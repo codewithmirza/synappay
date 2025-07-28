@@ -118,7 +118,7 @@ typechain-types/
 ignition/deployments/chain-31337/
 
 # Development documentation (not for public release)
-README.md
+README.private.md
 IMPLEMENTATION_STATUS.md
 docs/development/
 docs/internal/
