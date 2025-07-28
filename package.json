@@ -1,0 +1,44 @@
+{
+  "name": "synappay",
+  "version": "1.0.0",
+  "description": "Cross-chain swap between Ethereum and Stellar using 1inch Fusion+",
+  "main": "index.js",
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "demo": "node scripts/demo.js",
+    "build": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "test:full": "npx hardhat run scripts/test-full-flow.js",
+    "deploy:sepolia": "npx hardhat run scripts/deploy.js --network sepolia",
+    "relayer": "node src/relayer/index.js",
+    "test:relayer": "node src/relayer/test.js",
+    "cli": "node src/cli/index.js",
+    "synappay": "node src/cli/index.js"
+  },
+  "dependencies": {
+    "@1inch/fusion-sdk": "^2.0.0",
+    "stellar-sdk": "^11.3.0",
+    "ethers": "^6.8.0",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.0",
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@typechain/ethers-v6": "^0.5.0",
+    "@typechain/hardhat": "^9.0.0",
+    "@types/chai": "^4.2.0",
+    "@types/mocha": ">=9.1.0",
+    "chai": "^4.2.0",
+    "hardhat": "^2.19.0",
+    "hardhat-gas-reporter": "^1.0.8",
+    "solidity-coverage": "^0.8.1",
+    "ts-node": ">=8.0.0",
+    "typechain": "^8.3.0",
+    "typescript": ">=4.5.0"
+  }
+}
