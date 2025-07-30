@@ -1,5 +1,7 @@
 # SynapPay - Cross-Chain Ethereum ↔ Stellar Swaps
 
+> ⚠️ **SECURITY NOTE**: This is an open-source project. See `SECURITY_REMINDER.md` for important security guidelines.
+
 SynapPay enables atomic cross-chain swaps between Ethereum and Stellar using 1inch Fusion+ and Hash Time Locked Contracts (HTLCs).
 
 ## 🚀 What We're Building
@@ -32,6 +34,10 @@ npm run cli test
 ## 📖 Documentation
 
 See `README.private.md` for detailed setup, API documentation, and development guides.
+
+## 🔒 Security
+
+This project uses testnet funds only. All private keys are stored in `.env` (gitignored). See `SECURITY_REMINDER.md` for guidelines.
 
 ## 📄 License
 

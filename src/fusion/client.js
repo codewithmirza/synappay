@@ -6,12 +6,12 @@ class FusionClient {
         this.apiKey = apiKey;
         this.network = network;
         this.provider = new ethers.JsonRpcProvider(rpcUrl);
-        
-        // Initialize Fusion SDK with error handling
+
+        // Initialize Fusion SDK with proper network configuration
         try {
             this.sdk = new FusionSDK({
                 url: 'https://api.1inch.dev',
-                network: this.network === 'ethereum' ? 1 : this.network, // Convert to chain ID
+                network: 11155111, // Sepolia testnet
                 authKey: this.apiKey
             });
         } catch (error) {
@@ -37,6 +37,11 @@ class FusionClient {
                 hashlock,
                 timelock
             } = orderParams;
+
+            // Check if SDK is initialized
+            if (!this.sdk) {
+                throw new Error('Fusion SDK not initialized - check API key and network configuration');
+            }
 
             // Create order with HTLC conditions
             const order = await this.sdk.createOrder({
@@ -117,7 +122,7 @@ class FusionClient {
         try {
             const wallet = new ethers.Wallet(privateKey, this.provider);
             const cancellation = await this.sdk.cancelOrder(orderHash, wallet);
-            
+
             return {
                 success: true,
                 transactionHash: cancellation.hash
@@ -188,7 +193,7 @@ class FusionClient {
                 const status = await this.getOrderStatus(orderHash);
                 if (status.success) {
                     callback(status.status);
-                    
+
                     // Stop monitoring if order is completed or cancelled
                     if (status.status.status === 'filled' || status.status.status === 'cancelled') {
                         clearInterval(interval);
@@ -217,7 +222,7 @@ class FusionClient {
             if (!this.sdk) {
                 throw new Error('Fusion SDK not initialized');
             }
-            
+
             // Mock response for testing when SDK is not properly configured
             if (!this.apiKey || this.apiKey === 'your_1inch_api_key') {
                 return {
@@ -225,7 +230,7 @@ class FusionClient {
                     error: 'API key not configured'
                 };
             }
-            
+
             // Try different SDK methods for getting tokens
             let tokens;
             try {
@@ -244,7 +249,7 @@ class FusionClient {
                     };
                 }
             }
-            
+
             return {
                 success: true,
                 tokens: tokens
