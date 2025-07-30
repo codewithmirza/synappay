@@ -1,11 +1,10 @@
 {
   "name": "synappay",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Cross-chain swap between Ethereum and Stellar using 1inch Fusion+",
   "main": "index.js",
   "scripts": {
     "setup": "node scripts/setup.js",
-    "demo": "node scripts/demo.js",
     "build": "npx hardhat compile",
     "test": "npx hardhat test",
     "test:full": "npx hardhat run scripts/test-full-flow.js",
@@ -14,20 +13,21 @@
     "test:relayer": "node src/relayer/test.js",
     "cli": "node src/cli/index.js",
     "synappay": "node src/cli/index.js",
-    "get-addresses": "node scripts/get-addresses.js",
-    "generate-wallet": "node scripts/generate-wallet.js",
-    "verify-metamask": "node scripts/verify-metamask.js",
     "deploy": "npm run deploy:sepolia",
-    "deploy-and-test": "node scripts/deploy-and-test.js",
-    "test-complete": "node scripts/test-complete-system.js"
+    "test-complete": "node scripts/test-complete-system.js",
+    "start": "npm run cli",
+    "dev": "npm run cli"
   },
   "dependencies": {
     "@1inch/fusion-sdk": "^2.0.0",
     "axios": "^1.6.0",
+    "chalk": "^4.1.2",
     "commander": "^11.1.0",
     "dotenv": "^16.6.1",
     "ethers": "^6.15.0",
+    "inquirer": "^8.2.6",
     "node-fetch": "^3.3.2",
+    "ora": "^5.4.1",
     "stellar-sdk": "^11.3.0"
   },
   "devDependencies": {
@@ -55,7 +55,16 @@
     "type": "git",
     "url": "git+https://github.com/codewithmirza/synappay.git"
   },
-  "keywords": [],
+  "keywords": [
+    "cross-chain",
+    "swap",
+    "ethereum",
+    "stellar",
+    "1inch",
+    "fusion",
+    "htlc",
+    "defi"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
