@@ -13,21 +13,28 @@
     "relayer": "node src/relayer/index.js",
     "test:relayer": "node src/relayer/test.js",
     "cli": "node src/cli/index.js",
-    "synappay": "node src/cli/index.js"
+    "synappay": "node src/cli/index.js",
+    "get-addresses": "node scripts/get-addresses.js",
+    "generate-wallet": "node scripts/generate-wallet.js",
+    "verify-metamask": "node scripts/verify-metamask.js",
+    "get-final-wallet": "node scripts/get-final-wallet.js",
+    "deploy": "npm run deploy:sepolia",
+    "deploy-and-test": "node scripts/deploy-and-test.js"
   },
   "dependencies": {
     "@1inch/fusion-sdk": "^2.0.0",
-    "stellar-sdk": "^11.3.0",
-    "ethers": "^6.8.0",
-    "dotenv": "^16.3.1",
     "axios": "^1.6.0",
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "dotenv": "^16.6.1",
+    "ethers": "^6.15.0",
+    "node-fetch": "^3.3.2",
+    "stellar-sdk": "^11.3.0"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.0",
     "@typechain/ethers-v6": "^0.5.0",
     "@typechain/hardhat": "^9.0.0",
@@ -40,5 +47,20 @@
     "ts-node": ">=8.0.0",
     "typechain": "^8.3.0",
     "typescript": ">=4.5.0"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codewithmirza/synappay.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/codewithmirza/synappay/issues"
+  },
+  "homepage": "https://github.com/codewithmirza/synappay#readme"
 }

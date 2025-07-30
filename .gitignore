@@ -120,6 +120,7 @@ ignition/deployments/chain-31337/
 # Development documentation (not for public release)
 README.private.md
 IMPLEMENTATION_STATUS.md
+DEPLOYMENT_GUIDE.md
 docs/development/
 docs/internal/
 

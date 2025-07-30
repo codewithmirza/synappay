@@ -336,6 +336,145 @@ program
         }
     });
 
+// Enhanced CLI commands for multi-currency and best rates
+program
+    .command('get-best-rate')
+    .description('Get best exchange rate for token pair')
+    .requiredOption('-f, --from <token>', 'Source token (ETH, USDC, XLM)')
+    .requiredOption('-t, --to <token>', 'Target token (ETH, USDC, XLM)')
+    .requiredOption('-a, --amount <amount>', 'Amount to swap')
+    .action(async (options) => {
+        try {
+            console.log('🔍 Finding best exchange rate...\n');
+            
+            const BestRateDiscovery = require('../enhanced/best-rate');
+            const rateDiscovery = new BestRateDiscovery(process.env.ONEINCH_API_KEY);
+            
+            // Convert amount to appropriate units
+            const amount = options.from.toUpperCase() === 'ETH' 
+                ? ethers.parseEther(options.amount.toString()).toString()
+                : (parseFloat(options.amount) * 1000000).toString(); // USDC has 6 decimals
+            
+            const result = await rateDiscovery.getBestRate(options.from, options.to, amount);
+            
+            if (result.success) {
+                console.log('💰 Best Rate Found:');
+                console.log('From:', options.from.toUpperCase());
+                console.log('To:', options.to.toUpperCase());
+                console.log('Input Amount:', options.amount);
+                console.log('Output Amount:', ethers.formatUnits(result.outputAmount, 18));
+                console.log('Exchange Rate:', result.exchangeRate.toFixed(6));
+                console.log('Route:', result.route);
+                console.log('Estimated Gas:', result.estimatedGas);
+                console.log('Price Impact:', result.priceImpact);
+                console.log('Savings vs CEX:', result.savings.vsCEX);
+            } else {
+                console.error('❌ Rate discovery failed:', result.error);
+                if (result.fallback) {
+                    console.log('📊 Fallback rate:', result.fallback);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error:', error.message);
+        }
+    });
+
+program
+    .command('compare-routes')
+    .description('Compare rates across different routes')
+    .requiredOption('-f, --from <token>', 'Source token')
+    .requiredOption('-t, --to <token>', 'Target token')
+    .requiredOption('-a, --amount <amount>', 'Amount to swap')
+    .option('--show-fees', 'Show detailed fee breakdown')
+    .option('--show-time', 'Show settlement time estimates')
+    .action(async (options) => {
+        try {
+            console.log('📊 Comparing routes across platforms...\n');
+            
+            const BestRateDiscovery = require('../enhanced/best-rate');
+            const rateDiscovery = new BestRateDiscovery(process.env.ONEINCH_API_KEY);
+            
+            const amount = options.from.toUpperCase() === 'ETH' 
+                ? ethers.parseEther(options.amount.toString()).toString()
+                : (parseFloat(options.amount) * 1000000).toString();
+            
+            const comparison = await rateDiscovery.compareRoutes(options.from, options.to, amount);
+            
+            if (comparison.success) {
+                console.log('🏆 Best Route:', comparison.bestRoute.name);
+                console.log('💡 Recommendation:', comparison.recommendation);
+                console.log('💰 Potential Savings:', comparison.savings.savingsPercent);
+                console.log('');
+                
+                console.log('📋 All Routes:');
+                comparison.allRoutes.forEach((route, index) => {
+                    console.log(`${index + 1}. ${route.name}`);
+                    console.log(`   Output: ${ethers.formatUnits(route.outputAmount || '0', 18)} ${options.to.toUpperCase()}`);
+                    if (options.showFees && route.fees) {
+                        console.log(`   Fees: $${route.fees.totalFeeUSD}`);
+                    }
+                    if (options.showTime) {
+                        console.log(`   Settlement: ${route.timeToSettle}`);
+                    }
+                    console.log('');
+                });
+            } else {
+                console.error('❌ Route comparison failed:', comparison.error);
+            }
+        } catch (error) {
+            console.error('❌ Error:', error.message);
+        }
+    });
+
+program
+    .command('create-fiat-swap')
+    .description('Create swap with fiat equivalent calculation')
+    .requiredOption('-c, --contract <address>', 'HTLC contract address')
+    .requiredOption('--from-currency <currency>', 'Source currency (ETH, XLM, USDC)')
+    .requiredOption('--to-currency <currency>', 'Target currency (ETH, XLM, USDC)')
+    .requiredOption('--amount <amount>', 'Amount to swap')
+    .option('--fiat-equivalent <fiat>', 'Show equivalent in fiat (USD, EUR, GBP)', 'USD')
+    .action(async (options) => {
+        try {
+            console.log('💱 Creating fiat-equivalent swap...\n');
+            
+            const MultiCurrencyManager = require('../enhanced/multi-currency');
+            const multiCurrency = new MultiCurrencyManager();
+            
+            // Calculate fiat equivalent
+            const fiatCalc = multiCurrency.calculateFiatEquivalent(
+                options.fromCurrency, 
+                parseFloat(options.amount), 
+                options.fiatEquivalent
+            );
+            
+            console.log('💰 Fiat Equivalent:');
+            console.log(`${fiatCalc.assetAmount} ${fiatCalc.assetCode} = ${fiatCalc.fiatAmount.toFixed(2)} ${fiatCalc.fiatCurrency}`);
+            console.log(`Exchange Rate: 1 ${fiatCalc.assetCode} = $${fiatCalc.exchangeRate}`);
+            console.log('');
+            
+            // Get conversion route
+            const route = multiCurrency.getBestConversionRoute(
+                options.fromCurrency,
+                options.toCurrency,
+                parseFloat(options.amount)
+            );
+            
+            console.log('🛣️  Conversion Route:');
+            console.log(`${route.inputAmount} ${route.fromAsset} → ${route.outputAmount.toFixed(6)} ${route.toAsset}`);
+            console.log(`Fee: ${route.feePercent.toFixed(2)}% (${route.feeAmount.toFixed(6)} ${route.toAsset})`);
+            console.log(`Route Type: ${route.route}`);
+            console.log(`Estimated Time: ${route.estimatedTime}`);
+            console.log('');
+            
+            console.log('✅ Ready to create swap with these parameters');
+            console.log('💡 Use create-eth-stellar or create-stellar-eth with these amounts');
+            
+        } catch (error) {
+            console.error('❌ Error:', error.message);
+        }
+    });
+
 // Start relayer service
 program
     .command('start-relayer')
