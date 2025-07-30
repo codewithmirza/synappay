@@ -250,7 +250,7 @@ class CrossChainRelayer {
                 hashlock: hashlock,
                 ethContractId: ethContractId,
                 stellarBalanceId: stellarResult.balanceId,
-                fusionOrderHash: fusionOrder.orderHash,
+                fusionOrderHash: fusionOrderHash,
                 status: 'ACTIVE',
                 timelock: timelockTimestamp,
                 createdAt: Date.now()
@@ -262,7 +262,7 @@ class CrossChainRelayer {
                 secret: secret,
                 ethContractId: ethContractId,
                 stellarBalanceId: stellarResult.balanceId,
-                fusionOrderHash: fusionOrder.orderHash
+                fusionOrderHash: fusionOrderHash
             };
 
         } catch (error) {

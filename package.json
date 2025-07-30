@@ -17,10 +17,9 @@
     "get-addresses": "node scripts/get-addresses.js",
     "generate-wallet": "node scripts/generate-wallet.js",
     "verify-metamask": "node scripts/verify-metamask.js",
-
     "deploy": "npm run deploy:sepolia",
     "deploy-and-test": "node scripts/deploy-and-test.js",
-
+    "test-complete": "node scripts/test-complete-system.js"
   },
   "dependencies": {
     "@1inch/fusion-sdk": "^2.0.0",
