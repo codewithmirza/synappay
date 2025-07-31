@@ -2,12 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowRight, RefreshCw, AlertCircle, CheckCircle, Wallet, Shield, Zap } from 'lucide-react';
 import OneInchClient from '../lib/1inch-client';
 import ApiClient from '../lib/api-client';
+import { useWalletConnect } from '../lib/useWalletConnect';
 import config from '../lib/config';
 
 export default function Swap() {
+  const {
+    isConnected,
+    address,
+    chainId,
+    isLoading: walletLoading,
+    error: walletError,
+    connect,
+    disconnect,
+    formatAddress,
+    isCorrectNetwork,
+    switchToSepolia
+  } = useWalletConnect();
+
   const [fromToken, setFromToken] = useState('ETH');
   const [toToken, setToToken] = useState('XLM');
   const [fromAmount, setFromAmount] = useState('');
@@ -16,8 +30,8 @@ export default function Swap() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [slippage, setSlippage] = useState(1);
-  const [walletAddress, setWalletAddress] = useState('');
   const [swapType, setSwapType] = useState('ETH_TO_STELLAR');
+  const [showNetworkAlert, setShowNetworkAlert] = useState(false);
 
   const oneInchClient = new OneInchClient();
   const apiClient = new ApiClient();
@@ -30,10 +44,16 @@ export default function Swap() {
     'DAI': '0x3e622317f8C93f7328350cF0B56d9eD4C620C5d6'
   };
 
+  // Check network on connection
   useEffect(() => {
-    // Simulate wallet connection
-    setWalletAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6');
-    
+    if (isConnected && !isCorrectNetwork()) {
+      setShowNetworkAlert(true);
+    } else {
+      setShowNetworkAlert(false);
+    }
+  }, [isConnected, isCorrectNetwork]);
+
+  useEffect(() => {
     // Update swap type based on token selection
     if (fromToken === 'ETH' && toToken === 'XLM') {
       setSwapType('ETH_TO_STELLAR');
@@ -186,6 +206,77 @@ export default function Swap() {
             </p>
           )}
         </div>
+
+        {/* Wallet Connection Status */}
+        {!isConnected ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-6 mb-6"
+          >
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center space-x-2">
+                <Wallet className="w-6 h-6 text-blue-600" />
+                <h3 className="text-lg font-semibold text-blue-900">Connect Your Wallet</h3>
+              </div>
+              <p className="text-blue-700 text-sm">
+                Connect your wallet to start swapping ETH ↔ XLM
+              </p>
+              <button
+                onClick={connect}
+                disabled={walletLoading}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 disabled:opacity-50"
+              >
+                {walletLoading ? 'Connecting...' : 'Connect Wallet'}
+              </button>
+            </div>
+          </motion.div>
+        ) : showNetworkAlert ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6"
+          >
+            <div className="flex items-center space-x-2 mb-3">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+              <h3 className="text-lg font-semibold text-amber-900">Wrong Network</h3>
+            </div>
+            <p className="text-amber-700 text-sm mb-4">
+              Please switch to Sepolia testnet to use SynapPay
+            </p>
+            <button
+              onClick={switchToSepolia}
+              className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
+            >
+              Switch to Sepolia
+            </button>
+          </motion.div>
+        ) : null}
+
+        {/* Connected Wallet Info */}
+        {isConnected && !showNetworkAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div>
+                  <p className="text-sm font-medium text-green-900">Connected</p>
+                  <p className="text-xs text-green-700 font-mono">{formatAddress(address)}</p>
+                </div>
+              </div>
+              <button
+                onClick={disconnect}
+                className="text-xs text-green-700 hover:text-green-900 font-medium"
+              >
+                Disconnect
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Swap Form */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -350,16 +441,19 @@ export default function Swap() {
           {/* Review Button */}
           <motion.button
             onClick={handleReviewSwap}
-            disabled={loading || !quote}
+            disabled={loading || !quote || !isConnected || showNetworkAlert}
             className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all ${
-              loading || !quote
+              loading || !quote || !isConnected || showNetworkAlert
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 active:scale-95'
             }`}
-            whileHover={!loading && quote ? { scale: 1.02 } : {}}
-            whileTap={!loading && quote ? { scale: 0.98 } : {}}
+            whileHover={!loading && quote && isConnected && !showNetworkAlert ? { scale: 1.02 } : {}}
+            whileTap={!loading && quote && isConnected && !showNetworkAlert ? { scale: 0.98 } : {}}
           >
-            {loading ? 'Loading...' : 'Review Swap'}
+            {loading ? 'Loading...' : 
+             !isConnected ? 'Connect Wallet' :
+             showNetworkAlert ? 'Switch Network' :
+             !quote ? 'Enter Amount' : 'Review Swap'}
           </motion.button>
         </div>
 

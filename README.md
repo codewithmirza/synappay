@@ -98,6 +98,18 @@ HTLC_CONTRACT_ADDRESS=your_deployed_contract_address
 STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
 STELLAR_PRIVATE_KEY=your_stellar_secret_key
 
+# 1inch API Configuration
+ONEINCH_API_KEY=your_1inch_api_key_here
+
+# WalletConnect Configuration
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id_here
+
+# Frontend Configuration
+NEXT_PUBLIC_SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
+NEXT_PUBLIC_HTLC_CONTRACT_ADDRESS=your_deployed_htlc_contract_address
+NEXT_PUBLIC_STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
+NEXT_PUBLIC_ONEINCH_API_KEY=your_1inch_api_key_here
+
 # 1inch Fusion+ Configuration (Developer Portal)
 ONEINCH_API_KEY=your_1inch_developer_portal_api_key
 ONEINCH_BASE_URL=https://api.1inch.dev
@@ -240,6 +252,63 @@ This will start:
 - **CORS Handling**: Proper CORS configuration for cross-origin requests
 - **API Key Protection**: Keys stored server-side, never exposed to frontend
 - **Error Handling**: Comprehensive error handling for network failures
+
+## 🔗 **WalletConnect Integration**
+
+### **Universal Wallet Support**
+
+SynapPay now features **WalletConnect v2** integration, providing:
+
+- **🔗 Multi-Wallet Support**: MetaMask, Trust Wallet, Coinbase Wallet, Rainbow, Argent, and 100+ other wallets
+- **📱 Mobile Wallet Support**: QR code scanning for mobile wallet connections
+- **🌐 Cross-Platform Compatibility**: Works on desktop, mobile, and web browsers
+- **🔒 Professional Security**: Industry-standard wallet connection protocol
+- **🎨 Beautiful UI**: Custom-styled modal matching SynapPay's design
+
+### **WalletConnect Features**
+
+#### **Supported Wallets**
+- **MetaMask**: Desktop and mobile browser extension
+- **Trust Wallet**: Mobile wallet with DApp browser
+- **Coinbase Wallet**: Mobile and browser extension
+- **Rainbow**: Mobile wallet with beautiful UI
+- **Argent**: Mobile wallet with social recovery
+- **And 100+ more** via WalletConnect's universal protocol
+
+#### **Network Management**
+- **Automatic Network Detection**: Detects if wallet is on Sepolia testnet
+- **One-Click Network Switch**: Seamless switching to Sepolia when needed
+- **Network Validation**: Prevents swaps on wrong networks
+- **Graceful Error Handling**: Clear error messages for network issues
+
+#### **User Experience**
+- **Seamless Connection**: One-click wallet connection with QR code support
+- **Real-Time Status**: Live connection status and address display
+- **Professional Modal**: Beautiful, customizable wallet selection modal
+- **Mobile-First Design**: Optimized for mobile wallet interactions
+
+### **Setup Instructions**
+
+1. **Get WalletConnect Project ID**:
+   - Visit [WalletConnect Cloud](https://cloud.walletconnect.com/)
+   - Create a new project
+   - Copy your Project ID
+
+2. **Add to Environment Variables**:
+   ```env
+   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id_here
+   ```
+
+3. **Deploy to Vercel**:
+   - Add the environment variable to your Vercel project
+   - Deploy and enjoy universal wallet support!
+
+### **Technical Implementation**
+
+- **React Hook**: `useWalletConnect()` for easy state management
+- **Event Handling**: Automatic reconnection and network monitoring
+- **Error Recovery**: Graceful handling of connection failures
+- **TypeScript Support**: Full type safety for wallet interactions
 
 ## 🧪 **Comprehensive Testing Guide**
 

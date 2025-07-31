@@ -23,6 +23,18 @@ const config = {
     network: 'testnet',
   },
 
+  // WalletConnect Configuration
+  walletConnect: {
+    projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+    chains: [11155111], // Sepolia testnet
+    metadata: {
+      name: 'SynapPay',
+      description: 'Cross-Chain ETH ↔ XLM Swaps',
+      url: 'https://synappay.com',
+      icons: ['https://synappay.com/icon.png']
+    }
+  },
+
   // Feature Flags
   features: {
     fusion: process.env.NEXT_PUBLIC_ENABLE_FUSION === 'true',
