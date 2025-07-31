@@ -1,348 +1,164 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Download, Eye, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import Layout from '../components/Layout';
-import { cn, formatAddress, formatAmount, getStatusBadge, getAssetIcon } from '../lib/utils';
+
+// Image assets from Figma
+const imgFrame = "http://localhost:3845/assets/ca89c627b59121acdb35167a0882371eb28979b3.svg";
+const imgFrame1 = "http://localhost:3845/assets/95fac634a56edbc6057ef1bae35e34985f052c3b.svg";
+const imgFrame2 = "http://localhost:3845/assets/bbd9b960c82d03bb6e236bc3312929e27758d260.svg";
 
 export default function History() {
-  const [swaps, setSwaps] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('date');
-
-  // Mock data for demonstration
-  useEffect(() => {
-    const mockSwaps = [
-      {
-        id: '0x1234567890abcdef',
-        direction: 'eth_to_stellar',
-        amount: 0.5,
-        asset: 'ETH',
-        receiver: 'GABCDEF1234567890',
-        status: 'COMPLETED',
-        fusionStatus: 'FILLED',
-        createdAt: new Date(Date.now() - 86400000), // 1 day ago
-        completedAt: new Date(Date.now() - 82800000), // 23 hours ago
-        fusionOrderHash: '0xabcdef1234567890'
-      },
-      {
-        id: '0xabcdef1234567890',
-        direction: 'stellar_to_eth',
-        amount: 500,
-        asset: 'XLM',
-        receiver: '0x9876543210fedcba',
-        status: 'ACTIVE',
-        fusionStatus: 'AUCTION_ACTIVE',
-        createdAt: new Date(Date.now() - 3600000), // 1 hour ago
-        completedAt: null,
-        fusionOrderHash: '0x1234567890abcdef'
-      },
-      {
-        id: '0x9876543210fedcba',
-        direction: 'eth_to_stellar',
-        amount: 1.2,
-        asset: 'ETH',
-        receiver: 'GZYXWVUT987654321',
-        status: 'REFUNDED',
-        fusionStatus: 'EXPIRED',
-        createdAt: new Date(Date.now() - 172800000), // 2 days ago
-        completedAt: null,
-        fusionOrderHash: '0xfedcba0987654321'
-      }
-    ];
-
-    setSwaps(mockSwaps);
-    setIsLoading(false);
-  }, []);
-
-  const filteredSwaps = swaps.filter(swap => {
-    const matchesSearch = swap.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         swap.receiver.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || swap.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const sortedSwaps = [...filteredSwaps].sort((a, b) => {
-    switch (sortBy) {
-      case 'date':
-        return new Date(b.createdAt) - new Date(a.createdAt);
-      case 'amount':
-        return b.amount - a.amount;
-      case 'status':
-        return a.status.localeCompare(b.status);
-      default:
-        return 0;
+  const [transactions] = useState([
+    {
+      id: 1,
+      fromToken: 'ETH',
+      toToken: 'USDC',
+      fromAmount: '2.5 ETH',
+      toAmount: '7,125.80 USDC',
+      status: 'Success',
+      statusColor: 'bg-[#34c759]',
+      date: '2024-01-15 at 14:32',
+      route: 'Ethereum → Stellar'
+    },
+    {
+      id: 2,
+      fromToken: 'USDC',
+      toToken: 'ETH',
+      fromAmount: '5,000.00 USDC',
+      toAmount: '1.75 ETH',
+      status: 'Pending',
+      statusColor: 'bg-[#007aff]',
+      date: '2024-01-15 at 16:45',
+      route: 'Stellar → Ethereum'
+    },
+    {
+      id: 3,
+      fromToken: 'WBTC',
+      toToken: 'XLM',
+      fromAmount: '0.1 WBTC',
+      toAmount: '15,420.50 XLM',
+      status: 'Refunded',
+      statusColor: 'bg-[#ff9500]',
+      date: '2024-01-14 at 09:15',
+      route: 'Ethereum → Stellar'
+    },
+    {
+      id: 4,
+      fromToken: 'XLM',
+      toToken: 'USDT',
+      fromAmount: '25,000.00 XLM',
+      toAmount: '2,847.32 USDT',
+      status: 'Success',
+      statusColor: 'bg-[#34c759]',
+      date: '2024-01-13 at 11:28',
+      route: 'Stellar → Ethereum'
+    },
+    {
+      id: 5,
+      fromToken: 'ETH',
+      toToken: 'USDC',
+      fromAmount: '1.0 ETH',
+      toAmount: '2,843.15 USDC',
+      status: 'Success',
+      statusColor: 'bg-[#34c759]',
+      date: '2024-01-12 at 20:07',
+      route: 'Ethereum → Stellar'
     }
-  });
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'COMPLETED':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'ACTIVE':
-        return <Clock className="h-4 w-4 text-blue-500" />;
-      case 'REFUNDED':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'EXPIRED':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
-  const formatDate = (date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  };
-
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </Layout>
-    );
-  }
+  ]);
 
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center p-4">
+      <div className="bg-[#ffffff] rounded-[30px] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.08)] p-8 max-w-[800px] w-full">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Swap History</h1>
-              <p className="text-muted-foreground">
-                Track all your cross-chain swaps and their current status
-              </p>
-            </div>
-            
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="btn btn-outline mt-4 sm:mt-0 flex items-center space-x-2"
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-[#0000ee] text-[30px] font-['Inter:Regular',_sans-serif] font-normal leading-[36px]">
+            Transaction History
+          </h1>
+          <div className="bg-[#f2f2f7] p-4 rounded-full">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Transactions List */}
+        <div className="space-y-6">
+          {transactions.map((tx, index) => (
+            <motion.div
+              key={tx.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="bg-[#f2f2f7] rounded-[20px] p-6"
             >
-              <Download className="h-4 w-4" />
-              <span>Export CSV</span>
-            </motion.button>
-          </div>
-        </motion.div>
-
-        {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="card mb-6"
-        >
-          <div className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Search */}
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search by swap ID or receiver address..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="input pl-10"
-                />
+              {/* Token Pair */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">{tx.fromToken}</span>
+                    </div>
+                    <span className="text-[#000000] text-[14px] font-['Inter:Regular',_sans-serif] font-normal leading-[21px]">
+                      {tx.fromToken}
+                    </span>
+                  </div>
+                  
+                  <div className="w-4 h-4">
+                    <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7H7" />
+                    </svg>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">{tx.toToken}</span>
+                    </div>
+                    <span className="text-[#000000] text-[14px] font-['Inter:Regular',_sans-serif] font-normal leading-[21px]">
+                      {tx.toToken}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="bg-[#ffffff] p-2 rounded-full shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)]">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+                </div>
               </div>
 
-              {/* Status Filter */}
-              <div className="flex items-center space-x-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="input min-w-[120px]"
-                >
-                  <option value="all">All Status</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="REFUNDED">Refunded</option>
-                  <option value="EXPIRED">Expired</option>
-                </select>
+              {/* Amount and Status */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-[#000000] text-[18px] font-['Inter:Regular',_sans-serif] font-normal leading-[27px]">
+                    {tx.fromAmount}
+                  </span>
+                  <span className="text-[14px] text-[rgba(0,0,0,0.5)] font-['Inter:Regular',_sans-serif] font-normal leading-[21px]">
+                    →
+                  </span>
+                  <span className="text-[#000000] text-[18px] font-['Inter:Regular',_sans-serif] font-normal leading-[27px]">
+                    {tx.toAmount}
+                  </span>
+                </div>
+                
+                <div className={`${tx.statusColor} px-3 py-1 rounded-full`}>
+                  <span className="text-[#ffffff] text-[12px] font-['Inter:Regular',_sans-serif] font-normal leading-[18px]">
+                    {tx.status}
+                  </span>
+                </div>
               </div>
 
-              {/* Sort */}
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="input min-w-[100px]"
-                >
-                  <option value="date">Date</option>
-                  <option value="amount">Amount</option>
-                  <option value="status">Status</option>
-                </select>
+              {/* Date and Route */}
+              <div className="flex justify-between items-center">
+                <span className="text-[12px] text-[rgba(0,0,0,0.5)] font-['Inter:Regular',_sans-serif] font-normal leading-[18px]">
+                  {tx.date}
+                </span>
+                <span className="text-[12px] text-[rgba(0,0,0,0.5)] font-['Inter:Regular',_sans-serif] font-normal leading-[18px]">
+                  {tx.route}
+                </span>
               </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"
-        >
-          <div className="card p-4 text-center">
-            <div className="text-2xl font-bold text-primary">{swaps.length}</div>
-            <div className="text-sm text-muted-foreground">Total Swaps</div>
-          </div>
-          <div className="card p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {swaps.filter(s => s.status === 'COMPLETED').length}
-            </div>
-            <div className="text-sm text-muted-foreground">Completed</div>
-          </div>
-          <div className="card p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {swaps.filter(s => s.status === 'ACTIVE').length}
-            </div>
-            <div className="text-sm text-muted-foreground">Active</div>
-          </div>
-          <div className="card p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">
-              {swaps.filter(s => s.status === 'REFUNDED').length}
-            </div>
-            <div className="text-sm text-muted-foreground">Refunded</div>
-          </div>
-        </motion.div>
-
-        {/* Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="card overflow-hidden"
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b bg-muted/50">
-                <tr>
-                  <th className="text-left p-4 font-medium">Swap ID</th>
-                  <th className="text-left p-4 font-medium">Direction</th>
-                  <th className="text-left p-4 font-medium">Amount</th>
-                  <th className="text-left p-4 font-medium">Receiver</th>
-                  <th className="text-left p-4 font-medium">Status</th>
-                  <th className="text-left p-4 font-medium">Created</th>
-                  <th className="text-left p-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedSwaps.map((swap, index) => (
-                  <motion.tr
-                    key={swap.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 * index }}
-                    className="border-b hover:bg-muted/30 transition-colors"
-                  >
-                    <td className="p-4">
-                      <div className="font-mono text-sm">{formatAddress(swap.id)}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{getAssetIcon(swap.asset)}</span>
-                        <span className="font-medium">
-                          {swap.direction === 'eth_to_stellar' ? 'ETH → Stellar' : 'Stellar → ETH'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-medium">{formatAmount(swap.amount)} {swap.asset}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-mono text-sm">{formatAddress(swap.receiver)}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(swap.status)}
-                        <span className={cn(
-                          "badge",
-                          getStatusBadge(swap.status)
-                        )}>
-                          {swap.status}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-muted-foreground">
-                        {formatDate(swap.createdAt)}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => window.location.href = `/progress/${swap.id}`}
-                          className="btn btn-ghost btn-sm"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </motion.button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {sortedSwaps.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-muted-foreground mb-4">
-                <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No swaps found</h3>
-                <p className="text-sm">
-                  {searchTerm || statusFilter !== 'all' 
-                    ? 'Try adjusting your search or filters'
-                    : 'Create your first swap to see it here'
-                  }
-                </p>
-              </div>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Pagination */}
-        {sortedSwaps.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="flex items-center justify-between mt-6"
-          >
-            <div className="text-sm text-muted-foreground">
-              Showing {sortedSwaps.length} of {swaps.length} swaps
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <button className="btn btn-outline btn-sm" disabled>
-                Previous
-              </button>
-              <span className="text-sm font-medium">1</span>
-              <button className="btn btn-outline btn-sm" disabled>
-                Next
-              </button>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          ))}
+        </div>
       </div>
-    </Layout>
+    </div>
   );
 } 

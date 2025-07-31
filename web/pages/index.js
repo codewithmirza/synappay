@@ -1,20 +1,19 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, Zap, Shield, Globe, ArrowUpDown } from 'lucide-react';
-import Layout from '../components/Layout';
-import { cn } from '../lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
   const [isConnected, setIsConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   const connectWallet = async () => {
     try {
       if (typeof window.ethereum !== 'undefined') {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const account = accounts[0];
-        setWalletAddress(account);
         setIsConnected(true);
+        // Navigate to swap page after successful connection
+        setTimeout(() => {
+          window.location.href = '/swap';
+        }, 1000);
       } else {
         alert('Please install MetaMask!');
       }
@@ -23,165 +22,140 @@ export default function Home() {
     }
   };
 
+  const openWalletModal = () => {
+    setShowWalletModal(true);
+  };
+
+  const closeWalletModal = () => {
+    setShowWalletModal(false);
+  };
+
   return (
-    <Layout>
-      <div className="max-w-6xl mx-auto">
-        {/* Hero Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
+    <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-[#ffffff] rounded-[30px] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.08)] p-16 max-w-[515px] w-full"
+      >
+        <div className="text-center space-y-9">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"
+            className="text-[48px] font-normal leading-[57.6px] text-black font-['Inter']"
           >
             Trustless Cross-Chain Swap
           </motion.h1>
-
+          
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.6 }}
-            className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto"
+            className="text-[20px] font-normal leading-[28px] text-black font-['Inter']"
           >
-            Seamlessly swap between Ethereum and Stellar with 1inch Fusion+ integration.
-            Atomic, secure, and lightning fast.
+            Seamless ETH ↔️ XLM transfers, no middleman.
           </motion.p>
-
-          <motion.div
+          
+          <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-          >
-            {!isConnected ? (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={connectWallet}
-                className="btn btn-primary text-lg px-8 py-4 flex items-center space-x-2"
-              >
-                <Zap className="h-5 w-5" />
-                <span>Start Swap</span>
-                <ArrowRight className="h-5 w-5" />
-              </motion.button>
-            ) : (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => window.location.href = '/swap'}
-                className="btn btn-primary text-lg px-8 py-4 flex items-center space-x-2"
-              >
-                <ArrowUpDown className="h-5 w-5" />
-                <span>Create Swap</span>
-                <ArrowRight className="h-5 w-5" />
-              </motion.button>
-            )}
-          </motion.div>
-        </motion.div>
-
-        {/* Features Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="grid md:grid-cols-3 gap-8 mb-16"
-        >
-          <motion.div
-            whileHover={{ y: -5 }}
-            className="card p-6 text-center"
-          >
-            <div className="flex justify-center mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Shield className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Atomic Security</h3>
-            <p className="text-muted-foreground">
-              HTLC contracts ensure your funds are safe. Either the swap completes or you get a refund.
-            </p>
-          </motion.div>
-
-          <motion.div
-            whileHover={{ y: -5 }}
-            className="card p-6 text-center"
-          >
-            <div className="flex justify-center mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Zap className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-            <h3 className="text-xl font-semibold mb-2">1inch Fusion+</h3>
-            <p className="text-muted-foreground">
-              Get the best rates with Dutch auction mechanics and real-time price discovery.
-            </p>
-          </motion.div>
-
-          <motion.div
-            whileHover={{ y: -5 }}
-            className="card p-6 text-center"
-          >
-            <div className="flex justify-center mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Globe className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Cross-Chain</h3>
-            <p className="text-muted-foreground">
-              Bridge Ethereum and Stellar seamlessly. Support for ETH, XLM, USDC, and more.
-            </p>
-          </motion.div>
-        </motion.div>
-
-        {/* Stats Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.0, duration: 0.6 }}
-          className="card p-8 text-center"
-        >
-          <h2 className="text-3xl font-bold mb-8">Powered by</h2>
-          <div className="flex flex-wrap justify-center items-center gap-8">
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded bg-blue-600"></div>
-              <span className="text-lg font-semibold">1inch Fusion+</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded bg-purple-600"></div>
-              <span className="text-lg font-semibold">Stellar</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded bg-orange-600"></div>
-              <span className="text-lg font-semibold">Ethereum</span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* CTA Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2, duration: 0.6 }}
-          className="text-center mt-16"
-        >
-          <h2 className="text-3xl font-bold mb-4">Ready to swap?</h2>
-          <p className="text-muted-foreground mb-6">
-            Connect your wallet and start swapping in seconds.
-          </p>
-          <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={isConnected ? () => window.location.href = '/swap' : connectWallet}
-            className="btn btn-primary text-lg px-8 py-4"
+            onClick={openWalletModal}
+            className="bg-[#000000] text-white px-12 py-4 rounded-[20px] text-[18px] font-normal leading-[27px] font-['Inter'] hover:bg-gray-800 transition-colors"
           >
-            {isConnected ? 'Create Your First Swap' : 'Connect Wallet'}
+            {isConnected ? 'Connected!' : 'Start'}
           </motion.button>
-        </motion.div>
-      </div>
-    </Layout>
+        </div>
+      </motion.div>
+
+      {/* Wallet Connect Modal with Blurred Background */}
+      <AnimatePresence>
+        {showWalletModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 backdrop-blur-md backdrop-filter bg-[rgba(0,0,0,0.4)] z-50 flex items-center justify-center p-4"
+            onClick={closeWalletModal}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.3 }}
+              className="bg-[#ffffff] rounded-[30px] shadow-[0px_20px_60px_0px_rgba(0,0,0,0.15)] p-8 max-w-[520px] w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="text-center mb-8">
+                <h2 className="text-[#0000ee] text-[30px] font-['Inter:Regular',_sans-serif] font-normal leading-[36px] mb-2">
+                  Connect Wallet
+                </h2>
+                <p className="text-[16px] text-[rgba(0,0,0,0.5)] font-['Inter:Regular',_sans-serif] font-normal leading-[19px]">
+                  Choose your preferred wallet to get started
+                </p>
+              </div>
+
+              {/* Wallet Options */}
+              <div className="space-y-4 mb-8">
+                {/* MetaMask */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={connectWallet}
+                  className="bg-[#f2f2f7] flex items-center gap-3 px-6 py-4 rounded-[30px] w-full transition-all hover:bg-gray-100"
+                >
+                  <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">M</span>
+                  </div>
+                  <span className="font-['Inter:Regular',_sans-serif] font-normal text-[16px] text-[#000000] leading-[21px]">
+                    Connect MetaMask
+                  </span>
+                </motion.button>
+
+                {/* WalletConnect */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    // TODO: Integrate WalletConnect
+                    alert('WalletConnect integration coming soon!');
+                  }}
+                  className="bg-[#f2f2f7] flex items-center gap-3 px-6 py-4 rounded-[30px] w-full transition-all hover:bg-gray-100"
+                >
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">WC</span>
+                  </div>
+                  <span className="font-['Inter:Regular',_sans-serif] font-normal text-[16px] text-[#000000] leading-[21px]">
+                    Connect with WalletConnect
+                  </span>
+                </motion.button>
+              </div>
+
+              {/* Footer Text */}
+              <div className="text-center">
+                <p className="text-[14px] text-[rgba(0,0,0,0.5)] font-['Inter:Regular',_sans-serif] font-normal leading-[18px]">
+                  Your keys, your coins.
+                </p>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={closeWalletModal}
+                className="absolute top-6 right-6 bg-[#f2f2f7] p-2 rounded-full hover:bg-gray-200 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 } 
