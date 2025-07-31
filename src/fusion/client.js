@@ -2,12 +2,12 @@ const axios = require('axios');
 const { ethers } = require('ethers');
 
 class FusionClient {
-    constructor(apiKey = process.env.ONEINCH_API_KEY, network = 'ethereum', rpcUrl = process.env.SEPOLIA_RPC_URL) {
+    constructor(apiKey = process.env.ONEINCH_API_KEY, network = process.env.NETWORK, rpcUrl = process.env.SEPOLIA_RPC_URL) {
         this.apiKey = apiKey;
         this.network = network;
         this.rpcUrl = rpcUrl;
         this.baseUrl = 'https://api.1inch.dev';
-        this.chainId = 11155111; // Sepolia testnet
+        this.chainId = process.env.CHAIN_ID || 11155111; // Use env or default to Sepolia
         
         // Initialize provider
         this.provider = new ethers.JsonRpcProvider(rpcUrl);
