@@ -14,9 +14,15 @@ export default function Progress() {
   const [error, setError] = useState(null);
   const [showAuctionDetails, setShowAuctionDetails] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(null);
+  const [orderHash, setOrderHash] = useState('demo-order-hash');
 
-  // Get order hash from URL params (in real app, this would come from navigation state)
-  const orderHash = new URLSearchParams(window.location.search).get('orderHash') || 'demo-order-hash';
+  // SSR-safe: get orderHash from URL only on client
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = new URLSearchParams(window.location.search).get('orderHash');
+      setOrderHash(hash || 'demo-order-hash');
+    }
+  }, []);
 
   useEffect(() => {
     // Fetch auction status on component mount
