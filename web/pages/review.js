@@ -2,83 +2,110 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle, AlertCircle, Loader } from 'lucide-react';
-import ApiClient from '../lib/api-client';
+import { ArrowLeft, CheckCircle, AlertCircle, Loader, Shield, Zap, Star, ArrowRight } from 'lucide-react';
+import { useCrossChainWallet } from '../lib/useCrossChainWallet';
 import config from '../lib/config';
 
 export default function Review() {
-  const [swapData, setSwapData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  const [swapResult, setSwapResult] = useState(null);
+  const {
+    ethConnected,
+    ethAddress,
+    stellarConnected,
+    stellarPublicKey,
+    formatEthAddress,
+    formatStellarAddress
+  } = useCrossChainWallet();
 
-  const apiClient = new ApiClient();
+  const [swapData, setSwapData] = useState(null);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Get swap data from sessionStorage
     const storedData = sessionStorage.getItem('swapData');
     if (storedData) {
       setSwapData(JSON.parse(storedData));
-    } else {
-      // Redirect back to swap if no data
-      window.location.href = '/swap';
     }
   }, []);
 
   const handleSwapTokens = async () => {
-    if (!swapData) return;
+    if (!swapData) {
+      setError('No swap data found');
+      return;
+    }
 
-    setLoading(true);
+    setIsExecuting(true);
     setError(null);
 
     try {
-      // Create the cross-chain swap
-      const result = await apiClient.createSwap({
-        swapType: swapData.swapType,
-        fromToken: swapData.fromToken,
-        toToken: swapData.toToken,
-        amount: swapData.fromAmount,
-        receiver: swapData.walletAddress, // For demo, using sender as receiver
-        slippage: swapData.slippage
+      console.log('🚀 Executing cross-chain swap...');
+
+      const response = await fetch('/api/execute-swap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fromToken: swapData.fromToken,
+          toToken: swapData.toToken,
+          fromAmount: swapData.fromAmount,
+          toAmount: swapData.toAmount,
+          ethAddress: swapData.ethAddress,
+          stellarPublicKey: swapData.stellarPublicKey,
+          swapType: swapData.swapType,
+          contractAddress: swapData.contractAddress,
+          slippage: swapData.slippage
+        }),
       });
 
+      const result = await response.json();
+
       if (result.success) {
-        setSwapResult(result.data);
-        setSuccess(true);
+        setExecutionResult(result);
+        console.log('✅ Swap executed successfully:', result);
         
-        // Store swap result for progress page
-        sessionStorage.setItem('swapResult', JSON.stringify(result.data));
+        // Store execution result for progress page
+        sessionStorage.setItem('executionResult', JSON.stringify(result));
         
-        // Redirect to progress page after a short delay
+        // Navigate to progress page
         setTimeout(() => {
           window.location.href = '/progress';
         }, 2000);
       } else {
-        setError(result.error || 'Failed to create swap');
+        setError(result.error || 'Swap execution failed');
+        console.error('❌ Swap execution failed:', result.error);
       }
     } catch (error) {
-      console.error('Swap creation error:', error);
-      setError('Failed to create swap. Please try again.');
+      setError('Network error. Please try again.');
+      console.error('❌ Network error:', error);
     } finally {
-      setLoading(false);
+      setIsExecuting(false);
     }
   };
 
   const handleRetry = () => {
     setError(null);
-    handleSwapTokens();
+    setExecutionResult(null);
   };
 
   const handleBack = () => {
-    window.location.href = '/swap';
+    window.history.back();
   };
 
   if (!swapData) {
     return (
-      <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center p-4">
         <div className="text-center">
-          <Loader className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p>Loading swap details...</p>
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Swap Data</h2>
+          <p className="text-gray-600 mb-4">Please go back and create a swap first.</p>
+          <button
+            onClick={handleBack}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go Back
+          </button>
         </div>
       </div>
     );
@@ -99,101 +126,112 @@ export default function Review() {
 
         {/* Swap Details */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Swap Direction */}
-            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">{swapData.fromToken[0]}</span>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-4 mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">{swapData.fromToken[0]}</span>
+                  </div>
+                  <span className="text-lg font-semibold">{swapData.fromAmount} {swapData.fromToken}</span>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">You Pay</p>
-                  <p className="font-semibold">{swapData.fromAmount} {swapData.fromToken}</p>
-                </div>
-              </div>
-              <ArrowLeft className="w-5 h-5 text-gray-400" />
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">{swapData.toToken[0]}</span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">You Receive</p>
-                  <p className="font-semibold">{swapData.toAmount} {swapData.toToken}</p>
+                <ArrowRight className="w-6 h-6 text-gray-400" />
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">{swapData.toToken[0]}</span>
+                  </div>
+                  <span className="text-lg font-semibold">{swapData.toAmount} {swapData.toToken}</span>
                 </div>
               </div>
+              <p className="text-sm text-gray-500">
+                {swapData.fromToken} → {swapData.toToken} via 1inch Fusion+
+              </p>
             </div>
 
-            {/* Swap Type */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm text-gray-600">Swap Type</span>
-              <span className="text-sm font-medium">
-                {swapData.swapType === 'ETH_TO_STELLAR' ? 'ETH → XLM' : 'XLM → ETH'}
-              </span>
-            </div>
-
-            {/* Exchange Rate */}
+            {/* Quote Details */}
             {swapData.quote && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-600">Exchange Rate</span>
-                <span className="text-sm font-medium">
-                  1 {swapData.fromToken} = {swapData.quote.exchangeRate?.toFixed(6) || 'N/A'} {swapData.toToken}
-                </span>
+              <div className="bg-blue-50 rounded-xl p-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Quote Details</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Exchange Rate</span>
+                    <span className="text-sm font-semibold">
+                      1 {swapData.fromToken} = {(swapData.toAmount / swapData.fromAmount).toFixed(6)} {swapData.toToken}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Price Impact</span>
+                    <span className="text-sm font-semibold text-green-600">
+                      {swapData.quote.priceImpact || 0}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Slippage</span>
+                    <span className="text-sm font-semibold">{swapData.slippage}%</span>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Slippage */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm text-gray-600">Slippage Tolerance</span>
-              <span className="text-sm font-medium">{swapData.slippage}%</span>
-            </div>
-
-            {/* Network Fee */}
-            {swapData.quote && (
+            {/* Wallet Information */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-gray-700">Wallet Information</h3>
+              
+              {/* Ethereum Wallet */}
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-600">Network Fee</span>
-                <span className="text-sm font-medium">
-                  ~${swapData.quote.estimatedGas || 'Unknown'}
-                </span>
+                <div className="flex items-center space-x-3">
+                  <Shield className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Ethereum</p>
+                    <p className="text-xs text-gray-600 font-mono">{formatEthAddress(swapData.ethAddress)}</p>
+                  </div>
+                </div>
+                <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
-            )}
 
-            {/* Contract Address */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm text-gray-600">HTLC Contract</span>
-              <span className="text-sm font-medium text-gray-500">
-                {swapData.contractAddress?.slice(0, 8)}...{swapData.contractAddress?.slice(-6)}
-              </span>
+              {/* Stellar Wallet */}
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Star className="w-5 h-5 text-yellow-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Stellar</p>
+                    <p className="text-xs text-gray-600 font-mono">{formatStellarAddress(swapData.stellarPublicKey)}</p>
+                  </div>
+                </div>
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
             </div>
 
-            {/* Wallet Address */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm text-gray-600">Your Wallet</span>
-              <span className="text-sm font-medium text-gray-500">
-                {swapData.walletAddress?.slice(0, 8)}...{swapData.walletAddress?.slice(-6)}
-              </span>
+            {/* Security Information */}
+            <div className="bg-green-50 rounded-xl p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Shield className="w-5 h-5 text-green-600" />
+                <h3 className="text-sm font-medium text-green-900">HTLC Security</h3>
+              </div>
+              <p className="text-xs text-green-700">
+                Your swap is protected by Hash Time Locked Contracts (HTLCs) on both chains. 
+                Funds are secured and can be refunded if the swap fails.
+              </p>
+            </div>
+
+            {/* Contract Information */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Contract Details</h3>
+              <p className="text-xs text-gray-600 font-mono">
+                {swapData.contractAddress}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Success Message */}
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <span className="text-sm text-green-700">Swap created successfully!</span>
-            </div>
-            {swapResult && (
-              <div className="mt-2 text-sm text-green-600">
-                <p>Swap ID: {swapResult.swapId?.slice(0, 16)}...</p>
-                <p>Redirecting to progress page...</p>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl"
+          >
             <div className="flex items-center space-x-2">
               <AlertCircle className="w-5 h-5 text-red-500" />
               <span className="text-sm text-red-700">{error}</span>
@@ -204,41 +242,54 @@ export default function Review() {
             >
               Try again
             </button>
-          </div>
+          </motion.div>
+        )}
+
+        {/* Success Message */}
+        {executionResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl"
+          >
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              <span className="text-sm text-green-700">Swap executed successfully!</span>
+            </div>
+            <p className="text-xs text-green-600 mt-1">
+              Transaction Hash: {executionResult.txHash?.slice(0, 10)}...{executionResult.txHash?.slice(-8)}
+            </p>
+          </motion.div>
         )}
 
         {/* Action Buttons */}
         <div className="flex space-x-4">
-          <motion.button
+          <button
             onClick={handleBack}
-            disabled={loading}
-            className="flex-1 py-4 px-6 rounded-xl font-semibold text-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            disabled={isExecuting}
+            className="flex-1 py-3 px-6 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
+            <ArrowLeft className="w-5 h-5 inline mr-2" />
             Back
-          </motion.button>
+          </button>
 
           <motion.button
             onClick={handleSwapTokens}
-            disabled={loading || success}
-            className={`flex-1 py-4 px-6 rounded-xl font-semibold text-lg transition-all ${
-              loading || success
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
-            }`}
-            whileHover={!loading && !success ? { scale: 1.02 } : {}}
-            whileTap={!loading && !success ? { scale: 0.98 } : {}}
+            disabled={isExecuting}
+            className="flex-1 py-3 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50"
+            whileHover={!isExecuting ? { scale: 1.02 } : {}}
+            whileTap={!isExecuting ? { scale: 0.98 } : {}}
           >
-            {loading ? (
-              <div className="flex items-center justify-center space-x-2">
-                <Loader className="w-5 h-5 animate-spin" />
-                <span>Creating Swap...</span>
-              </div>
-            ) : success ? (
-              'Swap Created!'
+            {isExecuting ? (
+              <>
+                <Loader className="w-5 h-5 inline mr-2 animate-spin" />
+                Executing...
+              </>
             ) : (
-              'Confirm Swap'
+              <>
+                <Zap className="w-5 h-5 inline mr-2" />
+                Execute Swap
+              </>
             )}
           </motion.button>
         </div>
@@ -246,7 +297,7 @@ export default function Review() {
         {/* Info Section */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-500">
-            This creates a secure HTLC on both chains
+            Powered by 1inch Fusion+ • HTLC Security • Cross-Chain
           </p>
         </div>
       </div>
