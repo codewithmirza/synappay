@@ -8,186 +8,237 @@ export default function Swap() {
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('2,847.32');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
 
-  const handleReviewSwap = () => {
-    if (!fromAmount) {
-      alert('Please enter an amount to swap');
+  const validateInput = () => {
+    const errors = {};
+    
+    if (!fromAmount || parseFloat(fromAmount) <= 0) {
+      errors.amount = 'Please enter a valid amount';
+    }
+    
+    if (parseFloat(fromAmount) > 2.45) {
+      errors.balance = 'Insufficient balance';
+    }
+    
+    if (parseFloat(fromAmount) < 0.001) {
+      errors.minAmount = 'Minimum swap amount is 0.001 ETH';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleReviewSwap = async () => {
+    setError(null);
+    
+    if (!validateInput()) {
       return;
     }
-    // Navigate to review page
-    window.location.href = '/review';
+
+    setIsLoading(true);
+    
+    try {
+      // Simulate API call for quote
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Check if quote is still valid
+      if (Math.random() < 0.1) { // 10% chance of quote expiry
+        throw new Error('Quote expired. Please try again.');
+      }
+      
+      // Navigate to review page
+      window.location.href = '/review';
+    } catch (error) {
+      setError(error.message || 'Failed to get quote. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAmountChange = (value) => {
+    setFromAmount(value);
+    setError(null);
+    setValidationErrors({});
+    
+    // Simulate real-time quote updates
+    if (value && parseFloat(value) > 0) {
+      const calculatedAmount = (parseFloat(value) * 2847.32).toFixed(2);
+      setToAmount(calculatedAmount.toLocaleString());
+    } else {
+      setToAmount('0.00');
+    }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setValidationErrors({});
   };
 
   return (
-    <div className="bg-[#ffffff] box-border content-stretch flex flex-col items-start justify-start p-0 relative size-full">
-      <div className="bg-[#ffffff] box-border content-stretch flex flex-col items-start justify-start overflow-clip p-0 relative shrink-0 w-full">
-        <div className="bg-[#f2f2f7] box-border content-stretch flex flex-col items-start justify-start pb-[81px] pt-20 px-[385px] relative shrink-0 w-full">
-          <div className="bg-[#ffffff] box-border content-stretch flex flex-col gap-8 items-start justify-start overflow-clip pb-[31.667px] pl-[31.833px] pr-[32.167px] pt-[32.333px] relative rounded-[30px] shrink-0">
-            {/* Header */}
-            <div className="box-border content-stretch flex flex-row gap-[187px] items-center justify-end pb-[0.333px] pl-[0.167px] pr-0 pt-0 relative shrink-0 w-full">
-              <div className="font-['Inter:Regular',_sans-serif] font-normal leading-[0] not-italic relative shrink-0 text-[#0000ee] text-[30px] text-left text-nowrap">
-                <p className="block leading-[36px] whitespace-pre">
-                  Swap Tokens
-                </p>
-              </div>
-              <div className="bg-[#f2f2f7] box-border content-stretch flex flex-col items-start justify-start pb-[15px] pl-[15px] pr-4 pt-4 relative rounded-[2.23696e+07px] shrink-0">
-                <div className="shrink-0 size-8">
-                  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center p-4">
+      <div className="bg-[#ffffff] rounded-[30px] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.08)] p-6 md:p-8 max-w-[600px] w-full">
+        
+        {/* Error State */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
+                <span className="text-red-800 font-medium">{error}</span>
+              </div>
+              <button
+                onClick={handleRetry}
+                className="text-red-600 hover:text-red-800 font-medium"
+              >
+                Retry
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl md:text-3xl font-semibold text-black mb-2">Swap Tokens</h1>
+          <p className="text-gray-600">Exchange ETH for USDC with the best rates</p>
+        </div>
+
+        {/* Swap Form */}
+        <div className="space-y-6">
+          {/* From Token */}
+          <div className="bg-gray-50 rounded-[20px] p-6">
+            <div className="flex items-center justify-between mb-4">
+              <label className="text-sm font-medium text-gray-700">You Pay</label>
+              <div className="text-sm text-gray-500">
+                Balance: <span className="font-medium">2.45 ETH</span>
               </div>
             </div>
-
-            {/* Swap Interface */}
-            <div className="box-border content-stretch flex flex-col gap-6 items-center justify-center pb-[0.333px] pl-[0.167px] pr-0 pt-0 relative shrink-0 w-full">
-              {/* From Token */}
-              <div className="bg-[#f2f2f7] box-border content-stretch flex flex-col gap-2 items-start justify-center pb-[23.667px] pl-[23.833px] pr-[24.167px] pt-[24.333px] relative rounded-[20px] shrink-0 w-full">
-                <div className="box-border content-stretch flex flex-row font-['Inter:Regular',_sans-serif] font-normal items-start justify-between leading-[0] not-italic pb-[0.333px] pl-[0.167px] pr-[0.833px] pt-0 relative shrink-0 text-[14px] text-[rgba(0,0,0,0.5)] text-left text-nowrap w-full">
-                  <div className="relative shrink-0">
-                    <p className="block leading-[21px] text-nowrap whitespace-pre">
-                      From
-                    </p>
-                  </div>
-                  <div className="relative shrink-0">
-                    <p className="block leading-[21px] text-nowrap whitespace-pre">
-                      Balance: 2.45 ETH
-                    </p>
-                  </div>
-                </div>
-                <div className="box-border content-stretch flex flex-row gap-[11.833px] items-center justify-start pl-[0.167px] pr-0 py-0 relative shrink-0">
-                  <div className="rounded-[2.23696e+07px] shrink-0 size-10 bg-blue-500 flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">ETH</span>
-                  </div>
-                  <div className="font-['Inter:Regular',_sans-serif] font-normal h-[45px] leading-[0] not-italic relative shrink-0 text-left text-nowrap w-[72.208px]">
-                    <div className="absolute left-[0.17px] text-[#000000] text-[16px] top-[-0.33px]">
-                      <p className="block leading-[24px] text-nowrap whitespace-pre">
-                        Ethereum
-                      </p>
-                    </div>
-                    <div className="absolute left-[0.17px] text-[#808080] text-[14px] top-[23.67px]">
-                      <p className="block leading-[21px] text-nowrap whitespace-pre">
-                        ETH
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
                 <input
                   type="number"
-                  placeholder="0.00"
                   value={fromAmount}
-                  onChange={(e) => setFromAmount(e.target.value)}
-                  className="w-full bg-transparent border-none outline-none text-[24px] font-['Inter:Regular',_sans-serif] font-normal text-[#000000] leading-[36px]"
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full text-2xl font-semibold bg-transparent border-none outline-none"
                 />
+                {validationErrors.amount && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.amount}</p>
+                )}
+                {validationErrors.balance && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.balance}</p>
+                )}
+                {validationErrors.minAmount && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.minAmount}</p>
+                )}
               </div>
-
-              {/* Swap Arrow */}
-              <div className="bg-[#ffffff] box-border content-stretch flex flex-col items-start justify-start p-[12px] relative rounded-[2.23696e+07px] shadow-[0px_1.13px_2px_0px_rgba(0,0,0,0.25)] shrink-0">
-                <div className="relative shrink-0 size-6">
-                  <img
-                    alt="Swap"
-                    className="block max-w-none size-full"
-                    src={imgFrame}
-                  />
+              
+              <div className="flex items-center gap-2 bg-white rounded-[15px] px-4 py-2">
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">Ξ</span>
                 </div>
+                <span className="font-medium">ETH</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
-
-              {/* To Token */}
-              <div className="bg-[#f2f2f7] box-border content-stretch flex flex-col gap-2 items-start justify-center pb-[23.667px] pl-[23.833px] pr-[24.167px] pt-[24.333px] relative rounded-[20px] shrink-0 w-full">
-                <div className="box-border content-stretch flex flex-row font-['Inter:Regular',_sans-serif] font-normal items-start justify-between leading-[0] not-italic pb-[0.333px] pl-[0.167px] pr-0 pt-0 relative shrink-0 text-[14px] text-[rgba(0,0,0,0.5)] text-left text-nowrap w-full">
-                  <div className="relative shrink-0">
-                    <p className="block leading-[21px] text-nowrap whitespace-pre">
-                      To
-                    </p>
-                  </div>
-                  <div className="relative shrink-0">
-                    <p className="block leading-[21px] text-nowrap whitespace-pre">
-                      Balance: 0.00 USDC
-                    </p>
-                  </div>
-                </div>
-                <div className="box-border content-stretch flex flex-row items-center justify-between p-0 relative shrink-0 w-full">
-                  <div className="box-border content-stretch flex flex-row gap-[11.833px] items-center justify-start pl-[0.167px] pr-0 py-0 relative shrink-0">
-                    <div className="rounded-[2.23696e+07px] shrink-0 size-10 bg-blue-600 flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">USDC</span>
-                    </div>
-                    <div className="font-['Inter:Regular',_sans-serif] font-normal h-[45px] leading-[0] not-italic relative shrink-0 text-left text-nowrap w-[72.833px]">
-                      <div className="absolute left-[0.17px] text-[#000000] text-[16px] top-[-0.33px]">
-                        <p className="block leading-[24px] text-nowrap whitespace-pre">
-                          USD Coin
-                        </p>
-                      </div>
-                      <div className="absolute left-[0.17px] text-[#808080] text-[14px] top-[23.67px]">
-                        <p className="block leading-[21px] text-nowrap whitespace-pre">
-                          USDC
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="font-['Inter:Regular',_sans-serif] font-normal leading-[0] not-italic relative shrink-0 text-[#000000] text-[24px] text-nowrap text-right">
-                    <p className="block leading-[36px] whitespace-pre">
-                      {toAmount}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Swap Details */}
-              <div className="bg-[#f2f2f7] box-border content-stretch flex flex-col gap-2 items-start justify-center pb-[15.667px] pl-[15.833px] pr-[16.167px] pt-[16.333px] relative rounded-2xl shrink-0 w-full">
-                <div className="box-border content-stretch flex flex-row font-['Inter:Regular',_sans-serif] font-normal items-start justify-between leading-[0] not-italic pb-[0.333px] pl-[0.167px] pr-0 pt-0 relative shrink-0 text-[14px] text-left text-nowrap w-full">
-                  <div className="relative shrink-0 text-[rgba(0,0,0,0.5)]">
-                    <p className="block leading-[21px] text-nowrap whitespace-pre">
-                      Rate
-                    </p>
-                  </div>
-                  <div className="relative shrink-0 text-[#000000]">
-                    <p className="block leading-[21px] text-nowrap whitespace-pre">
-                      1 ETH = 2,847.32 USDC
-                    </p>
-                  </div>
-                </div>
-                <div className="box-border content-stretch flex flex-row font-['Inter:Regular',_sans-serif] font-normal items-start justify-between leading-[0] not-italic pb-[0.333px] pl-[0.167px] pr-[0.833px] pt-0 relative shrink-0 text-[14px] text-left text-nowrap w-full">
-                  <div className="relative shrink-0 text-[rgba(0,0,0,0.5)]">
-                    <p className="block leading-[21px] text-nowrap whitespace-pre">
-                      Network Fee
-                    </p>
-                  </div>
-                  <div className="relative shrink-0 text-[#000000]">
-                    <p className="block leading-[21px] text-nowrap whitespace-pre">
-                      ~$12.50
-                    </p>
-                  </div>
-                </div>
-                <div className="box-border content-stretch flex flex-row font-['Inter:Regular',_sans-serif] font-normal items-start justify-between leading-[0] not-italic pb-[0.333px] pl-[0.167px] pr-[0.833px] pt-0 relative shrink-0 text-[14px] text-left text-nowrap w-full">
-                  <div className="relative shrink-0 text-[rgba(0,0,0,0.5)]">
-                    <p className="block leading-[21px] text-nowrap whitespace-pre">
-                      Slippage
-                    </p>
-                  </div>
-                  <div className="relative shrink-0 text-[#000000]">
-                    <p className="block leading-[21px] text-nowrap whitespace-pre">
-                      0.5%
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Review Swap Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleReviewSwap}
-                disabled={!fromAmount || isLoading}
-                className="bg-[#000000] box-border content-stretch flex flex-col items-start justify-start px-[169px] py-4 relative rounded-[20px] shrink-0 w-full disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="font-['Inter:Regular',_sans-serif] font-normal leading-[0] not-italic relative shrink-0 text-[#ffffff] text-[16px] text-center text-nowrap">
-                  <p className="block leading-[24px] whitespace-pre">
-                    {isLoading ? 'Processing...' : 'Review Swap'}
-                  </p>
-                </div>
-              </motion.button>
             </div>
           </div>
+
+          {/* Swap Arrow */}
+          <div className="flex justify-center">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+            >
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+            </motion.button>
+          </div>
+
+          {/* To Token */}
+          <div className="bg-gray-50 rounded-[20px] p-6">
+            <div className="flex items-center justify-between mb-4">
+              <label className="text-sm font-medium text-gray-700">You Receive</label>
+              <div className="text-sm text-gray-500">
+                Rate: <span className="font-medium">1 ETH = 2,847.32 USDC</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="text-2xl font-semibold text-gray-900">
+                  {toAmount}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  ≈ ${(parseFloat(toAmount.replace(',', '')) * 1).toLocaleString()}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 bg-white rounded-[15px] px-4 py-2">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">$</span>
+                </div>
+                <span className="font-medium">USDC</span>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Swap Details */}
+          <div className="bg-gray-50 rounded-[20px] p-6">
+            <h3 className="text-lg font-semibold mb-4">Swap Details</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Exchange Rate</span>
+                <span className="font-medium">1 ETH = 2,847.32 USDC</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Slippage</span>
+                <span className="font-medium">1.0%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Gas Fee</span>
+                <span className="font-medium">$12.50</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Estimated Time</span>
+                <span className="font-medium">2-5 minutes</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Button */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleReviewSwap}
+            disabled={isLoading || !fromAmount || parseFloat(fromAmount) <= 0}
+            className="w-full bg-black text-white py-4 rounded-[20px] text-lg font-medium hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Getting Quote...
+              </div>
+            ) : (
+              'Review Swap'
+            )}
+          </motion.button>
         </div>
       </div>
     </div>

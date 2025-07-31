@@ -13,7 +13,7 @@ export default function ClaimSuccess() {
 
   return (
     <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center p-4">
-      <div className="bg-[#ffffff] rounded-[30px] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.08)] p-12 max-w-[600px] w-full relative overflow-hidden">
+      <div className="bg-[#ffffff] rounded-[30px] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.08)] p-6 md:p-12 max-w-[600px] w-full relative overflow-hidden">
         {/* Animated Particles */}
         <div className="absolute inset-0 pointer-events-none">
           <motion.div
@@ -23,7 +23,7 @@ export default function ClaimSuccess() {
               rotate: [0, 360]
             }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#34c759] rounded-full size-2 top-[147px] right-[100px]"
+            className="absolute bg-green-500 rounded-full size-2 top-[147px] right-[100px]"
           />
           <motion.div
             animate={{ 
@@ -32,7 +32,7 @@ export default function ClaimSuccess() {
               rotate: [0, -360]
             }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#ff3b30] rounded-full size-3.5 top-[89px] right-[200px]"
+            className="absolute bg-red-500 rounded-full size-3.5 top-[89px] right-[200px]"
           />
           <motion.div
             animate={{ 
@@ -41,7 +41,7 @@ export default function ClaimSuccess() {
               rotate: [0, 180]
             }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#ff2d92] rounded-full size-[11px] top-[178px] right-[50px]"
+            className="absolute bg-pink-500 rounded-full size-[11px] top-[178px] right-[50px]"
           />
           <motion.div
             animate={{ 
@@ -50,7 +50,7 @@ export default function ClaimSuccess() {
               rotate: [0, 360]
             }}
             transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#007aff] rounded-full size-[13px] top-[119px] right-[250px]"
+            className="absolute bg-blue-500 rounded-full size-[13px] top-[119px] right-[250px]"
           />
           <motion.div
             animate={{ 
@@ -59,7 +59,7 @@ export default function ClaimSuccess() {
               rotate: [0, -180]
             }}
             transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#34c759] rounded-full size-2.5 top-[208px] right-[150px]"
+            className="absolute bg-green-500 rounded-full size-2.5 top-[208px] right-[150px]"
           />
           <motion.div
             animate={{ 
@@ -68,7 +68,7 @@ export default function ClaimSuccess() {
               rotate: [0, 360]
             }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#ff2d92] rounded-full size-[9px] top-[327px] left-[100px]"
+            className="absolute bg-pink-500 rounded-full size-[9px] top-[327px] left-[100px]"
           />
           <motion.div
             animate={{ 
@@ -77,7 +77,7 @@ export default function ClaimSuccess() {
               rotate: [0, -360]
             }}
             transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#ff9500] rounded-full size-2.5 top-[208px] left-[126px]"
+            className="absolute bg-orange-500 rounded-full size-2.5 top-[208px] left-[126px]"
           />
           <motion.div
             animate={{ 
@@ -86,7 +86,7 @@ export default function ClaimSuccess() {
               rotate: [0, 180]
             }}
             transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#30d158] rounded-full size-[7px] top-[268px] left-[226px]"
+            className="absolute bg-green-400 rounded-full size-[7px] top-[268px] left-[226px]"
           />
           <motion.div
             animate={{ 
@@ -95,119 +95,93 @@ export default function ClaimSuccess() {
               rotate: [0, 360]
             }}
             transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#5856d6] rounded-full size-3 top-[149px] left-[264px]"
-          />
-          <motion.div
-            animate={{ 
-              x: [0, -15, 20, 0],
-              y: [0, 10, -25, 0],
-              rotate: [0, -180]
-            }}
-            transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#5856d6] rounded-full size-[9px] top-[238px] left-[176px]"
-          />
-          <motion.div
-            animate={{ 
-              x: [0, 20, -15, 0],
-              y: [0, -25, 10, 0],
-              rotate: [0, 360]
-            }}
-            transition={{ duration: 3.3, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#ff9500] rounded-full size-2 top-[297px] right-[100px]"
-          />
-          <motion.div
-            animate={{ 
-              x: [0, -10, 25, 0],
-              y: [0, 20, -15, 0],
-              rotate: [0, -360]
-            }}
-            transition={{ duration: 4.7, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bg-[#007aff] rounded-full size-3 top-[116px] left-[75px]"
+            className="absolute bg-purple-500 rounded-full size-3 top-[149px] left-[264px]"
           />
         </div>
 
-        {/* Header */}
-        <div className="text-center mb-12 relative z-10">
-          <h1 className="text-[#0000ee] text-[30px] font-['Inter:Regular',_sans-serif] font-normal leading-[36px] mb-4">
-            Claim Your Funds
-          </h1>
-          <p className="text-[16px] text-[rgba(0,0,0,0.5)] font-['Inter:Regular',_sans-serif] font-normal leading-[24px]">
-            Enter your transaction hash or secret to claim
-          </p>
-        </div>
-
-        {/* Input Field */}
-        <div className="mb-8 relative z-10">
-          <label className="block text-[#000000] text-[18px] font-['Inter:Regular',_sans-serif] font-normal leading-[27px] mb-4">
-            Transaction Hash or Secret
-          </label>
-          <input
-            type="text"
-            value={hashOrSecret}
-            onChange={(e) => setHashOrSecret(e.target.value)}
-            placeholder="0x1a2b3c4d... or secret123"
-            className="w-full bg-[#f2f2f7] border-none rounded-[20px] px-6 py-4 text-[16px] font-['Inter:Regular',_sans-serif] font-normal text-[#000000] leading-[normal] focus:outline-none focus:ring-2 focus:ring-[#007aff]"
-          />
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-4 mb-8 relative z-10">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex-1 bg-[#000000] text-white px-12 py-5 rounded-[20px] text-[18px] font-['Inter:Regular',_sans-serif] font-normal leading-[27px]"
+        {/* Success Content */}
+        <div className="relative z-10 text-center">
+          {/* Success Icon */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5, type: "spring" }}
+            className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6"
           >
-            Claim Funds
-          </motion.button>
-          
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex-1 bg-[#f2f2f7] text-[#000000] px-8 py-5 rounded-[20px] text-[18px] font-['Inter:Regular',_sans-serif] font-normal leading-[27px]"
-          >
-            Request Refund
-          </motion.button>
-        </div>
+            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </motion.div>
 
-        {/* Success Message */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-[#26b286] rounded-[20px] p-6 mb-6 relative z-10"
-        >
-          <div className="flex items-center justify-center gap-3">
-            <div className="bg-[#ffffff] p-1 rounded-full">
-              <div className="w-3.5 h-3.5">
-                <img
-                  alt="Success"
-                  className="w-full h-full"
-                  src={imgFrame}
-                />
+          {/* Success Message */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="mb-8"
+          >
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Funds Received!
+            </h1>
+            <p className="text-lg text-gray-600 leading-relaxed">
+              Your funds have been successfully claimed and transferred to your wallet. The transaction has been confirmed on the blockchain.
+            </p>
+          </motion.div>
+
+          {/* Transaction Details */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="bg-gray-50 rounded-[20px] p-6 mb-8"
+          >
+            <h3 className="text-lg font-semibold mb-4">Transaction Details</h3>
+            <div className="space-y-3 text-left">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Transaction Hash:</span>
+                <span className="font-mono text-sm">{hashOrSecret}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Status:</span>
+                <span className="text-green-600 font-medium">Confirmed</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Amount:</span>
+                <span className="font-medium">2,847.32 USDC</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Network:</span>
+                <span className="font-medium">Ethereum</span>
               </div>
             </div>
-            <span className="text-[#ffffff] text-[16px] font-['Inter:Regular',_sans-serif] font-normal leading-[24px]">
-              Funds claimed successfully!
-            </span>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Start New Claim Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="text-center relative z-10"
-        >
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleStartNewClaim}
-            className="bg-[#f2f2f7] text-[#007aff] px-6 py-3 rounded-[20px] text-[14px] font-['Inter:Regular',_sans-serif] font-normal leading-[21px]"
+          {/* Action Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+            className="flex gap-4"
           >
-            Start New Claim
-          </motion.button>
-        </motion.div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleStartNewClaim}
+              className="flex-1 bg-gray-200 text-gray-800 py-4 rounded-[20px] text-lg font-medium hover:bg-gray-300 transition-colors"
+            >
+              Claim More Funds
+            </motion.button>
+            
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => window.location.href = '/'}
+              className="flex-1 bg-black text-white py-4 rounded-[20px] text-lg font-medium hover:bg-gray-800 transition-colors"
+            >
+              Back to Home
+            </motion.button>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

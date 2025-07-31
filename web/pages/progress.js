@@ -10,9 +10,26 @@ const imgFrame3 = "http://localhost:3845/assets/9ed60ebac51962657d4c62f72d544402
 export default function Progress() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isComplete, setIsComplete] = useState(false);
+  const [auctionData, setAuctionData] = useState(null);
+  const [error, setError] = useState(null);
+  const [showAuctionDetails, setShowAuctionDetails] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(null);
+
+  // Get order hash from URL params (in real app, this would come from navigation state)
+  const orderHash = new URLSearchParams(window.location.search).get('orderHash') || 'demo-order-hash';
 
   useEffect(() => {
-    // Simulate progress through steps
+    // Fetch auction status on component mount
+    fetchAuctionStatus();
+    
+    // Set up polling for real-time updates
+    const interval = setInterval(fetchAuctionStatus, 5000);
+    
+    return () => clearInterval(interval);
+  }, [orderHash]);
+
+  useEffect(() => {
+    // Simulate progress through steps with auction awareness
     const timer = setInterval(() => {
       setCurrentStep((prev) => {
         if (prev < 4) {
@@ -28,161 +45,273 @@ export default function Progress() {
     return () => clearInterval(timer);
   }, []);
 
-  const steps = [
-    {
-      id: 1,
-      title: "Locking on Ethereum",
-      description: "Confirming transaction on Ethereum network...",
-      icon: imgFrame,
-      isActive: currentStep >= 1,
-      isComplete: currentStep > 1
-    },
-    {
-      id: 2,
-      title: "Locking on Stellar",
-      description: "Waiting for Ethereum confirmation...",
-      icon: imgFrame1,
-      isActive: currentStep >= 2,
-      isComplete: currentStep > 2
-    },
-    {
-      id: 3,
-      title: "Awaiting Resolver/Secret",
-      description: "Waiting for Stellar lock...",
-      icon: imgFrame2,
-      isActive: currentStep >= 3,
-      isComplete: currentStep > 3
-    },
-    {
-      id: 4,
-      title: "Swap Complete",
-      description: "Waiting for secret verification...",
-      icon: imgFrame3,
-      isActive: currentStep >= 4,
-      isComplete: isComplete
+  const fetchAuctionStatus = async () => {
+    try {
+      const response = await fetch(`/api/auction-status?orderHash=${orderHash}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setAuctionData(data);
+        setError(null);
+        
+        // Update step based on auction status
+        updateStepFromAuctionStatus(data.status.current);
+      } else {
+        setError(data.error || 'Failed to fetch auction status');
+      }
+    } catch (error) {
+      setError('Network error while fetching status');
+      console.error('Error fetching auction status:', error);
     }
-  ];
+  };
+
+  const updateStepFromAuctionStatus = (status) => {
+    switch (status) {
+      case 'ACTIVE':
+        setCurrentStep(3); // Awaiting Resolver/Secret
+        break;
+      case 'FILLED':
+        setCurrentStep(4); // Swap Complete
+        setIsComplete(true);
+        break;
+      case 'EXPIRED':
+        setCurrentStep(4); // Show refund option
+        break;
+      default:
+        // Keep current step
+        break;
+    }
+  };
+
+  const handleCancelSwap = () => {
+    if (auctionData?.status?.canRefund) {
+      // Show refund modal or redirect to refund page
+      window.location.href = '/claim';
+    } else {
+      alert('Swap cannot be cancelled at this stage');
+    }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    fetchAuctionStatus();
+  };
+
+  const formatTime = (seconds) => {
+    if (!seconds) return '--:--';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getStepStatus = (step) => {
+    if (step < currentStep) return 'completed';
+    if (step === currentStep) return 'active';
+    return 'pending';
+  };
+
+  const getStepIcon = (step, status) => {
+    if (status === 'completed') {
+      return (
+        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      );
+    }
+    
+    const icons = [
+      <svg key="1" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>,
+      <svg key="2" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>,
+      <svg key="3" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>,
+      <svg key="4" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ];
+    
+    return icons[step - 1];
+  };
 
   return (
-    <div className="bg-[#ffffff] box-border content-stretch flex flex-col items-start justify-start p-0 relative size-full">
-      <div className="bg-[#ffffff] box-border content-stretch flex flex-col items-start justify-start overflow-clip p-0 relative shrink-0 w-full">
-        <div className="bg-[#f2f2f7] box-border content-stretch flex flex-col items-start justify-start pb-16 pt-[63px] px-[385px] relative shrink-0 w-full">
-          <div className="bg-[#ffffff] box-border content-stretch flex flex-col gap-12 items-start justify-start overflow-clip pb-[47.667px] pl-[47.833px] pr-[48.167px] pt-[48.333px] relative rounded-[30px] shrink-0">
-            {/* Header */}
-            <div className="box-border content-stretch flex flex-col font-['Inter:Regular',_sans-serif] font-normal gap-[7px] items-center justify-center leading-[0] not-italic pb-[0.333px] pl-[71.167px] pr-[70.833px] pt-0 relative shrink-0 text-center text-nowrap w-full">
-              <div className="relative shrink-0 text-[#0000ee] text-[30px]">
-                <p className="block leading-[36px] text-nowrap whitespace-pre">
-                  Cross-Chain Swap
-                </p>
+    <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center p-4">
+      <div className="bg-[#ffffff] rounded-[30px] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.08)] p-6 md:p-8 max-w-[600px] w-full">
+        
+        {/* Error State */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <span className="text-red-800 font-medium">{error}</span>
               </div>
-              <div className="relative shrink-0 text-[16px] text-[rgba(0,0,0,0.5)]">
-                <p className="block leading-[24px] text-nowrap whitespace-pre">
-                  ETH → USDC via Stellar Bridge
-                </p>
-              </div>
-            </div>
-
-            {/* Progress Steps */}
-            <div className="box-border content-stretch flex flex-col gap-8 items-start justify-end p-0 relative shrink-0 w-full">
-              {steps.map((step, index) => (
-                <motion.div
-                  key={step.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.2 }}
-                  className="box-border content-stretch flex flex-row gap-6 items-start justify-start p-0 relative shrink-0 w-full"
-                >
-                  {/* Step Icon */}
-                  <div className="box-border content-stretch flex flex-col gap-2 items-center justify-center pb-[0.333px] pl-[0.167px] pr-0 pt-0 relative shrink-0">
-                    <div className={`relative rounded-[2.23696e+07px] shrink-0 size-14 ${
-                      step.isComplete 
-                        ? 'bg-[#007aff]' 
-                        : step.isActive 
-                          ? 'bg-[#007aff]' 
-                          : 'bg-[rgba(0,0,0,0.2)]'
-                    }`}>
-                      {step.isComplete ? (
-                        <div className="absolute left-4 size-6 top-4">
-                          <img
-                            alt="Complete"
-                            className="block max-w-none size-full"
-                            src={imgFrame}
-                          />
-                        </div>
-                      ) : step.isActive ? (
-                        <div className="absolute left-4 size-6 top-4">
-                          <img
-                            alt="Active"
-                            className="block max-w-none size-full"
-                            src={step.icon}
-                          />
-                        </div>
-                      ) : (
-                        <div className="absolute left-4 size-6 top-4">
-                          <img
-                            alt="Pending"
-                            className="block max-w-none size-full"
-                            src={step.icon}
-                          />
-                        </div>
-                      )}
-                      {step.isActive && (
-                        <div className="absolute left-[-13px] opacity-[0.162] rounded-[2.23696e+07px] size-[82px] top-[-13px]">
-                          <div className="absolute border-2 border-[#007aff] border-solid inset-0 pointer-events-none rounded-[2.23696e+07px]" />
-                        </div>
-                      )}
-                    </div>
-                    {index < steps.length - 1 && (
-                      <div className="bg-[rgba(0,0,0,0.1)] h-[60px] shrink-0 w-0.5" />
-                    )}
-                  </div>
-
-                  {/* Step Content */}
-                  <div className="box-border content-stretch flex flex-col gap-[7.667px] items-start justify-center pb-[0.333px] pt-3 px-0 relative shrink-0">
-                    <div className="box-border content-stretch flex flex-row gap-2 items-start justify-end pl-[0.167px] pr-[110.833px] py-0 relative shrink-0 w-full">
-                      <div className="font-['Inter:Regular',_sans-serif] font-normal leading-[0] not-italic relative shrink-0 text-[#000000] text-[18px] text-left text-nowrap">
-                        <p className="block leading-[27px] whitespace-pre">
-                          {step.title}
-                        </p>
-                      </div>
-                      {step.isActive && !step.isComplete && (
-                        <div className="flex h-[39.545px] items-center justify-center relative shrink-0 w-[39.545px]">
-                          <div className="flex-none rotate-[47.958deg]">
-                            <div className="relative rounded-[2.23696e+07px] size-7">
-                              <div className="absolute border-2 border-[rgba(0,0,0,0)] border-solid inset-0 pointer-events-none rounded-[2.23696e+07px]" />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="font-['Inter:Regular',_sans-serif] font-normal leading-[0] not-italic relative shrink-0 text-[14px] text-[rgba(0,0,0,0.5)] text-left text-nowrap">
-                      <p className="block leading-[21px] whitespace-pre">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Success Message */}
-            {isComplete && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center mt-8"
+              <button
+                onClick={handleRetry}
+                className="text-red-600 hover:text-red-800 font-medium"
               >
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => window.location.href = '/swap'}
-                  className="bg-[#007aff] text-white px-8 py-4 rounded-[20px] font-['Inter:Regular',_sans-serif] font-normal text-[16px] leading-[24px]"
-                >
-                  Start New Swap
-                </motion.button>
+                Retry
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl md:text-3xl font-semibold text-black mb-2">Swap Progress</h1>
+          <p className="text-gray-600">Tracking your cross-chain swap</p>
+        </div>
+
+        {/* Progress Timeline */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            {[1, 2, 3, 4].map((step) => {
+              const status = getStepStatus(step);
+              return (
+                <div key={step} className="flex flex-col items-center">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+                    status === 'completed' ? 'bg-green-500' :
+                    status === 'active' ? 'bg-blue-500' : 'bg-gray-300'
+                  }`}>
+                    {getStepIcon(step, status)}
+                  </div>
+                  <div className="text-xs text-center">
+                    {step === 1 && 'Initiated'}
+                    {step === 2 && 'Processing'}
+                    {step === 3 && 'Awaiting'}
+                    {step === 4 && 'Complete'}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Progress Lines */}
+          <div className="flex justify-between px-6">
+            {[1, 2, 3].map((step) => (
+              <div
+                key={step}
+                className={`flex-1 h-0.5 ${
+                  getStepStatus(step) === 'completed' ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Current Status */}
+        <div className="bg-gray-50 rounded-[20px] p-6 mb-6">
+          <h3 className="text-lg font-semibold mb-4">Current Status</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Order Hash</span>
+              <span className="font-mono text-sm">{orderHash.slice(0, 8)}...{orderHash.slice(-8)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Status</span>
+              <span className={`font-medium ${
+                currentStep === 4 ? 'text-green-600' : 'text-blue-600'
+              }`}>
+                {currentStep === 1 && 'Swap Initiated'}
+                {currentStep === 2 && 'Processing Transaction'}
+                {currentStep === 3 && 'Awaiting Resolver'}
+                {currentStep === 4 && 'Swap Complete'}
+              </span>
+            </div>
+            {auctionData && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Resolvers</span>
+                <span className="font-medium">{auctionData.status?.resolverCount || 0}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Auction Details (Expandable) */}
+        {auctionData && (
+          <div className="bg-gray-50 rounded-[20px] p-6 mb-6">
+            <button
+              onClick={() => setShowAuctionDetails(!showAuctionDetails)}
+              className="flex items-center justify-between w-full text-left"
+            >
+              <h3 className="text-lg font-semibold">Auction Details</h3>
+              <svg
+                className={`w-5 h-5 transition-transform ${showAuctionDetails ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {showAuctionDetails && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-4 space-y-3"
+              >
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Best Offer</span>
+                  <span className="font-medium">{auctionData.status?.bestOffer || '--'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Time Remaining</span>
+                  <span className="font-medium">{formatTime(auctionData.status?.timeRemaining)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Offers</span>
+                  <span className="font-medium">{auctionData.status?.totalOffers || 0}</span>
+                </div>
               </motion.div>
             )}
           </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-4">
+          {isComplete ? (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => window.location.href = '/history'}
+              className="flex-1 bg-green-600 text-white py-4 rounded-[20px] text-lg font-medium hover:bg-green-700 transition-colors"
+            >
+              View History
+            </motion.button>
+          ) : (
+            <>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleCancelSwap}
+                className="flex-1 bg-red-600 text-white py-4 rounded-[20px] text-lg font-medium hover:bg-red-700 transition-colors"
+              >
+                Cancel Swap
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => window.location.href = '/swap'}
+                className="flex-1 bg-black text-white py-4 rounded-[20px] text-lg font-medium hover:bg-gray-800 transition-colors"
+              >
+                New Swap
+              </motion.button>
+            </>
+          )}
         </div>
       </div>
     </div>
