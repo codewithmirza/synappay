@@ -22,7 +22,7 @@
     "web:start": "cd web && npm run start"
   },
   "dependencies": {
-    "@1inch/fusion-sdk": "^2.0.0",
+    "@1inch/fusion-sdk": "^2.3.5",
     "axios": "^1.6.0",
     "chalk": "^4.1.2",
     "commander": "^11.1.0",

@@ -1,6 +1,16 @@
 import config from '../../lib/config';
 
 export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -35,7 +45,7 @@ export default async function handler(req, res) {
     } catch (error) {
       console.error('CLI execution error:', error);
       
-      // Fallback to 1inch API directly
+      // Fallback to 1inch API through our proxy
       const fallbackRate = await getFallbackRate(fromToken, toToken, amount);
       
       return res.status(200).json({
@@ -100,18 +110,18 @@ function parseCLIOutput(output) {
 }
 
 async function getFallbackRate(fromToken, toToken, amount) {
-  // Fallback to 1inch API if CLI fails
-  const response = await fetch('https://api.1inch.dev/swap/v6.0/1/quote', {
-    method: 'GET',
+  // Use our proxy endpoint instead of direct API call
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'}/api/proxy/1inch/quote`, {
+    method: 'POST',
     headers: {
-      'Authorization': `Bearer ${config.api.oneinchApiKey}`,
-      'Accept': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.ONEINCH_API_KEY}`
     },
-    params: {
+    body: JSON.stringify({
       src: getTokenAddress(fromToken),
       dst: getTokenAddress(toToken),
       amount: amount
-    }
+    })
   });
 
   if (!response.ok) {

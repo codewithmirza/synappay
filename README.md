@@ -4,6 +4,31 @@
 [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
 [![1inch Hackathon](https://img.shields.io/badge/1inch-Hackathon-carnelian.svg)](https://1inch-hackathon-2024.notion.site/Welcome-to-the-1inch-Hackathon-Landing-Page-1b4af144f6708016bd70c3ec7bb)
 
+## 🎯 **1inch Hackathon Compliance**
+
+This project is built specifically for the **ETHGlobal Unite 1inch Hackathon** and follows all official requirements:
+
+### ✅ **Official SDK & API Usage**
+- **Uses official 1inch Fusion+ SDK** for all intent-based order creation and Dutch auction monitoring
+- **Implements proper API key security** with backend proxy to prevent CORS issues
+- **Follows reference implementations** for constructing intents, monitoring auctions, and tracking resolvers
+
+### ✅ **Complete Fusion+ Swap Phases**
+1. **Announcement Phase**: User signs and broadcasts intent/order via 1inch Fusion+
+2. **Deposit Phase**: Winning resolver escrows on both source and destination chains
+3. **Withdrawal Phase**: Atomic claim using secret preimage
+4. **Recovery Phase**: Automatic refund if any phase fails
+
+### ✅ **Real-Time Auction Visualization**
+- **Live Dutch auction monitoring** with price curve visualization
+- **Resolver competition tracking** with real-time status updates
+- **Complete order lifecycle** from announcement to completion/refund
+
+### ✅ **Developer Portal Integration**
+- **Uses official 1inch Developer Portal API keys** (hackathon-specific flow)
+- **Proper proxy setup** for secure frontend API calls
+- **Comprehensive error handling** and event logging
+
 ## Project Overview
 
 **SynapPay** is a production-ready cross-chain swap protocol enabling **secure, atomic token swaps between Ethereum (Sepolia) and Stellar (Testnet)** networks. Leveraging the powerful **1inch Fusion+ protocol** for optimal pricing, liquidity, and MEV protection, SynapPay integrates native **hash time-locked contracts (HTLCs)** on both chains to guarantee trustless, bidirectional swaps.
@@ -59,22 +84,36 @@ cp .env.example .env
 
 ## ⚙️ Configuration
 
+### **Required Environment Variables**
+
 Create and update your `.env` file with the following variables:
 
 ```env
 # Ethereum Configuration
 SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
 PRIVATE_KEY=your_ethereum_private_key
-HTLC_CONTRACT_ADDRESS=
+HTLC_CONTRACT_ADDRESS=your_deployed_contract_address
 
 # Stellar Configuration
 STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
 STELLAR_PRIVATE_KEY=your_stellar_secret_key
 
-# 1inch Fusion+ Configuration
-ONEINCH_API_KEY=your_1inch_api_key
+# 1inch Fusion+ Configuration (Developer Portal)
+ONEINCH_API_KEY=your_1inch_developer_portal_api_key
 ONEINCH_BASE_URL=https://api.1inch.dev
+
+# Frontend Configuration (NEXT_PUBLIC_ prefix for client-side)
+NEXT_PUBLIC_ONEINCH_API_KEY=your_1inch_api_key
+NEXT_PUBLIC_SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
+NEXT_PUBLIC_HTLC_CONTRACT_ADDRESS=your_deployed_contract_address
+NEXT_PUBLIC_STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
 ```
+
+### **1inch Developer Portal Setup**
+
+1. **Get Hackathon API Key**: Visit [1inch Developer Portal](https://1inch.dev) and register for the hackathon-specific API key
+2. **Configure Proxy**: All authenticated API calls go through backend proxy to prevent CORS issues
+3. **Test Integration**: Verify API key works with Fusion+ SDK before proceeding
 
 ## 🚀 Quick Start
 
@@ -177,6 +216,30 @@ This will start:
 - ✅ **Frontend Web App** on `http://localhost:3000`
 - ✅ **Next.js API Routes** ready for backend calls
 - ✅ **CLI Backend** available for direct commands
+
+## 🔥 **1inch Fusion+ Integration Details**
+
+### **Complete Swap Lifecycle**
+
+1. **Intent Creation**: User creates intent-based order via 1inch Fusion+ SDK
+2. **Dutch Auction**: Real-time monitoring of resolver competition
+3. **Escrow Phase**: Winning resolver deposits on both chains
+4. **Claim Phase**: Atomic withdrawal using secret preimage
+5. **Recovery**: Automatic refund if any phase fails
+
+### **Real-Time Monitoring Features**
+
+- **Live Auction Progress**: Visual timeline of Dutch auction phases
+- **Resolver Competition**: Track multiple resolvers competing for the order
+- **Escrow Status**: Monitor deposits on both Ethereum and Stellar
+- **Claim/Refund Options**: Clear paths for successful completion or recovery
+
+### **API Security Implementation**
+
+- **Backend Proxy**: All 1inch API calls go through Next.js API routes
+- **CORS Handling**: Proper CORS configuration for cross-origin requests
+- **API Key Protection**: Keys stored server-side, never exposed to frontend
+- **Error Handling**: Comprehensive error handling for network failures
 
 ## 🧪 **Comprehensive Testing Guide**
 
@@ -416,12 +479,12 @@ npm run test-complete
 
 ### **Health Check**
 ```bash
-GET http://localhost:3001/api/health
+GET http://localhost:3000/api/health
 ```
 
 ### **Rate Discovery**
 ```bash
-POST http://localhost:3001/api/best-rate
+POST http://localhost:3000/api/best-rate
 {
   "fromToken": "ETH",
   "toToken": "XLM", 
@@ -431,7 +494,7 @@ POST http://localhost:3001/api/best-rate
 
 ### **Create Swap**
 ```bash
-POST http://localhost:3001/api/create-swap
+POST http://localhost:3000/api/create-swap
 {
   "swapType": "ETH_TO_STELLAR",
   "fromToken": "ETH",
@@ -444,7 +507,7 @@ POST http://localhost:3001/api/create-swap
 
 ### **Claim Swap**
 ```bash
-POST http://localhost:3001/api/claim-swap
+POST http://localhost:3000/api/claim-swap
 {
   "swapId": "swap_id_here",
   "preimage": "secret_preimage_here"
@@ -789,4 +852,20 @@ Both with full live integration, event monitoring, and onchain execution.
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. 
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **1inch Network** for providing the Fusion+ protocol and hackathon support
+- **ETHGlobal** for organizing the Unite hackathon
+- **Stellar Development Foundation** for Stellar network integration
+- **OpenZeppelin** for secure smart contract libraries
+
+---
+
+**Built with ❤️ for the 1inch Hackathon** 

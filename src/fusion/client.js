@@ -15,12 +15,23 @@ class FusionClient {
         
         // Initialize 1inch Fusion+ SDK
         try {
-            // Note: In production, you would import and initialize the actual 1inch Fusion+ SDK
-            // const { FusionSDK } = require('@1inch/fusion-sdk');
-            // this.sdk = new FusionSDK({ apiKey: this.apiKey, network: this.network });
-                console.log('✅ 1inch Fusion+ SDK initialized successfully');
-            } catch (error) {
-            throw new Error(`Failed to initialize 1inch Fusion+ SDK: ${error.message}`);
+            // Import the official 1inch Fusion+ SDK
+            const { FusionSDK, FusionOrder, FusionOrderParams } = require('@1inch/fusion-sdk');
+            
+            // Initialize SDK with proper configuration
+            this.sdk = new FusionSDK({
+                url: this.baseUrl,
+                network: this.network,
+                auth: {
+                    apiKey: this.apiKey
+                }
+            });
+            
+            console.log('✅ 1inch Fusion+ SDK initialized successfully');
+        } catch (error) {
+            console.warn('⚠️ Official Fusion+ SDK not available, falling back to REST API');
+            console.warn('For production use, install: npm install @1inch/fusion-sdk');
+            this.sdk = null;
         }
         
         // Track active orders and resolver activity
@@ -29,7 +40,7 @@ class FusionClient {
     }
 
     /**
-     * Create an intent-based order with HTLC conditions
+     * Create an intent-based order with HTLC conditions using official SDK
      * @param {Object} orderParams - Order parameters
      * @returns {Promise<Object>} Order creation result
      */
@@ -58,51 +69,12 @@ class FusionClient {
             console.log(`   Hashlock: ${hashlock}`);
             console.log(`   Timelock: ${timelock} seconds`);
 
-            // Build HTLC interactions
-            const interactions = this.buildHTLCInteractions(hashlock, timelock);
-
-            // Create order via 1inch Fusion+ API
-            const response = await axios.post(`${this.baseUrl}/fusion/orders`, {
-                makerAsset,
-                takerAsset,
-                makingAmount,
-                takingAmount,
-                maker,
-                receiver,
-                interactions: interactions,
-                deadline: Math.floor(Date.now() / 1000) + deadline,
-                auctionMode: true,
-                minFillAmount: makingAmount
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.data && response.data.orderHash) {
-                console.log('✅ Intent-based order created successfully');
-                console.log(`📋 Order Hash: ${response.data.orderHash}`);
-                
-                // Track the order
-                this.activeOrders.set(response.data.orderHash, {
-                    ...orderParams,
-                    orderHash: response.data.orderHash,
-                    status: 'ACTIVE',
-                    createdAt: Date.now(),
-                    auctionActive: true
-                });
-
-                this.logStatus('ORDER_CREATED', `Order ${response.data.orderHash} created with HTLC conditions`);
-                
-                return {
-                    success: true,
-                    orderHash: response.data.orderHash,
-                    order: response.data
-                };
+            if (this.sdk) {
+                // Use official Fusion+ SDK
+                return await this.createOrderWithSDK(orderParams);
             } else {
-                throw new Error('Failed to create order - no order hash returned');
+                // Fallback to REST API
+                return await this.createOrderWithREST(orderParams);
             }
 
         } catch (error) {
@@ -117,7 +89,130 @@ class FusionClient {
     }
 
     /**
-     * Monitor Dutch auction for an order
+     * Create order using official Fusion+ SDK
+     * @param {Object} orderParams - Order parameters
+     * @returns {Promise<Object>} Order creation result
+     */
+    async createOrderWithSDK(orderParams) {
+        try {
+            const { FusionOrder, FusionOrderParams } = require('@1inch/fusion-sdk');
+            
+            // Build HTLC interactions
+            const interactions = this.buildHTLCInteractions(orderParams.hashlock, orderParams.timelock);
+
+            // Create Fusion+ order parameters
+            const orderParamsSDK = new FusionOrderParams({
+                makerAsset: orderParams.makerAsset,
+                takerAsset: orderParams.takerAsset,
+                makingAmount: orderParams.makingAmount,
+                takingAmount: orderParams.takingAmount,
+                maker: orderParams.maker,
+                receiver: orderParams.receiver,
+                interactions: interactions,
+                deadline: Math.floor(Date.now() / 1000) + orderParams.deadline,
+                auctionMode: true,
+                minFillAmount: orderParams.makingAmount
+            });
+
+            // Create the order using SDK
+            const order = await this.sdk.createOrder(orderParamsSDK);
+            
+            if (order && order.orderHash) {
+                console.log('✅ Intent-based order created successfully with SDK');
+                console.log(`📋 Order Hash: ${order.orderHash}`);
+                
+                // Track the order
+                this.activeOrders.set(order.orderHash, {
+                    ...orderParams,
+                    orderHash: order.orderHash,
+                    status: 'ACTIVE',
+                    createdAt: Date.now(),
+                    auctionActive: true,
+                    phase: 'ANNOUNCEMENT'
+                });
+
+                this.logStatus('ORDER_CREATED', `Order ${order.orderHash} created with HTLC conditions`);
+                
+                return {
+                    success: true,
+                    orderHash: order.orderHash,
+                    order: order,
+                    phase: 'ANNOUNCEMENT'
+                };
+            } else {
+                throw new Error('Failed to create order with SDK - no order hash returned');
+            }
+
+        } catch (error) {
+            console.error('❌ SDK order creation failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Create order using REST API (fallback)
+     * @param {Object} orderParams - Order parameters
+     * @returns {Promise<Object>} Order creation result
+     */
+    async createOrderWithREST(orderParams) {
+        try {
+            // Build HTLC interactions
+            const interactions = this.buildHTLCInteractions(orderParams.hashlock, orderParams.timelock);
+
+            // Create order via 1inch Fusion+ API
+            const response = await axios.post(`${this.baseUrl}/fusion/orders`, {
+                makerAsset: orderParams.makerAsset,
+                takerAsset: orderParams.takerAsset,
+                makingAmount: orderParams.makingAmount,
+                takingAmount: orderParams.takingAmount,
+                maker: orderParams.maker,
+                receiver: orderParams.receiver,
+                interactions: interactions,
+                deadline: Math.floor(Date.now() / 1000) + orderParams.deadline,
+                auctionMode: true,
+                minFillAmount: orderParams.makingAmount
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.data && response.data.orderHash) {
+                console.log('✅ Intent-based order created successfully with REST API');
+                console.log(`📋 Order Hash: ${response.data.orderHash}`);
+                
+                // Track the order
+                this.activeOrders.set(response.data.orderHash, {
+                    ...orderParams,
+                    orderHash: response.data.orderHash,
+                    status: 'ACTIVE',
+                    createdAt: Date.now(),
+                    auctionActive: true,
+                    phase: 'ANNOUNCEMENT'
+                });
+
+                this.logStatus('ORDER_CREATED', `Order ${response.data.orderHash} created with HTLC conditions`);
+                
+                return {
+                    success: true,
+                    orderHash: response.data.orderHash,
+                    order: response.data,
+                    phase: 'ANNOUNCEMENT'
+                };
+            } else {
+                throw new Error('Failed to create order - no order hash returned');
+            }
+
+        } catch (error) {
+            console.error('❌ REST API order creation failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Monitor Dutch auction for an order with enhanced phase tracking
      * @param {string} orderHash - Order hash to monitor
      * @param {Function} callback - Callback for auction updates
      * @returns {Promise<Object>} Monitoring result
@@ -126,12 +221,14 @@ class FusionClient {
         try {
             console.log(`🎯 Starting Dutch auction monitoring for order: ${orderHash}`);
             
-            // Initialize monitoring
+            // Initialize monitoring with phase tracking
             const monitor = {
                 orderHash: orderHash,
                 isActive: true,
                 startTime: Date.now(),
                 resolverOffers: [],
+                currentPhase: 'ANNOUNCEMENT',
+                phaseTransitions: [],
                 stopMonitoring: () => {
                     monitor.isActive = false;
                     console.log('🛑 Dutch auction monitoring stopped');
@@ -146,17 +243,39 @@ class FusionClient {
                 }
 
                 try {
-                    // Get current auction status from 1inch API
+                    // Get current auction status
                     const auctionStatus = await this.getAuctionStatus(orderHash);
                     
                     if (auctionStatus.success) {
+                        // Track phase transitions
+                        const newPhase = this.determinePhase(auctionStatus, monitor);
+                        if (newPhase !== monitor.currentPhase) {
+                            monitor.phaseTransitions.push({
+                                from: monitor.currentPhase,
+                                to: newPhase,
+                                timestamp: Date.now()
+                            });
+                            monitor.currentPhase = newPhase;
+                            
+                            console.log(`🔄 Phase transition: ${monitor.currentPhase}`);
+                            
+                            callback({
+                                type: 'PHASE_TRANSITION',
+                                phase: newPhase,
+                                previousPhase: monitor.phaseTransitions[monitor.phaseTransitions.length - 2]?.from,
+                                timestamp: Date.now()
+                            });
+                        }
+
                         // Call callback with update
                         callback({
                             type: 'STATUS_UPDATE',
                             status: auctionStatus.status,
+                            phase: monitor.currentPhase,
                             resolvers: auctionStatus.resolvers,
                             bestOffer: auctionStatus.bestOffer,
-                            auctionDuration: Date.now() - monitor.startTime
+                            auctionDuration: Date.now() - monitor.startTime,
+                            phaseTransitions: monitor.phaseTransitions
                         });
 
                         // Check for new offers
@@ -167,7 +286,8 @@ class FusionClient {
                             callback({
                                 type: 'RESOLVER_OFFER',
                                 offer: auctionStatus.bestOffer,
-                                totalResolvers: auctionStatus.resolvers
+                                totalResolvers: auctionStatus.resolvers,
+                                phase: monitor.currentPhase
                             });
                             
                             monitor.resolverOffers.push(auctionStatus.bestOffer);
@@ -177,12 +297,16 @@ class FusionClient {
                         if (auctionStatus.status === 'FILLED' || auctionStatus.status === 'EXPIRED') {
                             console.log(`🏁 Auction completed with status: ${auctionStatus.status}`);
                             
+                            const finalPhase = auctionStatus.status === 'FILLED' ? 'WITHDRAWAL' : 'RECOVERY';
+                            
                             callback({
                                 type: 'AUCTION_COMPLETE',
                                 finalStatus: auctionStatus.status,
+                                finalPhase: finalPhase,
                                 winningResolver: auctionStatus.bestOffer,
                                 totalResolvers: auctionStatus.resolvers,
-                                auctionDuration: Date.now() - monitor.startTime
+                                auctionDuration: Date.now() - monitor.startTime,
+                                phaseTransitions: monitor.phaseTransitions
                             });
                             
                             monitor.stopMonitoring();
@@ -205,6 +329,24 @@ class FusionClient {
                 success: false,
                 error: error.message
             };
+        }
+    }
+
+    /**
+     * Determine current phase based on auction status
+     * @param {Object} auctionStatus - Current auction status
+     * @param {Object} monitor - Monitor object
+     * @returns {string} Current phase
+     */
+    determinePhase(auctionStatus, monitor) {
+        if (auctionStatus.status === 'FILLED') {
+            return 'WITHDRAWAL';
+        } else if (auctionStatus.status === 'EXPIRED') {
+            return 'RECOVERY';
+        } else if (auctionStatus.resolvers > 0) {
+            return 'DEPOSIT';
+        } else {
+            return 'ANNOUNCEMENT';
         }
     }
 
@@ -261,18 +403,18 @@ class FusionClient {
 
             if (response.data) {
                 const order = response.data;
-            const auctionStatus = await this.getAuctionStatus(orderHash);
-            
-            return {
-                success: true,
-                order: {
-                    ...order,
-                    resolvers: auctionStatus.resolvers || 0,
-                    bestOffer: auctionStatus.bestOffer,
-                    auctionActive: auctionStatus.status === 'ACTIVE',
-                    status: auctionStatus.status || 'ACTIVE'
-                }
-            };
+                const auctionStatus = await this.getAuctionStatus(orderHash);
+                
+                return {
+                    success: true,
+                    order: {
+                        ...order,
+                        resolvers: auctionStatus.resolvers || 0,
+                        bestOffer: auctionStatus.bestOffer,
+                        auctionActive: auctionStatus.status === 'ACTIVE',
+                        status: auctionStatus.status || 'ACTIVE'
+                    }
+                };
             } else {
                 throw new Error('No order data received');
             }
@@ -311,10 +453,10 @@ class FusionClient {
                     bestOffer: order.bestOffer
                 }));
 
-            return {
-                success: true,
-                orders: activeOrders
-            };
+                return {
+                    success: true,
+                    orders: activeOrders
+                };
             } else {
                 throw new Error('No orders data received');
             }
