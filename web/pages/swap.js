@@ -2,25 +2,43 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, RefreshCw, AlertCircle, CheckCircle, Wallet, Shield, Zap } from 'lucide-react';
+import { ArrowRight, RefreshCw, AlertCircle, CheckCircle, Wallet, Shield, Zap, Star } from 'lucide-react';
 import OneInchClient from '../lib/1inch-client';
 import ApiClient from '../lib/api-client';
-import { useWalletConnect } from '../lib/useWalletConnect';
+import { useCrossChainWallet } from '../lib/useCrossChainWallet';
 import config from '../lib/config';
 
 export default function Swap() {
   const {
-    isConnected,
-    address,
-    chainId,
-    isLoading: walletLoading,
-    error: walletError,
-    connect,
-    disconnect,
-    formatAddress,
-    isCorrectNetwork,
-    switchToSepolia
-  } = useWalletConnect();
+    // Ethereum wallet
+    ethConnected,
+    ethAddress,
+    ethChainId,
+    ethLoading,
+    ethError,
+    connectEth,
+    disconnectEth,
+    formatEthAddress,
+    isCorrectEthNetwork,
+    switchToSepolia,
+    
+    // Stellar wallet
+    stellarConnected,
+    stellarPublicKey,
+    stellarNetwork,
+    stellarLoading,
+    stellarError,
+    connectStellar,
+    disconnectStellar,
+    formatStellarAddress,
+    isCorrectStellarNetwork,
+    
+    // Combined state
+    bothConnected,
+    canSwap,
+    isLoading,
+    error
+  } = useCrossChainWallet();
 
   const [fromToken, setFromToken] = useState('ETH');
   const [toToken, setToToken] = useState('XLM');
@@ -28,7 +46,7 @@ export default function Swap() {
   const [toAmount, setToAmount] = useState('');
   const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [swapError, setSwapError] = useState(null);
   const [slippage, setSlippage] = useState(1);
   const [swapType, setSwapType] = useState('ETH_TO_STELLAR');
   const [showNetworkAlert, setShowNetworkAlert] = useState(false);
@@ -46,12 +64,12 @@ export default function Swap() {
 
   // Check network on connection
   useEffect(() => {
-    if (isConnected && !isCorrectNetwork()) {
+    if (ethConnected && !isCorrectEthNetwork()) {
       setShowNetworkAlert(true);
     } else {
       setShowNetworkAlert(false);
     }
-  }, [isConnected, isCorrectNetwork]);
+  }, [ethConnected, isCorrectEthNetwork]);
 
   useEffect(() => {
     // Update swap type based on token selection
@@ -66,7 +84,7 @@ export default function Swap() {
     if (!fromAmount || parseFloat(fromAmount) <= 0) return;
 
     setLoading(true);
-    setError(null);
+    setSwapError(null);
 
     try {
       // Try to get quote from backend first
@@ -108,7 +126,7 @@ export default function Swap() {
 
     } catch (error) {
       console.error('Error getting quote:', error);
-      setError('Failed to get quote. Please try again.');
+      setSwapError('Failed to get quote. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -142,8 +160,8 @@ export default function Swap() {
     if (!fromAmount || parseFloat(fromAmount) <= 0) {
       return 'Please enter a valid amount';
     }
-    if (!walletAddress) {
-      return 'Please connect your wallet';
+    if (!bothConnected) {
+      return 'Please connect both Ethereum and Stellar wallets';
     }
     if (!quote) {
       return 'Please wait for quote to load';
@@ -160,7 +178,7 @@ export default function Swap() {
   const handleReviewSwap = async () => {
     const validationError = validateInput();
     if (validationError) {
-      setError(validationError);
+      setSwapError(validationError);
       return;
     }
 
@@ -172,7 +190,8 @@ export default function Swap() {
       toAmount,
       quote,
       slippage,
-      walletAddress,
+      ethAddress,
+      stellarPublicKey,
       swapType,
       contractAddress: config.ethereum.htlcContractAddress
     };
@@ -183,7 +202,7 @@ export default function Swap() {
   };
 
   const handleRetry = () => {
-    setError(null);
+    setSwapError(null);
     if (fromAmount && parseFloat(fromAmount) > 0) {
       getQuote();
     }
@@ -208,7 +227,7 @@ export default function Swap() {
         </div>
 
         {/* Wallet Connection Status */}
-        {!isConnected ? (
+        {!bothConnected ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -217,18 +236,31 @@ export default function Swap() {
             <div className="text-center space-y-4">
               <div className="flex items-center justify-center space-x-2">
                 <Wallet className="w-6 h-6 text-blue-600" />
-                <h3 className="text-lg font-semibold text-blue-900">Connect Your Wallet</h3>
+                <h3 className="text-lg font-semibold text-blue-900">Connect Your Wallets</h3>
               </div>
               <p className="text-blue-700 text-sm">
-                Connect your wallet to start swapping ETH ↔ XLM
+                Connect both Ethereum and Stellar wallets to start swapping
               </p>
-              <button
-                onClick={connect}
-                disabled={walletLoading}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 disabled:opacity-50"
-              >
-                {walletLoading ? 'Connecting...' : 'Connect Wallet'}
-              </button>
+              
+              {/* Ethereum Wallet */}
+              <div className="flex flex-col space-y-3">
+                <button
+                  onClick={connectEth}
+                  disabled={ethLoading}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 disabled:opacity-50"
+                >
+                  {ethLoading ? 'Connecting...' : ethConnected ? '✅ Ethereum Connected' : 'Connect Ethereum Wallet'}
+                </button>
+                
+                {/* Stellar Wallet */}
+                <button
+                  onClick={connectStellar}
+                  disabled={stellarLoading}
+                  className="bg-gradient-to-r from-yellow-600 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-yellow-700 hover:to-orange-700 transition-all transform hover:scale-105 disabled:opacity-50"
+                >
+                  {stellarLoading ? 'Connecting...' : stellarConnected ? '✅ Stellar Connected' : 'Connect Stellar Wallet'}
+                </button>
+              </div>
             </div>
           </motion.div>
         ) : showNetworkAlert ? (
@@ -253,27 +285,47 @@ export default function Swap() {
           </motion.div>
         ) : null}
 
-        {/* Connected Wallet Info */}
-        {isConnected && !showNetworkAlert && (
+        {/* Connected Wallets Info */}
+        {bothConnected && !showNetworkAlert && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium text-green-900">Connected</p>
-                  <p className="text-xs text-green-700 font-mono">{formatAddress(address)}</p>
+            <div className="space-y-3">
+              {/* Ethereum Wallet */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-900">Ethereum Connected</p>
+                    <p className="text-xs text-green-700 font-mono">{formatEthAddress(ethAddress)}</p>
+                  </div>
                 </div>
+                <button
+                  onClick={disconnectEth}
+                  className="text-xs text-green-700 hover:text-green-900 font-medium"
+                >
+                  Disconnect
+                </button>
               </div>
-              <button
-                onClick={disconnect}
-                className="text-xs text-green-700 hover:text-green-900 font-medium"
-              >
-                Disconnect
-              </button>
+              
+              {/* Stellar Wallet */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Star className="w-5 h-5 text-yellow-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-900">Stellar Connected</p>
+                    <p className="text-xs text-green-700 font-mono">{formatStellarAddress(stellarPublicKey)}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={disconnectStellar}
+                  className="text-xs text-green-700 hover:text-green-900 font-medium"
+                >
+                  Disconnect
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -413,11 +465,11 @@ export default function Swap() {
           </div>
 
           {/* Error Message */}
-          {error && (
+          {swapError && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
               <div className="flex items-center space-x-2">
                 <AlertCircle className="w-5 h-5 text-red-500" />
-                <span className="text-sm text-red-700">{error}</span>
+                <span className="text-sm text-red-700">{swapError}</span>
               </div>
               <button
                 onClick={handleRetry}
@@ -441,18 +493,18 @@ export default function Swap() {
           {/* Review Button */}
           <motion.button
             onClick={handleReviewSwap}
-            disabled={loading || !quote || !isConnected || showNetworkAlert}
+            disabled={loading || !quote || !canSwap}
             className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all ${
-              loading || !quote || !isConnected || showNetworkAlert
+              loading || !quote || !canSwap
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 active:scale-95'
             }`}
-            whileHover={!loading && quote && isConnected && !showNetworkAlert ? { scale: 1.02 } : {}}
-            whileTap={!loading && quote && isConnected && !showNetworkAlert ? { scale: 0.98 } : {}}
+            whileHover={!loading && quote && canSwap ? { scale: 1.02 } : {}}
+            whileTap={!loading && quote && canSwap ? { scale: 0.98 } : {}}
           >
             {loading ? 'Loading...' : 
-             !isConnected ? 'Connect Wallet' :
-             showNetworkAlert ? 'Switch Network' :
+             !bothConnected ? 'Connect Wallets' :
+             !canSwap ? 'Check Networks' :
              !quote ? 'Enter Amount' : 'Review Swap'}
           </motion.button>
         </div>
