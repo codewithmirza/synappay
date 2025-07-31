@@ -72,7 +72,7 @@ program
                     stdio: 'inherit',
                     env: { ...process.env }
                 });
-                console.log('✅ Contract deployed successfully!');
+            console.log('✅ Contract deployed successfully!');
             } catch (error) {
                 console.error('❌ Contract deployment failed:', error.message);
                 process.exit(1);

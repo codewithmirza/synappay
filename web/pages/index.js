@@ -136,9 +136,9 @@ export default function Home() {
                   </div>
                   <svg className="w-5 h-5 text-[#6c757d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                </svg>
                 </motion.button>
-              </div>
+          </div>
 
               {/* Close Button */}
               <div className="mt-6 md:mt-8 text-center">

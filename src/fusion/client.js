@@ -18,8 +18,8 @@ class FusionClient {
             // Note: In production, you would import and initialize the actual 1inch Fusion+ SDK
             // const { FusionSDK } = require('@1inch/fusion-sdk');
             // this.sdk = new FusionSDK({ apiKey: this.apiKey, network: this.network });
-            console.log('✅ 1inch Fusion+ SDK initialized successfully');
-        } catch (error) {
+                console.log('✅ 1inch Fusion+ SDK initialized successfully');
+            } catch (error) {
             throw new Error(`Failed to initialize 1inch Fusion+ SDK: ${error.message}`);
         }
         
@@ -261,18 +261,18 @@ class FusionClient {
 
             if (response.data) {
                 const order = response.data;
-                const auctionStatus = await this.getAuctionStatus(orderHash);
-                
-                return {
-                    success: true,
-                    order: {
-                        ...order,
-                        resolvers: auctionStatus.resolvers || 0,
-                        bestOffer: auctionStatus.bestOffer,
-                        auctionActive: auctionStatus.status === 'ACTIVE',
-                        status: auctionStatus.status || 'ACTIVE'
-                    }
-                };
+            const auctionStatus = await this.getAuctionStatus(orderHash);
+            
+            return {
+                success: true,
+                order: {
+                    ...order,
+                    resolvers: auctionStatus.resolvers || 0,
+                    bestOffer: auctionStatus.bestOffer,
+                    auctionActive: auctionStatus.status === 'ACTIVE',
+                    status: auctionStatus.status || 'ACTIVE'
+                }
+            };
             } else {
                 throw new Error('No order data received');
             }
@@ -311,10 +311,10 @@ class FusionClient {
                     bestOffer: order.bestOffer
                 }));
 
-                return {
-                    success: true,
-                    orders: activeOrders
-                };
+            return {
+                success: true,
+                orders: activeOrders
+            };
             } else {
                 throw new Error('No orders data received');
             }
