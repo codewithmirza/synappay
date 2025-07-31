@@ -16,15 +16,20 @@
     "deploy": "npm run deploy:sepolia",
     "test-complete": "node scripts/test-complete-system.js",
     "start": "npm run cli",
-    "dev": "npm run cli"
+    "dev": "npm run cli",
+    "web:dev": "cd web && npm run dev",
+    "web:build": "cd web && npm run build",
+    "web:start": "cd web && npm run start"
   },
   "dependencies": {
     "@1inch/fusion-sdk": "^2.0.0",
     "axios": "^1.6.0",
     "chalk": "^4.1.2",
     "commander": "^11.1.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "ethers": "^6.15.0",
+    "express": "^4.21.2",
     "inquirer": "^8.2.6",
     "node-fetch": "^3.3.2",
     "ora": "^5.4.1",

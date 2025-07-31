@@ -1,5 +1,10 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { CheckCircle, AlertCircle, Loader, RefreshCw } from 'lucide-react';
+import ApiClient from '../lib/api-client';
+import config from '../lib/config';
 
 export default function Settings() {
   const [healthData, setHealthData] = useState(null);

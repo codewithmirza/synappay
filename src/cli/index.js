@@ -482,4 +482,5 @@ program
         }
     });
 
-program.parse();
+// Parse command line arguments
+program.parse(process.argv);

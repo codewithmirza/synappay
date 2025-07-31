@@ -1,5 +1,10 @@
+'use client';
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { ChevronDown, ChevronUp, HelpCircle, ArrowLeft } from 'lucide-react';
+import ApiClient from '../lib/api-client';
+import config from '../lib/config';
 
 // Image assets from Figma
 const imgFrame = "http://localhost:3845/assets/27ccbc11c5a98e500f11ca85816c17b029ddc418.svg";

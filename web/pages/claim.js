@@ -1,5 +1,10 @@
+'use client';
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import ApiClient from '../lib/api-client';
+import config from '../lib/config';
 
 export default function Claim() {
   const [hashOrSecret, setHashOrSecret] = useState('');

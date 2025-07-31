@@ -1,5 +1,10 @@
+'use client';
+
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, Wallet, Shield, Zap } from 'lucide-react';
+import ApiClient from '../lib/api-client';
+import config from '../lib/config';
 
 export default function Home() {
   const [isConnected, setIsConnected] = useState(false);
