@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, ChevronDown, CheckCircle, AlertCircle, Coins, Star, Download, Key, X } from 'lucide-react';
+import { Wallet, ChevronDown, CheckCircle, AlertCircle, Coins, Star, Download, Key, X, Info } from 'lucide-react';
 import { useCombinedWallet } from '../lib/useCombinedWallet';
 
 export default function WalletConnectionButton() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showStellarManual, setShowStellarManual] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
   
   const {
     // Ethereum wallet
@@ -34,6 +35,7 @@ export default function WalletConnectionButton() {
     connectWithManualKey,
     disconnectStellar,
     isFreighterAvailable,
+    freighterStatus,
     formatStellarAddress,
     
     // Combined state
@@ -99,6 +101,28 @@ export default function WalletConnectionButton() {
 
   const buttonContent = getButtonContent();
 
+  // Debug information
+  const getDebugInfo = () => {
+    if (typeof window === 'undefined') return {};
+    
+    return {
+      windowKeys: Object.keys(window).filter(key => 
+        key.toLowerCase().includes('freighter') || 
+        key.toLowerCase().includes('stellar') ||
+        key.toLowerCase().includes('wallet')
+      ),
+      freighterApi: !!window.freighterApi,
+      freighter: !!window.freighter,
+      stellarWallet: !!window.stellarWallet,
+      freighterWallet: !!window.freighterWallet,
+      userAgent: navigator.userAgent,
+      protocol: window.location.protocol,
+      hostname: window.location.hostname
+    };
+  };
+
+  const debugInfo = getDebugInfo();
+
   return (
     <div className="relative">
       <motion.button
@@ -124,13 +148,36 @@ export default function WalletConnectionButton() {
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Wallet Connection</h3>
-              <button
-                onClick={() => setShowDropdown(false)}
-                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setShowDebug(!showDebug)}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Debug Info"
+                >
+                  <Info className="w-4 h-4 text-gray-500" />
+                </button>
+                <button
+                  onClick={() => setShowDropdown(false)}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
+              </div>
             </div>
+
+            {/* Debug Information */}
+            {showDebug && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">Debug Info</h4>
+                <div className="space-y-1 text-xs">
+                  <div><strong>Freighter Status:</strong> {freighterStatus}</div>
+                  <div><strong>Freighter API:</strong> {debugInfo.freighterApi ? '✅' : '❌'}</div>
+                  <div><strong>Window Keys:</strong> {debugInfo.windowKeys.join(', ') || 'None'}</div>
+                  <div><strong>Protocol:</strong> {debugInfo.protocol}</div>
+                  <div><strong>Hostname:</strong> {debugInfo.hostname}</div>
+                </div>
+              </div>
+            )}
 
             {/* Ethereum Wallet Section */}
             <div className="mb-6">
@@ -242,31 +289,45 @@ export default function WalletConnectionButton() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {!isFreighterAvailable() && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <AlertCircle className="w-4 h-4 text-amber-600" />
-                        <span className="text-sm font-medium text-amber-900">Freighter Not Detected</span>
-                      </div>
-                      <p className="text-xs text-amber-700 mb-3">
+                  {/* Freighter Status */}
+                  <div className={`rounded-lg p-3 ${
+                    freighterStatus === 'available' ? 'bg-green-50 border border-green-200' :
+                    freighterStatus === 'not_available' ? 'bg-amber-50 border border-amber-200' :
+                    'bg-gray-50 border border-gray-200'
+                  }`}>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Info className="w-4 h-4 text-gray-600" />
+                      <span className="text-sm font-medium text-gray-900">
+                        Freighter Status: {freighterStatus === 'available' ? 'Available' : 
+                                        freighterStatus === 'not_available' ? 'Not Available' : 
+                                        'Checking...'}
+                      </span>
+                    </div>
+                    {freighterStatus === 'not_available' && (
+                      <p className="text-xs text-gray-600 mb-3">
                         Install Freighter extension for the best experience
                       </p>
-                      <a
-                        href="https://www.freighter.app/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-amber-600 text-white px-3 py-1 rounded text-xs hover:bg-amber-700 transition-colors inline-flex items-center space-x-1"
-                      >
-                        <Download className="w-3 h-3" />
-                        <span>Install Freighter</span>
-                      </a>
-                    </div>
-                  )}
+                    )}
+                    {freighterStatus === 'available' && (
+                      <p className="text-xs text-green-700 mb-3">
+                        Freighter extension detected and ready
+                      </p>
+                    )}
+                    <a
+                      href="https://www.freighter.app/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-amber-600 text-white px-3 py-1 rounded text-xs hover:bg-amber-700 transition-colors inline-flex items-center space-x-1"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>Install Freighter</span>
+                    </a>
+                  </div>
                   
                   <div className="space-y-2">
                     <button
                       onClick={handleConnectStellar}
-                      disabled={stellarLoading}
+                      disabled={stellarLoading || freighterStatus === 'not_available'}
                       className="w-full bg-black text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
                     >
                       {stellarLoading ? (
