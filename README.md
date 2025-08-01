@@ -1,104 +1,63 @@
-# SynapPay: Unified Cross-Chain Swap Platform
+# SynapPay - Cross-Chain Atomic Swaps
 
-**Bidirectional atomic swaps between Ethereum and Stellar using 1inch Fusion+ and HTLC security**
-
-## 🎯 **Hackathon Strategy: Dual Track Qualification**
-
-SynapPay is designed to qualify for **both ETHGlobal Unite DeFi hackathon prize tracks**:
-
-- **Track 1**: Extend Fusion+ to Stellar ($32,000 total)
-- **Track 2**: Best Use of Stellar × 1inch ($10,000 total)
-
-### **Unified Architecture Benefits**
-
-| Feature | Track 1 Coverage | Track 2 Coverage |
-|---------|------------------|------------------|
-| Ethereum HTLC (hashlock + timelock) | ✅ | ✅ |
-| Stellar HTLC (Soroban/SDK) | ✅ | ✅ |
-| 1inch Fusion+ API integration | ✅ | ✅ |
-| Bidirectional swap demo | ✅ | ✅ |
-| Relayer for secret broadcast | ✅ | ✅ |
-| Polished UI & user flow | ✅ | ✅ |
-
-**One platform, one demo, one submission**—customized pitches for each prize.
+A decentralized application enabling secure, trustless swaps between Ethereum and Stellar networks using Hash Time-Locked Contracts (HTLCs) and 1inch Fusion+ for optimal pricing.
 
 ## 🚀 **Quick Start**
+
+### **Environment Setup**
+
+Before running the application, you need to set up your environment variables. Create a `.env.local` file in the `web` directory:
+
+```bash
+# Required: Get your WalletConnect Project ID from https://cloud.reown.com/sign-in
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id_here
+
+# Optional: Sepolia RPC URL (has fallback)
+NEXT_PUBLIC_SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/your_infura_project_id
+
+# Optional: Stellar network (defaults to testnet)
+NEXT_PUBLIC_STELLAR_NETWORK=testnet
+```
+
+**How to get your WalletConnect Project ID:**
+1. Go to [https://cloud.reown.com/sign-in](https://cloud.reown.com/sign-in)
+2. Sign in or create an account
+3. Create a new project
+4. Select **WalletKit** as the SDK
+5. Select **Javascript** as the platform
+6. Copy your Project ID and add it to `.env.local`
+
+### **Installation**
 
 ```bash
 # Install dependencies
 npm install
 
-# Set environment variables
-cp .env.example .env
-
-# Start development
+# Start development server
 cd web && npm run dev
 ```
 
-## 🏗️ **Project Structure**
+Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
-```
-synappay/
-├── web/                    # Next.js frontend (main application)
-│   ├── components/        # React components
-│   ├── lib/              # Wallet hooks & utilities
-│   ├── pages/            # Next.js pages
-│   └── public/           # Static assets
-├── contracts/            # Smart contracts
-│   ├── EthereumHTLC.sol  # Ethereum HTLC contract
-│   └── StellarHTLC.sol   # Stellar HTLC contract
-├── src/                  # Backend services
-│   ├── relayer/          # Cross-chain relayer
-│   ├── fusion/           # 1inch Fusion+ integration
-│   └── stellar/          # Stellar SDK integration
-└── scripts/              # Deployment scripts
-```
+## 🏗️ **Architecture**
 
-## 🔄 **User Flow**
+### **Core Components**
+- **Smart Contracts**: HTLC contracts on both Ethereum and Stellar
+- **Frontend**: Next.js 14 with React 18, Wagmi, WalletConnect
+- **Backend**: Node.js with Ethers.js and Stellar SDK
+- **Cross-Chain Relayer**: Handles atomic swap execution
+- **1inch Fusion+**: DEX aggregation and MEV protection
 
-### **Track 1: Ethereum ⇄ Stellar Atomic Swap**
-```
-1. Connect Ethereum wallet (MetaMask/Reown)
-2. Connect Stellar wallet (Freighter)
-3. Select swap direction (ETH ↔ XLM)
-4. Get Fusion+ quote via 1inch SDK
-5. User confirms & signs transaction
-6. HTLCs lock funds on both chains
-7. User reveals secret to claim
-8. Relayer broadcasts secret
-9. Swap completes atomically ✅
-```
+### **Technology Stack**
+- **Frontend**: Next.js 14, React 18, Tailwind CSS, Framer Motion
+- **Ethereum**: Wagmi, WalletConnect, Ethers.js, Hardhat
+- **Stellar**: Stellar SDK, Freighter wallet integration
+- **DeFi**: 1inch Fusion+ API, HTLC contracts
+- **Deployment**: Vercel, Hardhat
 
-### **Track 2: Stellar × 1inch Aggregation**
-```
-1. Choose quick swap (Stellar → ERC20)
-2. Fetch best price via 1inch Swap API
-3. User signs Stellar transaction
-4. Swap routed through 1inch
-5. Settled to Ethereum
-6. UX highlights Stellar speed & fees
-```
+## 🔧 **Configuration**
 
-## 🛠️ **Technical Stack**
-
-### **Frontend**
-- **Next.js 14** with React 18
-- **Wagmi** + **WalletConnect** for Ethereum
-- **Freighter SDK** for Stellar
-- **Tailwind CSS** + **Framer Motion**
-- **Inter font** for clean typography
-
-### **Backend**
-- **1inch Fusion+ SDK** for DEX aggregation
-- **Ethers.js** for Ethereum interactions
-- **Stellar SDK** for Stellar operations
-- **Node.js** relayer service
-
-### **Smart Contracts**
-- **Ethereum HTLC** (Solidity) on Sepolia
-- **Stellar HTLC** (Soroban) on testnet
-
-## 🔧 **Environment Setup**
+### **Environment Variables**
 
 ```env
 # WalletConnect

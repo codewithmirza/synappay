@@ -16,6 +16,7 @@
     "@reown/appkit": "^1.0.0",
     "@reown/appkit-adapter-wagmi": "^1.0.0",
     "@stellar/freighter-api": "^1.0.0",
+    "@tanstack/react-query": "^5.0.0",
     "@walletconnect/ethereum-provider": "^2.21.6",
     "@walletconnect/modal": "^2.7.0",
     "autoprefixer": "^10.4.16",
@@ -29,13 +30,13 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
+    "rxjs": "^7.8.1",
     "stellar-sdk": "^11.3.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.3.0",
     "tailwindcss-animate": "^1.0.7",
     "viem": "^2.0.0",
-    "wagmi": "^2.0.0",
-    "@tanstack/react-query": "^5.0.0"
+    "wagmi": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.0",
@@ -44,5 +45,8 @@
     "eslint": "^8.51.0",
     "eslint-config-next": "^14.0.0",
     "typescript": "^5.2.0"
+  },
+  "resolutions": {
+    "rxjs": "^7.8.1"
   }
 }

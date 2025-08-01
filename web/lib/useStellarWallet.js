@@ -2,37 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-// StellarSnap bridge function based on official documentation
-const callMetaStellar = async (method, params = {}) => {
-  if (typeof window !== 'undefined' && window.ethereum) {
-    try {
-      if (method === 'connect') {
-        return await window.ethereum.request({
-          method: 'wallet_requestSnaps',
-          params: {
-            ['npm:stellar-snap']: {}
-          },
-        });
-      }
-      
-      const rpcPacket = {
-        method: 'wallet_invokeSnap',
-        params: {
-          snapId: 'npm:stellar-snap',
-          request: { method, params }
-        }
-      };
-      
-      return await window.ethereum.request(rpcPacket);
-    } catch (error) {
-      console.error(`StellarSnap ${method} error:`, error);
-      throw error;
-    }
-  } else {
-    throw new Error('MetaMask not available');
-  }
-};
-
 export const useStellarWallet = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [publicKey, setPublicKey] = useState(null);
@@ -41,53 +10,44 @@ export const useStellarWallet = () => {
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualSecretKey, setManualSecretKey] = useState('');
   const [connectionMethod, setConnectionMethod] = useState(null);
-  const [stellarSnapStatus, setStellarSnapStatus] = useState('checking');
+  const [freighterStatus, setFreighterStatus] = useState('checking');
 
-  // Check if MetaMask and StellarSnap are available
-  const isMetaMaskAvailable = useCallback(() => {
-    return typeof window !== 'undefined' && !!window.ethereum;
+  // Check if Freighter is available
+  const isFreighterAvailable = useCallback(() => {
+    return typeof window !== 'undefined' && window.freighterApi;
   }, []);
 
-  const isStellarSnapAvailable = useCallback(async () => {
-    if (!isMetaMaskAvailable()) return false;
-    
-    try {
-      const clientVersion = await window.ethereum.request({ method: "web3_clientVersion" });
-      const isFlask = clientVersion.includes("flask");
-      return isFlask;
-    } catch (error) {
-      console.error('Error checking MetaMask Flask:', error);
-      return false;
-    }
-  }, [isMetaMaskAvailable]);
-
-  // Connect with StellarSnap
-  const connectWithStellarSnap = useCallback(async () => {
+  // Connect with Freighter
+  const connectWithFreighter = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const flaskAvailable = await isStellarSnapAvailable();
-      if (!flaskAvailable) {
-        throw new Error('MetaMask Flask is required for StellarSnap. Please install MetaMask Flask.');
+      if (!isFreighterAvailable()) {
+        throw new Error('Freighter extension not found');
       }
 
-      await callMetaStellar('connect');
-      const address = await callMetaStellar('getAddress');
+      const freighter = window.freighterApi;
       
-      setPublicKey(address);
+      // Check if Freighter is connected
+      const isConnected = await freighter.isConnected();
+      if (!isConnected) {
+        await freighter.connect();
+      }
+
+      // Get public key
+      const publicKey = await freighter.getPublicKey();
+      setPublicKey(publicKey);
       setIsConnected(true);
-      setConnectionMethod('stellar-snap');
-      setStellarSnapStatus('connected');
+      setConnectionMethod('freighter');
       setError(null);
     } catch (err) {
-      console.error('Failed to connect with StellarSnap:', err);
-      setError(err.message || 'Failed to connect with StellarSnap');
-      setStellarSnapStatus('error');
+      console.error('Failed to connect with Freighter:', err);
+      setError(`Freighter connection failed: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
-  }, [isStellarSnapAvailable]);
+  }, [isFreighterAvailable]);
 
   // Manual connection with secret key
   const connectWithManualKey = useCallback(async () => {
@@ -127,37 +87,41 @@ export const useStellarWallet = () => {
       setIsLoading(true);
       setError(null);
 
-      const flaskAvailable = await isStellarSnapAvailable();
-      if (flaskAvailable) {
-        await connectWithStellarSnap();
-      } else {
-        // Fallback to manual input
-        setShowManualInput(true);
-        setConnectionMethod('manual');
+      // Try Freighter first
+      if (isFreighterAvailable()) {
+        await connectWithFreighter();
+        return;
       }
+      
+      // Fallback to manual input
+      setShowManualInput(true);
+      setConnectionMethod('manual');
     } catch (err) {
       console.error('Failed to connect Stellar wallet:', err);
       setError('Failed to connect Stellar wallet');
     } finally {
       setIsLoading(false);
     }
-  }, [isStellarSnapAvailable, connectWithStellarSnap]);
+  }, [isFreighterAvailable, connectWithFreighter]);
 
   // Disconnect wallet
   const disconnectWallet = useCallback(async () => {
     try {
+      if (connectionMethod === 'freighter' && isFreighterAvailable()) {
+        await window.freighterApi.disconnect();
+      }
+      
       setIsConnected(false);
       setPublicKey(null);
       setError(null);
       setShowManualInput(false);
       setManualSecretKey('');
       setConnectionMethod(null);
-      setStellarSnapStatus('not_available');
     } catch (err) {
       console.error('Failed to disconnect Stellar wallet:', err);
       setError('Failed to disconnect wallet');
     }
-  }, []);
+  }, [connectionMethod, isFreighterAvailable]);
 
   // Sign transaction
   const signTransaction = useCallback(async (transaction) => {
@@ -165,12 +129,12 @@ export const useStellarWallet = () => {
       throw new Error('Wallet not connected');
     }
 
-    if (connectionMethod === 'stellar-snap') {
-      return await callMetaStellar('signTransaction', { transaction });
+    if (connectionMethod === 'freighter' && isFreighterAvailable()) {
+      return await window.freighterApi.signTransaction(transaction);
     } else {
       throw new Error('Transaction signing not available for manual connection');
     }
-  }, [isConnected, connectionMethod]);
+  }, [isConnected, connectionMethod, isFreighterAvailable]);
 
   // Sign message
   const signMessage = useCallback(async (message) => {
@@ -178,12 +142,12 @@ export const useStellarWallet = () => {
       throw new Error('Wallet not connected');
     }
 
-    if (connectionMethod === 'stellar-snap') {
-      return await callMetaStellar('signStr', { message });
+    if (connectionMethod === 'freighter' && isFreighterAvailable()) {
+      return await window.freighterApi.signMessage(message);
     } else {
       throw new Error('Message signing not available for manual connection');
     }
-  }, [isConnected, connectionMethod]);
+  }, [isConnected, connectionMethod, isFreighterAvailable]);
 
   // Get balance
   const getBalance = useCallback(async () => {
@@ -191,12 +155,12 @@ export const useStellarWallet = () => {
       throw new Error('Wallet not connected');
     }
 
-    if (connectionMethod === 'stellar-snap') {
-      return await callMetaStellar('getBalance', { testnet: true });
+    if (connectionMethod === 'freighter' && isFreighterAvailable()) {
+      return await window.freighterApi.getBalance();
     } else {
       throw new Error('Balance not available for manual connection');
     }
-  }, [isConnected, connectionMethod]);
+  }, [isConnected, connectionMethod, isFreighterAvailable]);
 
   // Get account info
   const getAccountInfo = useCallback(async () => {
@@ -204,12 +168,12 @@ export const useStellarWallet = () => {
       throw new Error('Wallet not connected');
     }
 
-    if (connectionMethod === 'stellar-snap') {
-      return await callMetaStellar('getAccountInfo', { address: publicKey });
+    if (connectionMethod === 'freighter' && isFreighterAvailable()) {
+      return await window.freighterApi.getAccountInfo();
     } else {
       throw new Error('Account info not available for manual connection');
     }
-  }, [isConnected, connectionMethod, publicKey]);
+  }, [isConnected, connectionMethod, isFreighterAvailable]);
 
   const formatAddress = useCallback((address) => {
     if (!address) return '';
@@ -221,23 +185,24 @@ export const useStellarWallet = () => {
   }, [isConnected]);
 
   const installStellarSnap = useCallback(() => {
-    window.open('https://github.com/paulfears/StellarSnap', '_blank');
+    window.open('https://freighter.app/', '_blank');
   }, []);
 
-  // Check StellarSnap availability on mount
+  // Check Freighter availability on mount
   useEffect(() => {
-    const checkStellarSnap = async () => {
-      try {
-        const available = await isStellarSnapAvailable();
-        setStellarSnapStatus(available ? 'available' : 'not_available');
-      } catch (error) {
-        console.error('Error checking StellarSnap:', error);
-        setStellarSnapStatus('not_available');
-      }
+    const checkFreighterAvailability = () => {
+      const available = isFreighterAvailable();
+      setFreighterStatus(available ? 'available' : 'not_available');
     };
 
-    checkStellarSnap();
-  }, [isStellarSnapAvailable]);
+    // Check immediately
+    checkFreighterAvailability();
+
+    // Check again after a short delay to handle async loading
+    const timer = setTimeout(checkFreighterAvailability, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [isFreighterAvailable]);
 
   return {
     isConnected,
@@ -247,18 +212,17 @@ export const useStellarWallet = () => {
     showManualInput,
     manualSecretKey,
     setManualSecretKey,
-    stellarSnapStatus,
+    stellarSnapStatus: freighterStatus,
     connectionMethod,
+    selectedWalletId: connectionMethod === 'freighter' ? 'freighter' : null,
     connect: connectWallet,
     connectWithManualKey,
-    connectWithStellarSnap,
+    connectWithStellarKit: connectWithFreighter, // Alias for compatibility
     disconnect: disconnectWallet,
     signTransaction,
     signMessage,
     getBalance,
     getAccountInfo,
-    isMetaMaskAvailable,
-    isStellarSnapAvailable,
     isOnCorrectNetwork,
     formatAddress,
     installStellarSnap,

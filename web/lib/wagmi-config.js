@@ -2,8 +2,14 @@ import { createConfig, http } from 'wagmi';
 import { sepolia } from 'wagmi/chains';
 import { walletConnect } from 'wagmi/connectors';
 
-// Use the real WalletConnect project ID
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'c4f79cc821944d9680842e34466bfbd9';
+// Use environment variable for WalletConnect project ID
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+
+if (!projectId) {
+  console.warn('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID environment variable is not set. Please set it to your WalletConnect project ID from https://cloud.reown.com/sign-in');
+  // Temporary fallback for development - replace with your actual project ID
+  throw new Error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID environment variable is required. Please create a .env.local file with your WalletConnect project ID.');
+}
 
 // Dynamic metadata based on environment
 const getMetadata = () => {
