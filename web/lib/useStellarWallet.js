@@ -34,7 +34,7 @@ export const useStellarWallet = () => {
       console.log(`Key: ${key}, Type: ${typeof value}, Value:`, value);
     });
     
-    // Enhanced API detection - check multiple possible locations
+    // Enhanced API detection - check multiple possible locations SAFELY
     const freighterApis = [
       window.freighterApi,
       window.freighter,
@@ -46,23 +46,28 @@ export const useStellarWallet = () => {
       window.freighter?.api,
       window.stellar?.freighter,
       window.stellarWallet?.api,
-      // Check for any object with isConnected method (common wallet API pattern)
-      ...Object.values(window).filter(obj => 
-        obj && typeof obj === 'object' && 
-        typeof obj.isConnected === 'function' &&
-        typeof obj.getPublicKey === 'function'
-      )
+      // Check specific known Freighter API patterns
+      window.freighterApi?.api,
+      window.freighter?.wallet,
+      window.stellar?.wallet
     ];
     
+    // SAFE API validation - only check specific known APIs
     const availableApi = freighterApis.find(api => {
       if (!api || typeof api !== 'object') return false;
       
-      // Check if it has basic wallet methods
-      const hasBasicMethods = typeof api.isConnected === 'function' || 
-                             typeof api.getPublicKey === 'function' ||
-                             typeof api.connect === 'function';
-      
-      return hasBasicMethods;
+      // Check if it has basic wallet methods - SAFELY
+      try {
+        const hasBasicMethods = typeof api.isConnected === 'function' || 
+                               typeof api.getPublicKey === 'function' ||
+                               typeof api.connect === 'function';
+        
+        return hasBasicMethods;
+      } catch (error) {
+        // If we can't access the property due to cross-origin restrictions, skip it
+        console.log('Skipping API due to access restriction:', error.message);
+        return false;
+      }
     });
     
     if (availableApi) {
@@ -125,7 +130,7 @@ export const useStellarWallet = () => {
   const getFreighterApi = useCallback(() => {
     if (typeof window === 'undefined') return null;
     
-    // Enhanced API discovery with fallback methods
+    // Enhanced API discovery with fallback methods - SAFELY
     const apis = [
       window.freighterApi,
       window.freighter,
@@ -137,22 +142,28 @@ export const useStellarWallet = () => {
       window.freighter?.api,
       window.stellar?.freighter,
       window.stellarWallet?.api,
-      // Check for any object with wallet methods
-      ...Object.values(window).filter(obj => 
-        obj && typeof obj === 'object' && 
-        (typeof obj.isConnected === 'function' || typeof obj.getPublicKey === 'function')
-      )
+      // Check specific known Freighter API patterns
+      window.freighterApi?.api,
+      window.freighter?.wallet,
+      window.stellar?.wallet
     ];
     
+    // SAFE API validation - only check specific known APIs
     const api = apis.find(api => {
       if (!api || typeof api !== 'object') return false;
       
-      // Check if it has basic wallet methods
-      const hasBasicMethods = typeof api.isConnected === 'function' || 
-                             typeof api.getPublicKey === 'function' ||
-                             typeof api.connect === 'function';
-      
-      return hasBasicMethods;
+      // Check if it has basic wallet methods - SAFELY
+      try {
+        const hasBasicMethods = typeof api.isConnected === 'function' || 
+                               typeof api.getPublicKey === 'function' ||
+                               typeof api.connect === 'function';
+        
+        return hasBasicMethods;
+      } catch (error) {
+        // If we can't access the property due to cross-origin restrictions, skip it
+        console.log('Skipping API due to access restriction:', error.message);
+        return false;
+      }
     });
     
     if (api) {
@@ -317,9 +328,10 @@ export const useStellarWallet = () => {
           setError('Could not retrieve public key from Freighter. You can connect manually or try refreshing the page.');
         }
       } else {
-        // Try Stellar SDK connection as fallback
-        console.log('🔄 Freighter not available, trying Stellar SDK...');
-        await connectWithStellarSDK();
+        // Freighter not detected - provide clear guidance
+        console.log('🔄 Freighter not detected, showing installation guidance');
+        setShowManualInput(true);
+        setError('Freighter extension not detected. Please install Freighter from https://www.freighter.app/ or connect manually.');
       }
     } catch (err) {
       console.error('Failed to connect Stellar wallet:', err);

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, AlertCircle, Download, RefreshCw } from 'lucide-react';
+import { Wallet, AlertCircle, Download, RefreshCw, Info } from 'lucide-react';
 import { useCombinedWallet } from '../lib/useCombinedWallet';
 
 export default function WalletConnectionButton() {
@@ -24,6 +24,8 @@ export default function WalletConnectionButton() {
     disconnectStellar,
     formatStellarAddress,
     installFreighter,
+    freighterStatus,
+    isFreighterAvailable,
     
     bothConnected,
     canSwap,
@@ -32,6 +34,7 @@ export default function WalletConnectionButton() {
   } = useCombinedWallet();
 
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
 
   const handleConnectEth = async () => {
     try {
@@ -101,6 +104,27 @@ export default function WalletConnectionButton() {
           className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50"
         >
           <div className="space-y-4">
+            {/* Debug Section */}
+            <div className="border-b border-gray-200 pb-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900 text-sm">Debug Info</h3>
+                <button
+                  onClick={() => setShowDebug(!showDebug)}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Info size={14} />
+                </button>
+              </div>
+              {showDebug && (
+                <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+                  <div><strong>Freighter Status:</strong> {freighterStatus}</div>
+                  <div><strong>Freighter Available:</strong> {isFreighterAvailable() ? 'Yes' : 'No'}</div>
+                  <div><strong>Protocol:</strong> {typeof window !== 'undefined' ? window.location.protocol : 'N/A'}</div>
+                  <div><strong>Hostname:</strong> {typeof window !== 'undefined' ? window.location.hostname : 'N/A'}</div>
+                </div>
+              )}
+            </div>
+
             {/* Ethereum Wallet Section */}
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Ethereum Wallet</h3>
