@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.www.synappay.com/sitemap.xml 
+Sitemap: https://www.synappay.com/sitemap.xml 

@@ -43,11 +43,6 @@ export default function Document() {
         <link rel="dns-prefetch" href="//api.1inch.dev" />
         <link rel="dns-prefetch" href="//horizon-testnet.stellar.org" />
         
-        {/* Security Headers */}
-        <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
-        <meta httpEquiv="X-Frame-Options" content="DENY" />
-        <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
-        
         {/* PWA */}
         <meta name="application-name" content="SynapPay" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

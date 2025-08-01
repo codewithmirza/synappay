@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle, AlertCircle, Loader, Shield, Zap, Star, ArrowRight } from 'lucide-react';
-import { useCrossChainWallet } from '../lib/useCrossChainWallet';
+import { useCombinedWallet } from '../lib/useCombinedWallet';
 import config from '../lib/config';
 
 export default function Review() {
@@ -14,7 +14,7 @@ export default function Review() {
     stellarPublicKey,
     formatEthAddress,
     formatStellarAddress
-  } = useCrossChainWallet();
+  } = useCombinedWallet();
 
   const [swapData, setSwapData] = useState(null);
   const [isExecuting, setIsExecuting] = useState(false);
