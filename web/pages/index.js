@@ -117,49 +117,74 @@ export default function Home() {
             <AnimatePresence>
               {bothConnected ? (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="bg-green-50 border border-green-200 rounded-2xl p-6 space-y-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                  className="space-y-6"
                 >
-                  <div className="flex items-center justify-center space-x-2">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                    <span className="text-green-800 font-semibold">Both Wallets Connected</span>
-                  </div>
-                  
-                  <div className="bg-white rounded-xl p-4 space-y-3">
-                    {/* Ethereum Wallet */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Wallet className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm text-gray-600">Ethereum:</span>
-                      </div>
-                      <span className="font-mono text-sm bg-blue-100 px-3 py-1 rounded-lg">
-                        {formatEthAddress(ethAddress)}
-                      </span>
+                  {/* Success Message */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-green-50 border border-green-200 rounded-xl p-6 text-center"
+                  >
+                    <div className="flex items-center justify-center mb-3">
+                      <CheckCircle className="w-8 h-8 text-green-600" />
                     </div>
-                    
-                    {/* Stellar Wallet */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Coins className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm text-gray-600">Stellar:</span>
+                    <h3 className="text-green-800 font-semibold text-lg mb-2">
+                      🎉 Wallets Connected Successfully!
+                    </h3>
+                    <p className="text-green-700 text-sm mb-4">
+                      You're ready to start cross-chain swaps between Ethereum and Stellar
+                    </p>
+                    <button
+                      onClick={() => window.location.href = '/swap'}
+                      className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all transform hover:scale-105 flex items-center justify-center space-x-2 mx-auto"
+                    >
+                      <Coins className="w-5 h-5" />
+                      <span>Start Your First Swap</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  </motion.div>
+
+                  {/* Wallet Status Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Ethereum Status */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span className="text-blue-800 font-medium">Ethereum</span>
                       </div>
-                      <span className="font-mono text-sm bg-purple-100 px-3 py-1 rounded-lg">
-                        {formatStellarAddress(stellarPublicKey)}
-                      </span>
+                      <div className="text-sm text-blue-700 space-y-1">
+                        <div className="font-mono">{formatEthAddress(ethAddress)}</div>
+                        <div className="flex items-center justify-between">
+                          <span>Network:</span>
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            isCorrectEthNetwork() 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {isCorrectEthNetwork() ? 'Sepolia' : 'Wrong Network'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    
-                    {/* Network Status */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Network:</span>
-                      <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                        isCorrectEthNetwork() 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {isCorrectEthNetwork() ? 'Sepolia' : 'Wrong Network'}
-                      </span>
+
+                    {/* Stellar Status */}
+                    <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                        <span className="text-purple-800 font-medium">Stellar</span>
+                      </div>
+                      <div className="text-sm text-purple-700">
+                        <div className="font-mono">{formatStellarAddress(stellarPublicKey)}</div>
+                        <div className="flex items-center justify-between">
+                          <span>Network:</span>
+                          <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">
+                            Testnet
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

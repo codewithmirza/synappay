@@ -158,3 +158,15 @@ MIT License - see [LICENSE](LICENSE) for details.
 ---
 
 **Built with ❤️ for the ETHGlobal Unite DeFi Hackathon** 
+
+## Stellar Wallet Support
+
+The application now uses **Stellar Wallets Kit** which supports multiple Stellar wallets:
+
+- **Freighter** (Browser Extension)
+- **xBull** (Mobile App)
+- **Rabet** (Browser Extension)
+- **Albedo** (Browser Extension)
+- **Ledger** (Hardware Wallet)
+
+Users can select their preferred wallet through a unified interface. If no wallets are available, users can still connect manually by entering their secret key. 

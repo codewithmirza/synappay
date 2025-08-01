@@ -3,6 +3,38 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   
+  // Transpile problematic packages
+  transpilePackages: [
+    '@creit.tech/stellar-wallets-kit',
+    '@stellar/freighter-api',
+    '@stellar/wallets-kit',
+  ],
+  
+  // Webpack configuration to fix module resolution issues
+  webpack: (config, { isServer }) => {
+    // Fix CommonJS/ESM module resolution for Stellar Wallets Kit
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@stellar/freighter-api': require.resolve('@stellar/freighter-api'),
+    };
+    
+    // Handle ES modules properly
+    config.resolve.extensionAlias = {
+      '.js': ['.js', '.ts', '.tsx'],
+      '.mjs': ['.mjs', '.js', '.ts', '.tsx'],
+    };
+    
+    // Ensure proper module resolution
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+    
+    return config;
+  },
+  
   // Security Headers
   async headers() {
     return [

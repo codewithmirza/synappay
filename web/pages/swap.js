@@ -140,6 +140,16 @@ export default function Swap() {
         <div className="p-6 md:p-8 max-w-[600px] w-full">
           {/* Header */}
           <div className="text-center mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => window.history.back()}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm">Back</span>
+              </button>
+              <div className="flex-1"></div>
+            </div>
             <h1 className="text-3xl md:text-[32px] font-bold text-[#000000] font-inter mb-2">
               Cross-Chain Swap
             </h1>
