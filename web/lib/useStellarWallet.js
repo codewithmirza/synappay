@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { StellarWalletsKit, allowAllModules, FREIGHTER_ID } from '@creit.tech/stellar-wallets-kit';
 
 export const useStellarWallet = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -21,17 +20,30 @@ export const useStellarWallet = () => {
       console.log('Initializing Stellar Wallets Kit...');
       
       // Dynamic import to handle module resolution issues
-      const { StellarWalletsKit, allowAllModules, FREIGHTER_ID } = await import('@creit.tech/stellar-wallets-kit');
+      const { 
+        StellarWalletsKit, 
+        WalletNetwork, 
+        FreighterModule,
+        xBullModule,
+        FREIGHTER_ID,
+        XBULL_ID,
+        allowAllModules 
+      } = await import('@creit.tech/stellar-wallets-kit');
       
-      // Fix network configuration - use correct values
-      const network = process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet' ? 'PUBLIC' : 'TESTNET';
-      console.log('Using Stellar network:', network);
       console.log('Environment variable NEXT_PUBLIC_STELLAR_NETWORK:', process.env.NEXT_PUBLIC_STELLAR_NETWORK);
       
+      // Map environment variable to proper enum
+      const netEnv = process.env.NEXT_PUBLIC_STELLAR_NETWORK?.toUpperCase();
+      const network = netEnv === 'TESTNET' 
+        ? WalletNetwork.TESTNET 
+        : WalletNetwork.PUBLIC;
+      
+      console.log('Using network enum:', network);
+      
       const kit = new StellarWalletsKit({
-        modules: allowAllModules(),
-        network: network, // Use correct network values
+        network,
         selectedWalletId: localStorage.getItem('selectedWallet') || FREIGHTER_ID,
+        modules: [new FreighterModule(), new xBullModule()]
       });
       
       setKitRef(kit);
@@ -39,7 +51,6 @@ export const useStellarWallet = () => {
     } catch (err) {
       console.error('Failed to initialize Stellar Wallets Kit:', err);
       setError('Failed to initialize wallet kit. Falling back to manual input.');
-      // Don't throw error, just log it and continue with fallback
     }
   }, []);
 
@@ -65,13 +76,27 @@ export const useStellarWallet = () => {
     if (!kitRef) return false;
     
     try {
-      // Check if any wallet is available
-      const availableWallets = kitRef.getAvailableWallets();
-      console.log('Available Stellar wallets:', availableWallets);
-      return availableWallets.length > 0;
+      // Check if any wallet is available - try different API methods
+      console.log('Checking available wallets with kit:', kitRef);
+      
+      // Try to get available wallets - the method might be different
+      if (typeof kitRef.getAvailableWallets === 'function') {
+        const availableWallets = kitRef.getAvailableWallets();
+        console.log('Available Stellar wallets:', availableWallets);
+        return availableWallets && availableWallets.length > 0;
+      } else if (typeof kitRef.getWallets === 'function') {
+        const wallets = kitRef.getWallets();
+        console.log('Available Stellar wallets:', wallets);
+        return wallets && wallets.length > 0;
+      } else {
+        // If we can't check available wallets, assume they're available
+        console.log('Cannot check available wallets, assuming available');
+        return true;
+      }
     } catch (err) {
       console.error('Error checking available wallets:', err);
-      return false;
+      // If we can't check, assume wallets are available
+      return true;
     }
   }, [kitRef]);
 
@@ -115,11 +140,16 @@ export const useStellarWallet = () => {
       setIsLoading(true);
       setError(null);
 
-      // Try Stellar Wallets Kit first
-      if (kitRef && isAnyStellarWalletAvailable()) {
+      // Try Stellar Wallets Kit first if available
+      if (kitRef) {
         console.log('Stellar Wallets Kit available, attempting connection...');
-        await connectWithStellarKit();
-        return;
+        try {
+          await connectWithStellarKit();
+          return;
+        } catch (kitErr) {
+          console.error('Stellar Wallets Kit connection failed:', kitErr);
+          // Continue to manual fallback
+        }
       }
 
       console.log('No Stellar wallets available or kit not initialized, showing manual input...');
@@ -136,7 +166,7 @@ export const useStellarWallet = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [kitRef, isAnyStellarWalletAvailable, connectWithStellarKit]);
+  }, [kitRef, connectWithStellarKit]);
 
   // Manual connection with secret key
   const connectWithManualKey = useCallback(async (secretKey) => {
@@ -270,9 +300,14 @@ export const useStellarWallet = () => {
   // Check wallet availability on mount
   useEffect(() => {
     const checkWalletAvailability = () => {
-      const available = isAnyStellarWalletAvailable();
-      console.log('Checking Stellar wallet availability:', available);
-      setFreighterStatus(available ? 'available' : 'not_available');
+      try {
+        const available = isAnyStellarWalletAvailable();
+        console.log('Checking Stellar wallet availability:', available);
+        setFreighterStatus(available ? 'available' : 'not_available');
+      } catch (err) {
+        console.error('Error in wallet availability check:', err);
+        setFreighterStatus('not_available');
+      }
     };
 
     if (kitRef) {
