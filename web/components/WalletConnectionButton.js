@@ -9,10 +9,12 @@ export default function WalletConnectionButton() {
   const {
     ethConnected,
     ethAddress,
+    ethChainId,
     ethLoading,
     ethError,
     connectEth,
     disconnectEth,
+    switchToSepolia,
     formatEthAddress,
     isCorrectEthNetwork,
     
@@ -20,7 +22,11 @@ export default function WalletConnectionButton() {
     stellarPublicKey,
     stellarLoading,
     stellarError,
+    showManualInput,
+    manualSecretKey,
+    setManualSecretKey,
     connectStellar,
+    connectWithManualKey,
     disconnectStellar,
     formatStellarAddress,
     
@@ -42,10 +48,24 @@ export default function WalletConnectionButton() {
   };
 
   const handleConnectStellar = async () => {
+    console.log('Stellar connect button clicked');
     try {
+      console.log('Calling connectStellar...');
       await connectStellar();
+      console.log('connectStellar completed');
     } catch (error) {
       console.error('Failed to connect Stellar wallet:', error);
+    }
+  };
+
+  const handleSwitchToSepolia = async () => {
+    console.log('Switch to Sepolia button clicked');
+    try {
+      console.log('Calling switchToSepolia...');
+      await switchToSepolia();
+      console.log('switchToSepolia completed');
+    } catch (error) {
+      console.error('Failed to switch to Sepolia:', error);
     }
   };
 
@@ -118,6 +138,8 @@ export default function WalletConnectionButton() {
                   <div><strong>Stellar Connected:</strong> {stellarConnected ? 'Yes' : 'No'}</div>
                   <div><strong>Both Connected:</strong> {bothConnected ? 'Yes' : 'No'}</div>
                   <div><strong>Can Swap:</strong> {canSwap ? 'Yes' : 'No'}</div>
+                  <div><strong>ETH Chain ID:</strong> {ethChainId || 'Not Connected'}</div>
+                  <div><strong>Correct ETH Network:</strong> {isCorrectEthNetwork() ? 'Yes' : 'No'}</div>
                   <div><strong>Protocol:</strong> {typeof window !== 'undefined' ? window.location.protocol : 'N/A'}</div>
                   <div><strong>Hostname:</strong> {typeof window !== 'undefined' ? window.location.hostname : 'N/A'}</div>
                 </div>
@@ -135,10 +157,26 @@ export default function WalletConnectionButton() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Network:</span>
-                    <span className={`text-sm ${isCorrectEthNetwork() ? 'text-green-600' : 'text-red-600'}`}>
-                      {isCorrectEthNetwork() ? 'Sepolia' : 'Wrong Network'}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-sm ${isCorrectEthNetwork() ? 'text-green-600' : 'text-red-600'}`}>
+                        {isCorrectEthNetwork() ? 'Sepolia' : `Chain ID: ${ethChainId || 'Unknown'}`}
+                      </span>
+                      {!isCorrectEthNetwork() && (
+                        <button
+                          onClick={handleSwitchToSepolia}
+                          disabled={ethLoading}
+                          className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50 font-medium"
+                        >
+                          {ethLoading ? 'Switching...' : 'Switch to Sepolia'}
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  {!isCorrectEthNetwork() && (
+                    <div className="text-xs text-gray-500 bg-yellow-50 p-2 rounded">
+                      ⚠️ SynapPay requires Sepolia testnet for cross-chain swaps
+                    </div>
+                  )}
                   {ethError && (
                     <div className="flex items-center space-x-2 text-red-600 text-sm">
                       <AlertCircle size={14} />
@@ -197,17 +235,62 @@ export default function WalletConnectionButton() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <button
-                    onClick={handleConnectStellar}
-                    disabled={stellarLoading}
-                    className="w-full px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50"
-                  >
-                    {stellarLoading ? 'Connecting...' : 'Connect Stellar'}
-                  </button>
-                  {stellarError && (
-                    <div className="flex items-center space-x-2 text-red-600 text-sm">
-                      <AlertCircle size={14} />
-                      <span>{stellarError}</span>
+                  {/* Manual Input Section */}
+                  {showManualInput ? (
+                    <div className="space-y-2">
+                      <div className="text-xs text-gray-600 mb-2">
+                        Enter your Stellar secret key (starts with 'S', 56 characters)
+                      </div>
+                      <input
+                        type="password"
+                        placeholder="S... (56 characters)"
+                        value={manualSecretKey}
+                        onChange={(e) => setManualSecretKey(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={connectWithManualKey}
+                          disabled={stellarLoading || !manualSecretKey}
+                          className="flex-1 px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50"
+                        >
+                          {stellarLoading ? 'Connecting...' : 'Connect'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setManualSecretKey('');
+                            disconnectStellar();
+                          }}
+                          className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {stellarError && (
+                        <div className="flex items-center space-x-2 text-red-600 text-sm">
+                          <AlertCircle size={14} />
+                          <span>{stellarError}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          console.log('Stellar button clicked - test');
+                          handleConnectStellar();
+                        }}
+                        disabled={stellarLoading}
+                        className="w-full px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50"
+                      >
+                        {stellarLoading ? 'Connecting...' : 'Connect Stellar'}
+                      </button>
+                      {stellarError && (
+                        <div className="flex items-center space-x-2 text-red-600 text-sm">
+                          <AlertCircle size={14} />
+                          <span>{stellarError}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

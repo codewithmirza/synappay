@@ -14,33 +14,45 @@ export const useStellarWallet = () => {
 
   // Check if Freighter is available
   const isFreighterAvailable = useCallback(() => {
-    return typeof window !== 'undefined' && window.freighterApi;
+    const available = typeof window !== 'undefined' && window.freighterApi;
+    console.log('Freighter available check:', available);
+    return available;
   }, []);
 
   // Connect with Freighter
   const connectWithFreighter = useCallback(async () => {
+    console.log('Attempting to connect with Freighter...');
     try {
       setIsLoading(true);
       setError(null);
 
       if (!isFreighterAvailable()) {
+        console.log('Freighter not available, throwing error');
         throw new Error('Freighter extension not found');
       }
 
+      console.log('Freighter API found, attempting connection...');
       const freighter = window.freighterApi;
       
       // Check if Freighter is connected
       const isConnected = await freighter.isConnected();
+      console.log('Freighter isConnected check:', isConnected);
+      
       if (!isConnected) {
+        console.log('Connecting to Freighter...');
         await freighter.connect();
       }
 
       // Get public key
+      console.log('Getting public key from Freighter...');
       const publicKey = await freighter.getPublicKey();
+      console.log('Freighter public key:', publicKey);
+      
       setPublicKey(publicKey);
       setIsConnected(true);
       setConnectionMethod('freighter');
       setError(null);
+      console.log('Freighter connection successful');
     } catch (err) {
       console.error('Failed to connect with Freighter:', err);
       setError(`Freighter connection failed: ${err.message}`);
@@ -51,6 +63,7 @@ export const useStellarWallet = () => {
 
   // Manual connection with secret key
   const connectWithManualKey = useCallback(async () => {
+    console.log('Attempting manual connection with secret key...');
     try {
       setIsLoading(true);
       setError(null);
@@ -73,6 +86,7 @@ export const useStellarWallet = () => {
       setManualSecretKey('');
       setConnectionMethod('manual');
       setError(null);
+      console.log('Manual connection successful');
     } catch (err) {
       console.error('Failed to connect with manual key:', err);
       setError('Invalid secret key. Please check and try again.');
@@ -83,16 +97,19 @@ export const useStellarWallet = () => {
 
   // Main connect function
   const connectWallet = useCallback(async () => {
+    console.log('Stellar connectWallet called');
     try {
       setIsLoading(true);
       setError(null);
 
       // Try Freighter first
       if (isFreighterAvailable()) {
+        console.log('Freighter available, attempting connection...');
         await connectWithFreighter();
         return;
       }
       
+      console.log('Freighter not available, showing manual input...');
       // Fallback to manual input
       setShowManualInput(true);
       setConnectionMethod('manual');
@@ -106,6 +123,7 @@ export const useStellarWallet = () => {
 
   // Disconnect wallet
   const disconnectWallet = useCallback(async () => {
+    console.log('Disconnecting Stellar wallet...');
     try {
       if (connectionMethod === 'freighter' && isFreighterAvailable()) {
         await window.freighterApi.disconnect();
@@ -117,6 +135,7 @@ export const useStellarWallet = () => {
       setShowManualInput(false);
       setManualSecretKey('');
       setConnectionMethod(null);
+      console.log('Stellar wallet disconnected');
     } catch (err) {
       console.error('Failed to disconnect Stellar wallet:', err);
       setError('Failed to disconnect wallet');
@@ -192,6 +211,7 @@ export const useStellarWallet = () => {
   useEffect(() => {
     const checkFreighterAvailability = () => {
       const available = isFreighterAvailable();
+      console.log('Checking Freighter availability:', available);
       setFreighterStatus(available ? 'available' : 'not_available');
     };
 

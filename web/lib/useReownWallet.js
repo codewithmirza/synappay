@@ -64,12 +64,17 @@ export const useReownWallet = () => {
       setIsLoading(true);
       setError(null);
       
+      console.log('Switching to Sepolia network...');
       await switchChain({ chainId: sepolia.id });
+      console.log('Successfully switched to Sepolia');
     } catch (err) {
       console.error('Network switch failed:', err);
       
       if (err.message?.includes('User rejected')) {
         setError('Network switch was cancelled by user');
+      } else if (err.message?.includes('4902')) {
+        // Chain not added to MetaMask
+        setError('Sepolia network not found in wallet. Please add Sepolia testnet manually.');
       } else {
         setError('Failed to switch to Sepolia network');
       }
