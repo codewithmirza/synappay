@@ -10,43 +10,92 @@ export const useStellarWallet = () => {
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualSecretKey, setManualSecretKey] = useState('');
   const [freighterStatus, setFreighterStatus] = useState('checking');
+  const [connectionMethod, setConnectionMethod] = useState(null); // 'freighter', 'manual', 'stellar-sdk'
 
-  // Enhanced Freighter detection
+  // Enhanced Freighter detection with better API discovery
   const isFreighterAvailable = useCallback(() => {
     if (typeof window === 'undefined') return false;
     
-    // Check multiple possible Freighter API locations
+    // Log all window objects for debugging
+    const allWindowKeys = Object.keys(window);
+    const freighterRelatedKeys = allWindowKeys.filter(key => 
+      key.toLowerCase().includes('freighter') || 
+      key.toLowerCase().includes('stellar') ||
+      key.toLowerCase().includes('wallet')
+    );
+    
+    console.log('🔍 Freighter Detection Debug:');
+    console.log('All window keys:', allWindowKeys.length);
+    console.log('Freighter-related keys:', freighterRelatedKeys);
+    
+    // Check each freighter-related key
+    freighterRelatedKeys.forEach(key => {
+      const value = window[key];
+      console.log(`Key: ${key}, Type: ${typeof value}, Value:`, value);
+    });
+    
+    // Enhanced API detection - check multiple possible locations
     const freighterApis = [
       window.freighterApi,
       window.freighter,
       window.stellarWallet,
-      window.freighterWallet
+      window.freighterWallet,
+      window.freighterExtension,
+      window.stellarExtension,
+      // New locations for updated Freighter versions
+      window.freighter?.api,
+      window.stellar?.freighter,
+      window.stellarWallet?.api,
+      // Check for any object with isConnected method (common wallet API pattern)
+      ...Object.values(window).filter(obj => 
+        obj && typeof obj === 'object' && 
+        typeof obj.isConnected === 'function' &&
+        typeof obj.getPublicKey === 'function'
+      )
     ];
     
-    const availableApi = freighterApis.find(api => api && typeof api === 'object');
+    const availableApi = freighterApis.find(api => {
+      if (!api || typeof api !== 'object') return false;
+      
+      // Check if it has basic wallet methods
+      const hasBasicMethods = typeof api.isConnected === 'function' || 
+                             typeof api.getPublicKey === 'function' ||
+                             typeof api.connect === 'function';
+      
+      return hasBasicMethods;
+    });
     
     if (availableApi) {
-      console.log('Freighter API found:', availableApi);
+      console.log('✅ Freighter API found:', availableApi);
       return true;
     }
     
     // Check if Freighter extension is installed but API not ready
     if (window.location.protocol === 'https:' || window.location.hostname === 'localhost') {
-      // Try to detect Freighter extension
+      // Try to detect Freighter extension presence
       const hasFreighterExtension = document.querySelector('script[src*="freighter"]') || 
                                    document.querySelector('script[src*="stellar"]') ||
-                                   window.freighterExtension;
+                                   window.freighterExtension ||
+                                   freighterRelatedKeys.length > 0 ||
+                                   // Check for Freighter extension in browser extensions
+                                   window.navigator?.userAgent?.includes('Freighter') ||
+                                   // Check for any script tags that might indicate Freighter
+                                   Array.from(document.querySelectorAll('script')).some(script => 
+                                     script.src && (script.src.includes('freighter') || script.src.includes('stellar'))
+                                   );
       
       if (hasFreighterExtension) {
-        console.log('Freighter extension detected but API not ready');
+        console.log('⚠️ Freighter extension detected but API not ready');
+        console.log('Available keys:', freighterRelatedKeys);
         return true;
       }
     }
     
+    console.log('❌ No Freighter API found');
     return false;
   }, []);
 
-  // Check Freighter status on mount
+  // Check Freighter status on mount with retries and better timing
   useEffect(() => {
     const checkFreighterStatus = async () => {
       try {
@@ -64,21 +113,102 @@ export const useStellarWallet = () => {
     // Check immediately
     checkFreighterStatus();
     
-    // Check again after a delay to allow extension to load
-    const timer = setTimeout(checkFreighterStatus, 2000);
+    // Check again after delays to allow extension to load
+    // Increased delays for better compatibility
+    const timers = [1000, 3000, 5000, 8000, 12000].map(delay => 
+      setTimeout(checkFreighterStatus, delay)
+    );
     
-    return () => clearTimeout(timer);
+    return () => timers.forEach(timer => clearTimeout(timer));
   }, [isFreighterAvailable]);
 
   const getFreighterApi = useCallback(() => {
     if (typeof window === 'undefined') return null;
     
-    // Try different possible API locations
-    return window.freighterApi || 
-           window.freighter || 
-           window.stellarWallet || 
-           window.freighterWallet ||
-           null;
+    // Enhanced API discovery with fallback methods
+    const apis = [
+      window.freighterApi,
+      window.freighter,
+      window.stellarWallet,
+      window.freighterWallet,
+      window.freighterExtension,
+      window.stellarExtension,
+      // New locations for updated Freighter versions
+      window.freighter?.api,
+      window.stellar?.freighter,
+      window.stellarWallet?.api,
+      // Check for any object with wallet methods
+      ...Object.values(window).filter(obj => 
+        obj && typeof obj === 'object' && 
+        (typeof obj.isConnected === 'function' || typeof obj.getPublicKey === 'function')
+      )
+    ];
+    
+    const api = apis.find(api => {
+      if (!api || typeof api !== 'object') return false;
+      
+      // Check if it has basic wallet methods
+      const hasBasicMethods = typeof api.isConnected === 'function' || 
+                             typeof api.getPublicKey === 'function' ||
+                             typeof api.connect === 'function';
+      
+      return hasBasicMethods;
+    });
+    
+    if (api) {
+      console.log('🔧 Using Freighter API:', api);
+      return api;
+    }
+    
+    console.log('❌ No Freighter API available');
+    return null;
+  }, []);
+
+  // Stellar SDK-based connection (like WalletConnect for Ethereum)
+  const connectWithStellarSDK = useCallback(async () => {
+    try {
+      console.log('🔄 Attempting Stellar SDK connection...');
+      
+      // This would use Stellar's official SDK for wallet connection
+      // Similar to how WalletConnect works for Ethereum
+      
+      // For now, we'll simulate this with a prompt
+      const publicKey = prompt('Enter your Stellar public key (G...)');
+      
+      if (publicKey && publicKey.startsWith('G') && publicKey.length === 56) {
+        setPublicKey(publicKey);
+        setIsConnected(true);
+        setConnectionMethod('stellar-sdk');
+        setError(null);
+        console.log('✅ Connected via Stellar SDK');
+      } else {
+        throw new Error('Invalid Stellar public key format');
+      }
+    } catch (err) {
+      console.error('Stellar SDK connection failed:', err);
+      setError('Failed to connect via Stellar SDK: ' + err.message);
+    }
+  }, []);
+
+  // Utility function to help users install Freighter
+  const installFreighter = useCallback(() => {
+    const freighterUrl = 'https://www.freighter.app/';
+    window.open(freighterUrl, '_blank');
+  }, []);
+
+  // Enhanced error handling with installation guidance
+  const handleConnectionError = useCallback((error) => {
+    console.error('Stellar wallet connection error:', error);
+    
+    if (error.message?.includes('User rejected')) {
+      return 'Connection was cancelled by user';
+    } else if (error.message?.includes('not detected') || error.message?.includes('not available')) {
+      return 'Freighter not detected. Please install the Freighter extension from https://www.freighter.app/ or try connecting manually.';
+    } else if (error.message?.includes('API')) {
+      return 'Freighter API error. Please try refreshing the page or reinstalling the extension.';
+    } else {
+      return error.message || 'Failed to connect Stellar wallet';
+    }
   }, []);
 
   const connectWallet = useCallback(async () => {
@@ -89,40 +219,84 @@ export const useStellarWallet = () => {
       const freighterApi = getFreighterApi();
       
       if (freighterApi) {
-        console.log('Attempting to connect to Freighter...');
+        console.log('🔄 Attempting to connect to Freighter...');
+        setConnectionMethod('freighter');
         
-        // Try different connection methods
+        // Try different connection methods with better error handling
         let isConnected = false;
         let publicKey = null;
         
         try {
           // Method 1: Check if already connected
           if (typeof freighterApi.isConnected === 'function') {
-            isConnected = await freighterApi.isConnected();
-            console.log('Freighter connection status:', isConnected);
+            try {
+              isConnected = await freighterApi.isConnected();
+              console.log('Freighter connection status:', isConnected);
+            } catch (e) {
+              console.log('isConnected method failed, trying other methods...');
+            }
           }
           
           // Method 2: Try to connect if not connected
           if (!isConnected && typeof freighterApi.connect === 'function') {
-            await freighterApi.connect();
-            console.log('Freighter connected successfully');
-            isConnected = true;
+            try {
+              await freighterApi.connect();
+              console.log('Freighter connected successfully');
+              isConnected = true;
+            } catch (e) {
+              console.log('connect method failed, trying other methods...');
+            }
           }
           
-          // Method 3: Try to get public key
-          if (isConnected && typeof freighterApi.getPublicKey === 'function') {
-            publicKey = await freighterApi.getPublicKey();
-            console.log('Freighter public key:', publicKey);
+          // Method 3: Try to get public key directly
+          if (typeof freighterApi.getPublicKey === 'function') {
+            try {
+              publicKey = await freighterApi.getPublicKey();
+              console.log('Freighter public key:', publicKey);
+            } catch (e) {
+              console.log('getPublicKey method failed, trying alternatives...');
+            }
           }
           
           // Method 4: Try alternative API methods
-          if (!publicKey && typeof freighterApi.getPublicKey === 'function') {
-            publicKey = await freighterApi.getPublicKey();
+          if (!publicKey && typeof freighterApi.getAccount === 'function') {
+            try {
+              const account = await freighterApi.getAccount();
+              publicKey = account?.publicKey;
+              console.log('Got public key from getAccount:', publicKey);
+            } catch (e) {
+              console.log('getAccount method failed...');
+            }
           }
           
-          if (!publicKey && typeof freighterApi.getAccount === 'function') {
-            const account = await freighterApi.getAccount();
-            publicKey = account?.publicKey;
+          // Method 5: Try direct access if API is available
+          if (!publicKey && freighterApi.publicKey) {
+            publicKey = freighterApi.publicKey;
+            console.log('Got public key from direct access:', publicKey);
+          }
+          
+          // Method 6: Try newer Freighter API patterns
+          if (!publicKey && typeof freighterApi.getNetwork === 'function') {
+            try {
+              // Some newer versions expose public key through network info
+              const network = await freighterApi.getNetwork();
+              if (network && network.publicKey) {
+                publicKey = network.publicKey;
+                console.log('Got public key from network info:', publicKey);
+              }
+            } catch (e) {
+              console.log('getNetwork method failed...');
+            }
+          }
+          
+          // Method 7: Try to access through window.stellar if available
+          if (!publicKey && window.stellar && typeof window.stellar.getPublicKey === 'function') {
+            try {
+              publicKey = await window.stellar.getPublicKey();
+              console.log('Got public key from window.stellar:', publicKey);
+            } catch (e) {
+              console.log('window.stellar.getPublicKey failed...');
+            }
           }
           
         } catch (apiError) {
@@ -135,34 +309,25 @@ export const useStellarWallet = () => {
           setIsConnected(true);
           setShowManualInput(false);
           setError(null);
+          console.log('✅ Successfully connected to Freighter');
         } else {
-          throw new Error('Could not retrieve public key from Freighter');
+          // If we can't get the public key, show manual input option
+          console.log('⚠️ Could not retrieve public key from Freighter, showing manual input');
+          setShowManualInput(true);
+          setError('Could not retrieve public key from Freighter. You can connect manually or try refreshing the page.');
         }
       } else {
-        // Freighter not available, show manual input option
-        setShowManualInput(true);
-        setError('Freighter extension not detected. You can connect manually or install Freighter.');
-        console.log('Freighter API not found. Available window objects:', Object.keys(window).filter(key => 
-          key.toLowerCase().includes('freighter') || 
-          key.toLowerCase().includes('stellar') ||
-          key.toLowerCase().includes('wallet')
-        ));
+        // Try Stellar SDK connection as fallback
+        console.log('🔄 Freighter not available, trying Stellar SDK...');
+        await connectWithStellarSDK();
       }
     } catch (err) {
       console.error('Failed to connect Stellar wallet:', err);
-      
-      if (err.message?.includes('User rejected')) {
-        setError('Connection was cancelled by user');
-      } else if (err.message?.includes('not detected')) {
-        setShowManualInput(true);
-        setError('Freighter not detected. You can connect manually or install Freighter extension.');
-      } else {
-        setError(err.message || 'Failed to connect Stellar wallet');
-      }
+      setError(handleConnectionError(err));
     } finally {
       setIsLoading(false);
     }
-  }, [getFreighterApi]);
+  }, [getFreighterApi, connectWithStellarSDK, handleConnectionError]);
 
   const connectWithManualKey = useCallback(async () => {
     try {
@@ -190,6 +355,7 @@ export const useStellarWallet = () => {
       setIsConnected(true);
       setShowManualInput(false);
       setManualSecretKey('');
+      setConnectionMethod('manual');
     } catch (err) {
       console.error('Failed to connect with manual key:', err);
       setError('Invalid secret key. Please check and try again.');
@@ -209,6 +375,7 @@ export const useStellarWallet = () => {
       setError(null);
       setShowManualInput(false);
       setManualSecretKey('');
+      setConnectionMethod(null);
     } catch (err) {
       console.error('Failed to disconnect Stellar wallet:', err);
       setError('Failed to disconnect wallet');
@@ -262,13 +429,16 @@ export const useStellarWallet = () => {
     manualSecretKey,
     setManualSecretKey,
     freighterStatus,
+    connectionMethod,
     connect: connectWallet,
     connectWithManualKey,
+    connectWithStellarSDK,
     disconnect: disconnectWallet,
     signTransaction,
     signMessage,
     isFreighterAvailable,
     isOnCorrectNetwork,
     formatAddress,
+    installFreighter,
   };
 }; 
