@@ -8,31 +8,37 @@ import { sepolia } from 'wagmi/chains';
 export const useReownWallet = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const { address, isConnected, chainId } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
 
-  // Get WalletConnect connector
   const walletConnectConnector = connectors.find(
     connector => connector.id === 'walletConnect'
   );
 
   const connectWallet = useCallback(async () => {
+    if (!walletConnectConnector) {
+      setError('WalletConnect connector not available');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
       
-      if (!walletConnectConnector) {
-        throw new Error('WalletConnect connector not available');
-      }
-
       await connect({ connector: walletConnectConnector });
     } catch (err) {
-      console.error('Failed to connect wallet:', err);
-      setError(err.message);
-      throw err;
+      console.error('Wallet connection failed:', err);
+      
+      // Handle specific error types
+      if (err.message?.includes('403') || err.message?.includes('Forbidden')) {
+        setError('WalletConnect service temporarily unavailable. Please try again.');
+      } else if (err.message?.includes('User rejected')) {
+        setError('Connection was cancelled by user');
+      } else {
+        setError(err.message || 'Failed to connect wallet');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -40,31 +46,35 @@ export const useReownWallet = () => {
 
   const disconnectWallet = useCallback(async () => {
     try {
-      setIsLoading(true);
       await disconnect();
+      setError(null);
     } catch (err) {
-      console.error('Failed to disconnect wallet:', err);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+      console.error('Wallet disconnection failed:', err);
+      setError('Failed to disconnect wallet');
     }
   }, [disconnect]);
 
   const switchToSepolia = useCallback(async () => {
+    if (!isConnected) {
+      setError('Wallet not connected');
+      return;
+    }
+
     try {
-      if (!isConnected) {
-        throw new Error('Wallet not connected');
-      }
-
-      if (chainId === sepolia.id) {
-        return; // Already on Sepolia
-      }
-
+      setIsLoading(true);
+      setError(null);
+      
       await switchChain({ chainId: sepolia.id });
     } catch (err) {
-      console.error('Failed to switch to Sepolia:', err);
-      setError(err.message);
-      throw err;
+      console.error('Network switch failed:', err);
+      
+      if (err.message?.includes('User rejected')) {
+        setError('Network switch was cancelled by user');
+      } else {
+        setError('Failed to switch to Sepolia network');
+      }
+    } finally {
+      setIsLoading(false);
     }
   }, [isConnected, chainId, switchChain]);
 
@@ -77,20 +87,22 @@ export const useReownWallet = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   }, []);
 
+  // Clear error when wallet connects successfully
+  useEffect(() => {
+    if (isConnected && !isLoading) {
+      setError(null);
+    }
+  }, [isConnected, isLoading]);
+
   return {
-    // State
     isConnected,
     address,
     chainId,
     isLoading,
     error,
-    
-    // Actions
     connect: connectWallet,
     disconnect: disconnectWallet,
     switchToSepolia,
-    
-    // Utilities
     isOnCorrectNetwork,
     formatAddress,
   };

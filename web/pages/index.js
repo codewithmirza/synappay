@@ -62,8 +62,8 @@ export default function Home() {
         <WalletConnectionButton />
       </div>
 
-      {/* Main Content */}
-      <div className="flex items-center justify-center p-4">
+      {/* Main Content - Centered Vertically */}
+      <div className="min-h-screen flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -202,7 +202,6 @@ export default function Home() {
                   transition={{ delay: 0.4, duration: 0.6 }}
                   className="space-y-6"
                 >
-
                   {/* Error Display */}
                   {error && (
                     <motion.div

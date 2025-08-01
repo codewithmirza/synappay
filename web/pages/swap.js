@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle, AlertCircle, Loader, Shield, Zap, Star, ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowRight, CheckCircle, AlertCircle, Loader, Shield, Zap, Star, ArrowLeft, RefreshCw, Wallet } from 'lucide-react';
 import OneInchClient from '../lib/1inch-client';
 import ApiClient from '../lib/api-client';
 import { useCombinedWallet } from '../lib/useCombinedWallet';
@@ -135,8 +135,8 @@ export default function Swap() {
         <WalletConnectionButton />
       </div>
 
-      {/* Main Content */}
-      <div className="flex items-center justify-center p-4">
+      {/* Main Content - Centered Vertically */}
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="p-6 md:p-8 max-w-[600px] w-full">
           {/* Header */}
           <div className="text-center mb-8">
