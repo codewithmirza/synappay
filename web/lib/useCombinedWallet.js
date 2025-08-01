@@ -5,7 +5,6 @@ import { useReownWallet } from './useReownWallet';
 import { useStellarWallet } from './useStellarWallet';
 
 export const useCombinedWallet = () => {
-  // Ethereum wallet (Reown/WalletConnect)
   const {
     isConnected: ethConnected,
     address: ethAddress,
@@ -19,99 +18,71 @@ export const useCombinedWallet = () => {
     formatAddress: formatEthAddress,
   } = useReownWallet();
 
-  // Stellar wallet (Freighter)
   const {
     isConnected: stellarConnected,
     publicKey: stellarPublicKey,
     isLoading: stellarLoading,
     error: stellarError,
+    showManualInput,
+    manualSecretKey,
+    setManualSecretKey,
     connect: connectStellar,
+    connectWithManualKey,
     disconnect: disconnectStellar,
+    signTransaction: signStellarTransaction,
+    signMessage: signStellarMessage,
     isFreighterAvailable,
     isOnCorrectNetwork: isCorrectStellarNetwork,
     formatAddress: formatStellarAddress,
   } = useStellarWallet();
 
-  // Combined state
   const [combinedState, setCombinedState] = useState({
     bothConnected: false,
     canSwap: false,
     isLoading: false,
-    error: null,
+    error: null
   });
 
-  // Update combined state when either wallet changes
+  // Update combined state when individual wallet states change
   useEffect(() => {
     const bothConnected = ethConnected && stellarConnected;
-    const canSwap = bothConnected && 
-                   isCorrectEthNetwork() && 
-                   isCorrectStellarNetwork();
+    const canSwap = bothConnected && isCorrectEthNetwork() && isCorrectStellarNetwork();
+    const isLoading = ethLoading || stellarLoading;
+    const error = ethError || stellarError;
 
     setCombinedState({
       bothConnected,
       canSwap,
-      isLoading: ethLoading || stellarLoading,
-      error: ethError || stellarError,
+      isLoading,
+      error
     });
   }, [
-    ethConnected, 
-    stellarConnected, 
-    ethLoading, 
-    stellarLoading, 
-    ethError, 
-    stellarError,
-    isCorrectEthNetwork,
-    isCorrectStellarNetwork,
+    ethConnected, stellarConnected, ethLoading, stellarLoading,
+    ethError, stellarError, isCorrectEthNetwork, isCorrectStellarNetwork
   ]);
 
-  // Connect both wallets
   const connectBothWallets = useCallback(async () => {
     try {
-      setCombinedState(prev => ({ ...prev, isLoading: true, error: null }));
-
-      // Connect Ethereum first
-      if (!ethConnected) {
-        await connectEth();
-      }
-
-      // Connect Stellar second
-      if (!stellarConnected) {
-        await connectStellar();
-      }
-
-      return { success: true };
+      // Try to connect both wallets
+      await Promise.all([
+        connectEth().catch(err => console.error('ETH connection failed:', err)),
+        connectStellar().catch(err => console.error('Stellar connection failed:', err))
+      ]);
     } catch (error) {
       console.error('Failed to connect both wallets:', error);
-      setCombinedState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error.message 
-      }));
-      throw error;
     }
-  }, [ethConnected, stellarConnected, connectEth, connectStellar]);
+  }, [connectEth, connectStellar]);
 
-  // Disconnect both wallets
   const disconnectBothWallets = useCallback(async () => {
     try {
-      setCombinedState(prev => ({ ...prev, isLoading: true }));
-
-      if (ethConnected) {
-        await disconnectEth();
-      }
-
-      if (stellarConnected) {
-        await disconnectStellar();
-      }
+      await Promise.all([
+        disconnectEth().catch(err => console.error('ETH disconnection failed:', err)),
+        disconnectStellar().catch(err => console.error('Stellar disconnection failed:', err))
+      ]);
     } catch (error) {
-      console.error('Failed to disconnect wallets:', error);
-      setCombinedState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error.message 
-      }));
+      console.error('Failed to disconnect both wallets:', error);
     }
-  }, [ethConnected, stellarConnected, disconnectEth, disconnectStellar]);
+  }, [disconnectEth, disconnectStellar]);
 
   return {
     // Ethereum wallet
@@ -131,20 +102,21 @@ export const useCombinedWallet = () => {
     stellarPublicKey,
     stellarLoading,
     stellarError,
+    showManualInput,
+    manualSecretKey,
+    setManualSecretKey,
     connectStellar,
+    connectWithManualKey,
     disconnectStellar,
+    signStellarTransaction,
+    signStellarMessage,
     isFreighterAvailable,
     isCorrectStellarNetwork,
     formatStellarAddress,
 
     // Combined state
-    bothConnected: combinedState.bothConnected,
-    canSwap: combinedState.canSwap,
-    isLoading: combinedState.isLoading,
-    error: combinedState.error,
-
-    // Combined actions
-    connectBoth: connectBothWallets,
-    disconnectBoth: disconnectBothWallets,
+    ...combinedState,
+    connectBothWallets,
+    disconnectBothWallets,
   };
 }; 

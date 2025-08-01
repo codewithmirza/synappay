@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, ChevronDown, CheckCircle, AlertCircle, Coins, Star } from 'lucide-react';
+import { Wallet, ChevronDown, CheckCircle, AlertCircle, Coins, Star, Download, Key, X } from 'lucide-react';
 import { useCombinedWallet } from '../lib/useCombinedWallet';
 
 export default function WalletConnectionButton() {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showStellarManual, setShowStellarManual] = useState(false);
+  
   const {
     // Ethereum wallet
     ethConnected,
@@ -25,8 +27,13 @@ export default function WalletConnectionButton() {
     stellarPublicKey,
     stellarLoading,
     stellarError,
+    showManualInput,
+    manualSecretKey,
+    setManualSecretKey,
     connectStellar,
+    connectWithManualKey,
     disconnectStellar,
+    isFreighterAvailable,
     formatStellarAddress,
     
     // Combined state
@@ -49,6 +56,15 @@ export default function WalletConnectionButton() {
       await connectStellar();
     } catch (error) {
       console.error('Failed to connect Stellar wallet:', error);
+    }
+  };
+
+  const handleManualStellarConnect = async () => {
+    try {
+      await connectWithManualKey();
+      setShowStellarManual(false);
+    } catch (error) {
+      console.error('Failed to connect with manual key:', error);
     }
   };
 
@@ -103,99 +119,256 @@ export default function WalletConnectionButton() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 p-4 z-50"
+            className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-lg border border-gray-200 p-6 z-50"
           >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Wallet Connection</h3>
+              <button
+                onClick={() => setShowDropdown(false)}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+
             {/* Ethereum Wallet Section */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-900">Ethereum Wallet</h3>
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <Wallet className="w-5 h-5 text-blue-600" />
+                  <h4 className="font-semibold text-gray-900">Ethereum Wallet</h4>
+                </div>
                 {ethConnected ? (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-5 h-5 text-green-600" />
                 ) : (
-                  <AlertCircle className="w-4 h-4 text-gray-400" />
+                  <AlertCircle className="w-5 h-5 text-gray-400" />
                 )}
               </div>
               
               {ethConnected ? (
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-600 font-mono">{formatEthAddress(ethAddress)}</p>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      isCorrectEthNetwork() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {isCorrectEthNetwork() ? 'Sepolia' : 'Wrong Network'}
-                    </span>
-                    {!isCorrectEthNetwork() && (
-                      <button
-                        onClick={handleNetworkSwitch}
-                        className="text-xs text-blue-600 hover:text-blue-700"
-                      >
-                        Switch
-                      </button>
-                    )}
+                <div className="space-y-3">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-600 mb-1">Connected Address</p>
+                    <p className="font-mono text-sm text-gray-900">{formatEthAddress(ethAddress)}</p>
                   </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Network</span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        isCorrectEthNetwork() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {isCorrectEthNetwork() ? 'Sepolia' : 'Wrong Network'}
+                      </span>
+                      {!isCorrectEthNetwork() && (
+                        <button
+                          onClick={handleNetworkSwitch}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          Switch
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
                   <button
                     onClick={disconnectEth}
-                    className="text-xs text-red-600 hover:text-red-700"
+                    className="w-full text-sm text-red-600 hover:text-red-700 font-medium"
                   >
-                    Disconnect
+                    Disconnect Ethereum
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={handleConnectEth}
-                  disabled={ethLoading}
-                  className="w-full bg-black text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
-                >
-                  {ethLoading ? 'Connecting...' : 'Connect Ethereum'}
-                </button>
+                <div className="space-y-3">
+                  <button
+                    onClick={handleConnectEth}
+                    disabled={ethLoading}
+                    className="w-full bg-black text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                  >
+                    {ethLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Connecting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="w-4 h-4" />
+                        <span>Connect Ethereum</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <div className="text-xs text-gray-500 text-center">
+                    Supports MetaMask, Trust Wallet, Rainbow, and more
+                  </div>
+                </div>
               )}
               
               {ethError && (
-                <p className="text-xs text-red-600 mt-1">{ethError}</p>
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-xs text-red-600">{ethError}</p>
+                </div>
               )}
             </div>
 
             {/* Stellar Wallet Section */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-900">Stellar Wallet</h3>
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <Star className="w-5 h-5 text-purple-600" />
+                  <h4 className="font-semibold text-gray-900">Stellar Wallet</h4>
+                </div>
                 {stellarConnected ? (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-5 h-5 text-green-600" />
                 ) : (
-                  <AlertCircle className="w-4 h-4 text-gray-400" />
+                  <AlertCircle className="w-5 h-5 text-gray-400" />
                 )}
               </div>
               
               {stellarConnected ? (
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-600 font-mono">{formatStellarAddress(stellarPublicKey)}</p>
+                <div className="space-y-3">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-600 mb-1">Connected Address</p>
+                    <p className="font-mono text-sm text-gray-900">{formatStellarAddress(stellarPublicKey)}</p>
+                  </div>
+                  
                   <button
                     onClick={disconnectStellar}
-                    className="text-xs text-red-600 hover:text-red-700"
+                    className="w-full text-sm text-red-600 hover:text-red-700 font-medium"
                   >
-                    Disconnect
+                    Disconnect Stellar
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={handleConnectStellar}
-                  disabled={stellarLoading}
-                  className="w-full bg-black text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
-                >
-                  {stellarLoading ? 'Connecting...' : 'Connect Stellar'}
-                </button>
+                <div className="space-y-3">
+                  {!isFreighterAvailable() && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600" />
+                        <span className="text-sm font-medium text-amber-900">Freighter Not Detected</span>
+                      </div>
+                      <p className="text-xs text-amber-700 mb-3">
+                        Install Freighter extension for the best experience
+                      </p>
+                      <a
+                        href="https://www.freighter.app/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-amber-600 text-white px-3 py-1 rounded text-xs hover:bg-amber-700 transition-colors inline-flex items-center space-x-1"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Install Freighter</span>
+                      </a>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleConnectStellar}
+                      disabled={stellarLoading}
+                      className="w-full bg-black text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                    >
+                      {stellarLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Connecting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Star className="w-4 h-4" />
+                          <span>Connect Stellar (Freighter)</span>
+                        </>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowStellarManual(true)}
+                      className="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <Key className="w-4 h-4" />
+                      <span>Connect Manually</span>
+                    </button>
+                  </div>
+                </div>
               )}
               
               {stellarError && (
-                <p className="text-xs text-red-600 mt-1">{stellarError}</p>
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-xs text-red-600">{stellarError}</p>
+                </div>
               )}
             </div>
 
+            {/* Manual Stellar Input Modal */}
+            <AnimatePresence>
+              {showStellarManual && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                  onClick={() => setShowStellarManual(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    className="bg-white rounded-xl p-6 w-96 max-w-sm"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Manual Stellar Connection</h3>
+                      <button
+                        onClick={() => setShowStellarManual(false)}
+                        className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4 text-gray-500" />
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Stellar Secret Key
+                        </label>
+                        <input
+                          type="password"
+                          value={manualSecretKey}
+                          onChange={(e) => setManualSecretKey(e.target.value)}
+                          placeholder="S... (56 characters)"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Enter your Stellar secret key (starts with "S")
+                        </p>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleManualStellarConnect}
+                          disabled={!manualSecretKey || manualSecretKey.length < 56}
+                          className="flex-1 bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+                        >
+                          Connect
+                        </button>
+                        <button
+                          onClick={() => setShowStellarManual(false)}
+                          className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Status Section */}
-            <div className="border-t border-gray-200 pt-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-900">Status</span>
+            <div className="border-t border-gray-200 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-gray-900">Connection Status</span>
                 {bothConnected ? (
                   <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Ready to Swap</span>
                 ) : (
@@ -203,10 +376,33 @@ export default function WalletConnectionButton() {
                 )}
               </div>
               
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Ethereum</span>
+                  <span className={ethConnected ? 'text-green-600' : 'text-red-600'}>
+                    {ethConnected ? 'Connected' : 'Not Connected'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Stellar</span>
+                  <span className={stellarConnected ? 'text-green-600' : 'text-red-600'}>
+                    {stellarConnected ? 'Connected' : 'Not Connected'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Ready to Swap</span>
+                  <span className={canSwap ? 'text-green-600' : 'text-red-600'}>
+                    {canSwap ? 'Yes' : 'No'}
+                  </span>
+                </div>
+              </div>
+              
               {bothConnected && (
                 <button
                   onClick={() => window.location.href = '/swap'}
-                  className="w-full bg-black text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+                  className="w-full mt-3 bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
                 >
                   Start Swapping
                 </button>
@@ -215,7 +411,7 @@ export default function WalletConnectionButton() {
 
             {/* Error Display */}
             {error && (
-              <div className="border-t border-gray-200 pt-3">
+              <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center space-x-2">
                   <AlertCircle className="w-4 h-4 text-red-500" />
                   <span className="text-xs text-red-600">{error}</span>
