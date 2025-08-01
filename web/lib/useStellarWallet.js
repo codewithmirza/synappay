@@ -7,8 +7,6 @@ export const useStellarWallet = () => {
   const [publicKey, setPublicKey] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [showManualInput, setShowManualInput] = useState(false);
-  const [manualSecretKey, setManualSecretKey] = useState('');
   const [connectionMethod, setConnectionMethod] = useState(null);
   const [freighterStatus, setFreighterStatus] = useState('checking');
 
@@ -25,9 +23,18 @@ export const useStellarWallet = () => {
         WalletNetwork, 
         FreighterModule,
         xBullModule,
+        AlbedoModule,
+        RabetModule,
+        LobstrModule,
+        HanaModule,
+        HotWalletModule,
         FREIGHTER_ID,
         XBULL_ID,
-        allowAllModules 
+        ALBEDO_ID,
+        RABET_ID,
+        LOBSTR_ID,
+        HANA_ID,
+        HOTWALLET_ID
       } = await import('@creit.tech/stellar-wallets-kit');
       
       console.log('Environment variable NEXT_PUBLIC_STELLAR_NETWORK:', process.env.NEXT_PUBLIC_STELLAR_NETWORK);
@@ -40,17 +47,26 @@ export const useStellarWallet = () => {
       
       console.log('Using network enum:', network);
       
+      // Initialize with only the modules that actually exist
       const kit = new StellarWalletsKit({
         network,
         selectedWalletId: localStorage.getItem('selectedWallet') || FREIGHTER_ID,
-        modules: [new FreighterModule(), new xBullModule()]
+        modules: [
+          new FreighterModule(),
+          new xBullModule(),
+          new AlbedoModule(),
+          new RabetModule(),
+          new LobstrModule(),
+          new HanaModule(),
+          new HotWalletModule()
+        ]
       });
       
       setKitRef(kit);
-      console.log('Stellar Wallets Kit initialized successfully');
+      console.log('Stellar Wallets Kit initialized successfully with available wallet modules');
     } catch (err) {
       console.error('Failed to initialize Stellar Wallets Kit:', err);
-      setError('Failed to initialize wallet kit. Falling back to manual input.');
+      setError('Failed to initialize wallet kit. Please try refreshing the page.');
     }
   }, []);
 
@@ -72,31 +88,18 @@ export const useStellarWallet = () => {
     };
   }, [initializeKit]);
 
-  const isAnyStellarWalletAvailable = useCallback(() => {
+  const isAnyStellarWalletAvailable = useCallback(async () => {
     if (!kitRef) return false;
     
     try {
-      // Check if any wallet is available - try different API methods
-      console.log('Checking available wallets with kit:', kitRef);
+      console.log('Checking available wallets with Stellar Wallets Kit...');
       
-      // Try to get available wallets - the method might be different
-      if (typeof kitRef.getAvailableWallets === 'function') {
-        const availableWallets = kitRef.getAvailableWallets();
-        console.log('Available Stellar wallets:', availableWallets);
-        return availableWallets && availableWallets.length > 0;
-      } else if (typeof kitRef.getWallets === 'function') {
-        const wallets = kitRef.getWallets();
-        console.log('Available Stellar wallets:', wallets);
-        return wallets && wallets.length > 0;
-      } else {
-        // If we can't check available wallets, assume they're available
-        console.log('Cannot check available wallets, assuming available');
-        return true;
-      }
+      // The kit handles wallet availability internally
+      // We'll assume wallets are available and let the kit handle detection
+      return true;
     } catch (err) {
       console.error('Error checking available wallets:', err);
-      // If we can't check, assume wallets are available
-      return true;
+      return false;
     }
   }, [kitRef]);
 
@@ -107,6 +110,7 @@ export const useStellarWallet = () => {
 
     try {
       console.log('Opening Stellar wallet selection modal...');
+      
       await kitRef.openModal({
         onWalletSelected: async (option) => {
           console.log('Wallet selected:', option);
@@ -140,72 +144,29 @@ export const useStellarWallet = () => {
       setIsLoading(true);
       setError(null);
 
-      // Try Stellar Wallets Kit first if available
       if (kitRef) {
         console.log('Stellar Wallets Kit available, attempting connection...');
-        try {
-          await connectWithStellarKit();
-          return;
-        } catch (kitErr) {
-          console.error('Stellar Wallets Kit connection failed:', kitErr);
-          // Continue to manual fallback
-        }
+        await connectWithStellarKit();
+      } else {
+        throw new Error('Stellar Wallets Kit not initialized');
       }
-
-      console.log('No Stellar wallets available or kit not initialized, showing manual input...');
-      // Fallback to manual input
-      setShowManualInput(true);
-      setConnectionMethod('manual');
     } catch (err) {
       console.error('Failed to connect Stellar wallet:', err);
       setError(err.message || 'Failed to connect Stellar wallet');
-      
-      // If kit fails, show manual input as fallback
-      setShowManualInput(true);
-      setConnectionMethod('manual');
     } finally {
       setIsLoading(false);
     }
   }, [kitRef, connectWithStellarKit]);
 
-  // Manual connection with secret key
-  const connectWithManualKey = useCallback(async (secretKey) => {
-    console.log('Attempting manual connection with secret key...');
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Validate secret key format
-      if (!secretKey.startsWith('S') || secretKey.length !== 56) {
-        throw new Error('Invalid secret key format. Must start with "S" and be 56 characters long.');
-      }
-
-      // For manual connection, we'll just store the secret key
-      // In a real implementation, you'd validate it against the network
-      setPublicKey(secretKey); // In production, derive public key from secret
-      setIsConnected(true);
-      setConnectionMethod('manual');
-      setError(null);
-      console.log('Manual connection successful');
-    } catch (err) {
-      console.error('Failed to connect with manual key:', err);
-      setError(`Manual connection failed: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   const disconnectWallet = useCallback(async () => {
     console.log('Disconnecting Stellar wallet...');
     try {
-      if (kitRef && connectionMethod !== 'manual') {
+      if (kitRef) {
         await kitRef.disconnect();
       }
       
       setPublicKey(null);
       setIsConnected(false);
-      setShowManualInput(false);
-      setManualSecretKey('');
       setConnectionMethod(null);
       setError(null);
       console.log('Stellar wallet disconnected');
@@ -213,7 +174,7 @@ export const useStellarWallet = () => {
       console.error('Failed to disconnect Stellar wallet:', err);
       setError('Failed to disconnect wallet');
     }
-  }, [kitRef, connectionMethod]);
+  }, [kitRef]);
 
   const signTransaction = useCallback(async (transaction) => {
     if (!kitRef || !isConnected) {
@@ -221,16 +182,12 @@ export const useStellarWallet = () => {
     }
 
     try {
-      if (connectionMethod === 'manual') {
-        throw new Error('Manual connection does not support transaction signing');
-      }
-      
       return await kitRef.signTransaction(transaction);
     } catch (err) {
       console.error('Failed to sign transaction:', err);
       throw err;
     }
-  }, [kitRef, isConnected, connectionMethod]);
+  }, [kitRef, isConnected]);
 
   const signMessage = useCallback(async (message) => {
     if (!kitRef || !isConnected) {
@@ -238,16 +195,12 @@ export const useStellarWallet = () => {
     }
 
     try {
-      if (connectionMethod === 'manual') {
-        throw new Error('Manual connection does not support message signing');
-      }
-      
       return await kitRef.signMessage(message);
     } catch (err) {
       console.error('Failed to sign message:', err);
       throw err;
     }
-  }, [kitRef, isConnected, connectionMethod]);
+  }, [kitRef, isConnected]);
 
   const getBalance = useCallback(async () => {
     if (!kitRef || !isConnected) {
@@ -255,16 +208,12 @@ export const useStellarWallet = () => {
     }
 
     try {
-      if (connectionMethod === 'manual') {
-        throw new Error('Manual connection does not support balance checking');
-      }
-      
       return await kitRef.getBalance();
     } catch (err) {
       console.error('Failed to get balance:', err);
       throw err;
     }
-  }, [kitRef, isConnected, connectionMethod]);
+  }, [kitRef, isConnected]);
 
   const getAccountInfo = useCallback(async () => {
     if (!kitRef || !isConnected) {
@@ -272,16 +221,12 @@ export const useStellarWallet = () => {
     }
 
     try {
-      if (connectionMethod === 'manual') {
-        throw new Error('Manual connection does not support account info');
-      }
-      
       return await kitRef.getAccountInfo();
     } catch (err) {
       console.error('Failed to get account info:', err);
       throw err;
     }
-  }, [kitRef, isConnected, connectionMethod]);
+  }, [kitRef, isConnected]);
 
   const isOnCorrectNetwork = useCallback(() => {
     // For Stellar, we're always on the correct network (testnet/mainnet)
@@ -299,9 +244,9 @@ export const useStellarWallet = () => {
 
   // Check wallet availability on mount
   useEffect(() => {
-    const checkWalletAvailability = () => {
+    const checkWalletAvailability = async () => {
       try {
-        const available = isAnyStellarWalletAvailable();
+        const available = await isAnyStellarWalletAvailable();
         console.log('Checking Stellar wallet availability:', available);
         setFreighterStatus(available ? 'available' : 'not_available');
       } catch (err) {
@@ -325,11 +270,7 @@ export const useStellarWallet = () => {
     publicKey,
     isLoading,
     error,
-    showManualInput,
-    manualSecretKey,
-    setManualSecretKey,
     connect: connectWallet,
-    connectWithManualKey,
     disconnect: disconnectWallet,
     signTransaction,
     signMessage,

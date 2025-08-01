@@ -22,11 +22,7 @@ export default function WalletConnectionButton() {
     stellarPublicKey,
     stellarLoading,
     stellarError,
-    showManualInput,
-    manualSecretKey,
-    setManualSecretKey,
     connectStellar,
-    connectWithManualKey,
     disconnectStellar,
     formatStellarAddress,
     
@@ -235,62 +231,17 @@ export default function WalletConnectionButton() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {/* Manual Input Section */}
-                  {showManualInput ? (
-                    <div className="space-y-2">
-                      <div className="text-xs text-gray-600 mb-2">
-                        Enter your Stellar secret key (starts with 'S', 56 characters)
-                      </div>
-                      <input
-                        type="password"
-                        placeholder="S... (56 characters)"
-                        value={manualSecretKey}
-                        onChange={(e) => setManualSecretKey(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      />
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={connectWithManualKey}
-                          disabled={stellarLoading || !manualSecretKey}
-                          className="flex-1 px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50"
-                        >
-                          {stellarLoading ? 'Connecting...' : 'Connect'}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setManualSecretKey('');
-                            disconnectStellar();
-                          }}
-                          className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                      {stellarError && (
-                        <div className="flex items-center space-x-2 text-red-600 text-sm">
-                          <AlertCircle size={14} />
-                          <span>{stellarError}</span>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => {
-                          console.log('Stellar button clicked - test');
-                          handleConnectStellar();
-                        }}
-                        disabled={stellarLoading}
-                        className="w-full px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50"
-                      >
-                        {stellarLoading ? 'Connecting...' : 'Connect Stellar'}
-                      </button>
-                      {stellarError && (
-                        <div className="flex items-center space-x-2 text-red-600 text-sm">
-                          <AlertCircle size={14} />
-                          <span>{stellarError}</span>
-                        </div>
-                      )}
+                  <button
+                    onClick={handleConnectStellar}
+                    disabled={stellarLoading}
+                    className="w-full px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50"
+                  >
+                    {stellarLoading ? 'Connecting...' : 'Connect Stellar'}
+                  </button>
+                  {stellarError && (
+                    <div className="flex items-center space-x-2 text-red-600 text-sm">
+                      <AlertCircle size={14} />
+                      <span>{stellarError}</span>
                     </div>
                   )}
                 </div>
