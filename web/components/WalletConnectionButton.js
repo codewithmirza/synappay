@@ -23,9 +23,6 @@ export default function WalletConnectionButton() {
     connectStellar,
     disconnectStellar,
     formatStellarAddress,
-    installFreighter,
-    freighterStatus,
-    isFreighterAvailable,
     
     bothConnected,
     canSwap,
@@ -117,8 +114,10 @@ export default function WalletConnectionButton() {
               </div>
               {showDebug && (
                 <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                  <div><strong>Freighter Status:</strong> {freighterStatus}</div>
-                  <div><strong>Freighter Available:</strong> {isFreighterAvailable() ? 'Yes' : 'No'}</div>
+                  <div><strong>Ethereum Connected:</strong> {ethConnected ? 'Yes' : 'No'}</div>
+                  <div><strong>Stellar Connected:</strong> {stellarConnected ? 'Yes' : 'No'}</div>
+                  <div><strong>Both Connected:</strong> {bothConnected ? 'Yes' : 'No'}</div>
+                  <div><strong>Can Swap:</strong> {canSwap ? 'Yes' : 'No'}</div>
                   <div><strong>Protocol:</strong> {typeof window !== 'undefined' ? window.location.protocol : 'N/A'}</div>
                   <div><strong>Hostname:</strong> {typeof window !== 'undefined' ? window.location.hostname : 'N/A'}</div>
                 </div>
@@ -206,20 +205,9 @@ export default function WalletConnectionButton() {
                     {stellarLoading ? 'Connecting...' : 'Connect Stellar'}
                   </button>
                   {stellarError && (
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 text-red-600 text-sm">
-                        <AlertCircle size={14} />
-                        <span>{stellarError}</span>
-                      </div>
-                      {stellarError.includes('Freighter not detected') && (
-                        <button
-                          onClick={installFreighter}
-                          className="w-full px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center justify-center space-x-2"
-                        >
-                          <Download size={14} />
-                          <span>Install Freighter</span>
-                        </button>
-                      )}
+                    <div className="flex items-center space-x-2 text-red-600 text-sm">
+                      <AlertCircle size={14} />
+                      <span>{stellarError}</span>
                     </div>
                   )}
                 </div>

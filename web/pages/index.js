@@ -225,7 +225,7 @@ export default function Home() {
                       <span>•</span>
                       <span>Trust Wallet</span>
                       <span>•</span>
-                      <span>Freighter</span>
+                      <span>StellarSnap</span>
                       <span>•</span>
                       <span>Rainbow</span>
                     </div>
@@ -236,6 +236,14 @@ export default function Home() {
           </div>
         </motion.div>
       </div>
+
+      {/* Click outside to close */}
+      {/* showDropdown && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowDropdown(false)}
+        />
+      ) */}
     </div>
   );
 } 
