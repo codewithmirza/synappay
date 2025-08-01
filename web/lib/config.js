@@ -43,8 +43,8 @@ const config = {
     metadata: {
       name: 'SynapPay',
       description: 'Cross-chain swaps with 1inch Fusion+',
-      url: 'https://synappay.com',
-      icons: ['https://synappay.com/icon.png'],
+      url: 'https://www.synappay.com',
+      icons: ['https://www.synappay.com/icon.png'],
     },
   },
   tokens: {

@@ -116,7 +116,7 @@ export default function HelpDark() {
               </div>
               <div>
                 <div className="font-medium text-white">Email Support</div>
-                <div className="text-sm text-gray-400">support@synappay.com</div>
+                <div className="text-sm text-gray-400">support@www.synappay.com</div>
               </div>
             </div>
             

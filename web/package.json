@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@1inch/fusion-sdk": "^2.3.5",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@walletconnect/ethereum-provider": "^2.21.6",

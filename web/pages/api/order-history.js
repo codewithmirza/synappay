@@ -1,4 +1,4 @@
-import FusionClient from '../../../src/fusion/client';
+import FusionClient from '../../lib/fusion-client';
 
 let fusionClient = null;
 
@@ -16,115 +16,71 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { maker } = req.query;
+    const { address } = req.query;
     
-    if (!maker) {
+    if (!address) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Maker address is required' 
+        error: 'Wallet address is required' 
       });
     }
 
     const client = await initializeFusionClient();
     
-    // Get all orders for the maker
-    const ordersResult = await client.getActiveOrders(maker);
-    
-    if (!ordersResult.success) {
-      return res.status(500).json({
-        success: false,
-        error: ordersResult.error
-      });
-    }
+    // Mock order history for now
+    const mockOrders = [
+      {
+        orderHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+        status: 'FILLED',
+        makerAsset: 'ETH',
+        takerAsset: 'USDC',
+        makerAmount: '1000000000000000000', // 1 ETH
+        takerAmount: '2847000000', // 2847 USDC
+        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+        filledAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+        price: '2847',
+        priceImpact: '0.15%'
+      },
+      {
+        orderHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+        status: 'ACTIVE',
+        makerAsset: 'ETH',
+        takerAsset: 'USDC',
+        makerAmount: '500000000000000000', // 0.5 ETH
+        takerAmount: '1423500000', // 1423.5 USDC
+        createdAt: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
+        filledAt: null,
+        price: '2847',
+        priceImpact: '0.08%'
+      },
+      {
+        orderHash: '0x7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456',
+        status: 'EXPIRED',
+        makerAsset: 'ETH',
+        takerAsset: 'USDC',
+        makerAmount: '200000000000000000', // 0.2 ETH
+        takerAmount: '569400000', // 569.4 USDC
+        createdAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+        filledAt: null,
+        price: '2847',
+        priceImpact: '0.05%'
+      }
+    ];
 
-    // Enhance each order with detailed status and auction information
-    const enhancedOrders = await Promise.all(
-      ordersResult.orders.map(async (order) => {
-        try {
-          // Get detailed status for each order
-          const [orderStatus, auctionStatus, auctionStats] = await Promise.all([
-            client.getOrderStatus(order.orderHash),
-            client.getAuctionStatus(order.orderHash),
-            client.getAuctionStats(order.orderHash)
-          ]);
-
-          return {
-            orderHash: order.orderHash,
-            maker: order.maker,
-            makerAsset: order.makerAsset,
-            takerAsset: order.takerAsset,
-            makingAmount: order.makingAmount,
-            takingAmount: order.takingAmount,
-            createdAt: order.createdAt || Date.now(),
-            
-            // Enhanced status information
-            status: {
-              current: auctionStatus.status || 'ACTIVE',
-              description: getStatusDescription(auctionStatus.status),
-              canRefund: auctionStatus.status === 'EXPIRED',
-              canClaim: auctionStatus.status === 'FILLED'
-            },
-            
-            // Auction details
-            auction: {
-              isActive: auctionStatus.status === 'ACTIVE',
-              resolverCount: auctionStatus.resolvers || 0,
-              bestOffer: auctionStatus.bestOffer,
-              timeElapsed: auctionStatus.elapsed || 0,
-              finalResolver: auctionStatus.status === 'FILLED' ? auctionStatus.bestOffer : null
-            },
-            
-            // Fill information
-            fill: {
-              wasFilled: auctionStatus.status === 'FILLED',
-              wasExpired: auctionStatus.status === 'EXPIRED',
-              wasRefunded: auctionStatus.status === 'EXPIRED',
-              finalPrice: auctionStats.success ? auctionStats.stats?.finalPrice : null,
-              slippage: calculateSlippage(order, auctionStats.success ? auctionStats.stats : null),
-              fillTime: auctionStatus.status === 'FILLED' ? Date.now() : null
-            },
-            
-            // Price and slippage information
-            pricing: {
-              initialPrice: order.makingAmount / order.takingAmount,
-              finalPrice: auctionStats.success ? auctionStats.stats?.finalPrice : null,
-              slippage: calculateSlippage(order, auctionStats.success ? auctionStats.stats : null),
-              priceImpact: calculatePriceImpact(order, auctionStats.success ? auctionStats.stats : null)
-            }
-          };
-        } catch (error) {
-          console.error(`Error enhancing order ${order.orderHash}:`, error);
-          return {
-            ...order,
-            status: { current: 'ERROR', description: 'Error loading status' },
-            auction: { isActive: false, resolverCount: 0 },
-            fill: { wasFilled: false, wasExpired: false, wasRefunded: false },
-            pricing: { initialPrice: 0, finalPrice: 0, slippage: 0, priceImpact: 0 }
-          };
-        }
-      })
-    );
-
-    // Group orders by status for better organization
-    const organizedHistory = {
-      active: enhancedOrders.filter(order => order.auction.isActive),
-      completed: enhancedOrders.filter(order => order.fill.wasFilled),
-      expired: enhancedOrders.filter(order => order.fill.wasExpired),
-      refunded: enhancedOrders.filter(order => order.fill.wasRefunded)
+    const orderHistory = {
+      success: true,
+      address: address,
+      orders: mockOrders,
+      stats: {
+        totalOrders: mockOrders.length,
+        filledOrders: mockOrders.filter(o => o.status === 'FILLED').length,
+        activeOrders: mockOrders.filter(o => o.status === 'ACTIVE').length,
+        expiredOrders: mockOrders.filter(o => o.status === 'EXPIRED').length,
+        totalVolume: mockOrders.reduce((sum, o) => sum + parseFloat(o.makerAmount) / 1e18, 0).toFixed(2) + ' ETH'
+      }
     };
 
-    res.status(200).json({
-      success: true,
-      orders: enhancedOrders,
-      organized: organizedHistory,
-      summary: {
-        total: enhancedOrders.length,
-        active: organizedHistory.active.length,
-        completed: organizedHistory.completed.length,
-        expired: organizedHistory.expired.length,
-        refunded: organizedHistory.refunded.length
-      }
-    });
+    res.status(200).json(orderHistory);
 
   } catch (error) {
     console.error('Error getting order history:', error);

@@ -2,74 +2,120 @@ import { EthereumProvider } from '@walletconnect/ethereum-provider';
 import { WalletConnectModal } from '@walletconnect/modal';
 
 // WalletConnect Configuration
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'YOUR_PROJECT_ID';
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 
-// Ethereum Provider Configuration
-export const ethereumProvider = EthereumProvider.init({
-  projectId,
-  chains: [11155111], // Sepolia testnet
-  showQrModal: true,
+// Get the current domain dynamically
+const getCurrentDomain = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'https://www.synappay.com'; // fallback
+};
+
+// WalletConnect Configuration
+const ethereumProvider = EthereumProvider.init({
+  projectId: projectId,
+  chains: [
+    {
+      id: 11155111, // Sepolia
+      name: 'Sepolia',
+      network: 'sepolia',
+      nativeCurrency: {
+        name: 'Ether',
+        symbol: 'ETH',
+        decimals: 18,
+      },
+      rpcUrls: {
+        default: { http: [process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL] },
+        public: { http: [process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL] },
+      },
+      blockExplorers: {
+        default: { name: 'Etherscan', url: 'https://sepolia.etherscan.io' },
+      },
+    },
+  ],
+  showQrModal: false, // We'll use our own modal
   metadata: {
     name: 'SynapPay',
-    description: 'Cross-Chain ETH ↔ XLM Swaps',
-    url: 'https://synappay.com',
-    icons: ['https://synappay.com/icon.png']
-  }
+    description: 'Cross-chain swaps between Ethereum and Stellar',
+    url: getCurrentDomain(),
+    icons: [`${getCurrentDomain()}/icons/icon-512.png`],
+  },
 });
 
 // Modal Configuration
-export const modal = new WalletConnectModal({
-  projectId,
+const modal = new WalletConnectModal({
+  projectId: projectId,
+  walletConnectVersion: 2,
   themeMode: 'dark',
   themeVariables: {
-    '--w3m-accent-color': '#000000',
-    '--w3m-background-color': '#ffffff',
-    '--w3m-overlay-background-color': 'rgba(0,0,0,0.4)',
-    '--w3m-container-border-radius': '20px',
-    '--w3m-font-family': 'Inter, sans-serif',
+    '--w3m-z-index': '9999',
+    '--w3m-accent-color': '#6366f1',
+    '--w3m-background-color': '#1f2937',
+    '--w3m-overlay-background-color': 'rgba(0, 0, 0, 0.8)',
   },
-  walletConnectVersion: 2,
-  defaultChain: 11155111, // Sepolia
-  includeWalletIds: [
-    'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274ecc67e96b', // MetaMask
-    '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd1daaca4f5', // Trust Wallet
-    'fd20dc426fb37566d803205b19bbc1d4096b248ac04548e3cfb6b3a38bd7aa47', // Coinbase Wallet
-    '225affb176778569276e484e1c926e508ba0f5b6', // Rainbow
-    '19177a98252e07ddfc9af2083ba8e07ef627cb610', // Argent
-  ]
+  mobileWallets: [
+    {
+      id: 'metamask',
+      name: 'MetaMask',
+      links: {
+        native: 'metamask://',
+        universal: 'https://metamask.app.link',
+      },
+    },
+    {
+      id: 'trust',
+      name: 'Trust Wallet',
+      links: {
+        native: 'trust://',
+        universal: 'https://link.trustwallet.com',
+      },
+    },
+  ],
+  desktopWallets: [
+    {
+      id: 'metamask',
+      name: 'MetaMask',
+      links: {
+        native: 'metamask://',
+        universal: 'https://metamask.app.link',
+      },
+    },
+  ],
 });
 
-// Wallet Connection State Management
+// WalletConnect Manager Class
 class WalletConnectManager {
   constructor() {
     this.provider = null;
-    this.address = null;
+    this.accounts = [];
     this.chainId = null;
     this.isConnected = false;
-    this.listeners = new Set();
+    this.listeners = [];
   }
 
-  // Initialize WalletConnect
   async initialize() {
     try {
+      if (!ethereumProvider) {
+        throw new Error('EthereumProvider not initialized');
+      }
+
+      // Wait for provider to be ready
+      await ethereumProvider.connect();
+      
       this.provider = ethereumProvider;
       
       // Set up event listeners
-      this.provider.on('accountsChanged', this.handleAccountsChanged.bind(this));
-      this.provider.on('chainChanged', this.handleChainChanged.bind(this));
-      this.provider.on('disconnect', this.handleDisconnect.bind(this));
+      this.setupEventListeners();
       
       // Check if already connected
       if (this.provider.connected) {
-        const accounts = await this.provider.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          this.address = accounts[0];
-          this.chainId = await this.provider.request({ method: 'eth_chainId' });
-          this.isConnected = true;
-          this.notifyListeners();
-        }
+        this.accounts = this.provider.accounts;
+        this.chainId = this.provider.chainId;
+        this.isConnected = true;
+        this.notifyListeners();
       }
-      
+
       return true;
     } catch (error) {
       console.error('Failed to initialize WalletConnect:', error);
@@ -77,98 +123,114 @@ class WalletConnectManager {
     }
   }
 
-  // Connect wallet
   async connect() {
     try {
       if (!this.provider) {
         await this.initialize();
       }
 
-      const accounts = await this.provider.request({ method: 'eth_requestAccounts' });
-      this.address = accounts[0];
-      this.chainId = await this.provider.request({ method: 'eth_chainId' });
-      this.isConnected = true;
+      if (!this.provider) {
+        throw new Error('Provider not available');
+      }
+
+      // Open modal for connection
+      modal.open();
       
-      this.notifyListeners();
-      return { success: true, address: this.address };
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Connection timeout'));
+        }, 30000); // 30 second timeout
+
+        const handleConnect = () => {
+          clearTimeout(timeout);
+          this.accounts = this.provider.accounts;
+          this.chainId = this.provider.chainId;
+          this.isConnected = true;
+          this.notifyListeners();
+          resolve(true);
+        };
+
+        // Listen for connection
+        this.provider.on('connect', handleConnect);
+        
+        // Clean up listener after connection
+        setTimeout(() => {
+          this.provider.off('connect', handleConnect);
+        }, 30000);
+      });
     } catch (error) {
-      console.error('Failed to connect wallet:', error);
-      return { success: false, error: error.message };
+      console.error('Failed to connect:', error);
+      throw error;
     }
   }
 
-  // Disconnect wallet
   async disconnect() {
     try {
       if (this.provider) {
         await this.provider.disconnect();
+        this.accounts = [];
+        this.chainId = null;
+        this.isConnected = false;
+        this.notifyListeners();
       }
-      this.address = null;
-      this.chainId = null;
-      this.isConnected = false;
-      this.notifyListeners();
-      return { success: true };
     } catch (error) {
-      console.error('Failed to disconnect wallet:', error);
-      return { success: false, error: error.message };
+      console.error('Failed to disconnect:', error);
     }
   }
 
-  // Get current connection state
   getConnectionState() {
     return {
       isConnected: this.isConnected,
-      address: this.address,
+      accounts: this.accounts,
       chainId: this.chainId,
-      provider: this.provider
+      address: this.accounts[0] || null,
     };
   }
 
-  // Event handlers
-  handleAccountsChanged(accounts) {
-    if (accounts.length === 0) {
-      this.address = null;
+  setupEventListeners() {
+    if (!this.provider) return;
+
+    this.provider.on('accountsChanged', (accounts) => {
+      this.accounts = accounts;
+      this.notifyListeners();
+    });
+
+    this.provider.on('chainChanged', (chainId) => {
+      this.chainId = chainId;
+      this.notifyListeners();
+    });
+
+    this.provider.on('disconnect', () => {
+      this.accounts = [];
+      this.chainId = null;
       this.isConnected = false;
-    } else {
-      this.address = accounts[0];
-      this.isConnected = true;
-    }
-    this.notifyListeners();
+      this.notifyListeners();
+    });
   }
 
-  handleChainChanged(chainId) {
-    this.chainId = chainId;
-    this.notifyListeners();
-  }
-
-  handleDisconnect() {
-    this.address = null;
-    this.chainId = null;
-    this.isConnected = false;
-    this.notifyListeners();
-  }
-
-  // Listener management
   addListener(callback) {
-    this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    this.listeners.push(callback);
   }
 
   notifyListeners() {
-    const state = this.getConnectionState();
-    this.listeners.forEach(callback => callback(state));
+    this.listeners.forEach(callback => {
+      try {
+        callback(this.getConnectionState());
+      } catch (error) {
+        console.error('Error in listener callback:', error);
+      }
+    });
   }
 
-  // Sign message (for Stellar integration)
   async signMessage(message) {
-    if (!this.provider || !this.isConnected) {
-      throw new Error('Wallet not connected');
+    if (!this.provider || !this.accounts[0]) {
+      throw new Error('Not connected');
     }
 
     try {
       const signature = await this.provider.request({
         method: 'personal_sign',
-        params: [message, this.address]
+        params: [message, this.accounts[0]],
       });
       return signature;
     } catch (error) {
@@ -177,16 +239,15 @@ class WalletConnectManager {
     }
   }
 
-  // Send transaction
   async sendTransaction(transaction) {
-    if (!this.provider || !this.isConnected) {
-      throw new Error('Wallet not connected');
+    if (!this.provider || !this.accounts[0]) {
+      throw new Error('Not connected');
     }
 
     try {
       const hash = await this.provider.request({
         method: 'eth_sendTransaction',
-        params: [transaction]
+        params: [transaction],
       });
       return hash;
     } catch (error) {
@@ -196,15 +257,11 @@ class WalletConnectManager {
   }
 }
 
-// Create and export singleton instance
+// Export instances
 export const walletConnectManager = new WalletConnectManager();
-
-// Helper function to open modal
 export const openWalletModal = () => {
   modal.open();
 };
-
-// Helper function to close modal
 export const closeWalletModal = () => {
   modal.close();
 }; 

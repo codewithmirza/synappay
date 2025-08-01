@@ -349,9 +349,9 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 🆘 **Support**
 
-- **Documentation**: [docs.synappay.com](https://docs.synappay.com)
+- **Documentation**: [docs.www.synappay.com](https://docs.www.synappay.com)
 - **Discord**: [discord.gg/synappay](https://discord.gg/synappay)
-- **Email**: support@synappay.com
+- **Email**: support@www.synappay.com
 
 ---
 

@@ -1,4 +1,4 @@
-import FusionClient from '../../../src/fusion/client';
+import FusionClient from '../../lib/fusion-client';
 
 let fusionClient = null;
 

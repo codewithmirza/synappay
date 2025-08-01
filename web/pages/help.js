@@ -116,7 +116,7 @@ export default function Help() {
               </div>
               <div>
                 <div className="font-medium">Email Support</div>
-                <div className="text-sm text-gray-600">support@synappay.com</div>
+                <div className="text-sm text-gray-600">support@www.synappay.com</div>
               </div>
             </div>
             

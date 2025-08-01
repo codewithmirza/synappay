@@ -2,25 +2,27 @@ import { useState, useEffect, useCallback } from 'react';
 import { walletConnectManager, openWalletModal, closeWalletModal } from './walletconnect';
 
 export const useWalletConnect = () => {
-  const [connectionState, setConnectionState] = useState({
-    isConnected: false,
-    address: null,
-    chainId: null,
-    provider: null
-  });
-
+  const [isConnected, setIsConnected] = useState(false);
+  const [address, setAddress] = useState(null);
+  const [chainId, setChainId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Initialize wallet connection on mount
+  // Initialize wallet connection
   useEffect(() => {
     const initializeWallet = async () => {
       try {
         setIsLoading(true);
-        await walletConnectManager.initialize();
-        setConnectionState(walletConnectManager.getConnectionState());
-      } catch (err) {
-        setError(err.message);
+        const success = await walletConnectManager.initialize();
+        if (success) {
+          const state = walletConnectManager.getConnectionState();
+          setIsConnected(state.isConnected);
+          setAddress(state.address);
+          setChainId(state.chainId);
+        }
+      } catch (error) {
+        console.error('Failed to initialize wallet:', error);
+        setError(error.message);
       } finally {
         setIsLoading(false);
       }
@@ -28,135 +30,104 @@ export const useWalletConnect = () => {
 
     initializeWallet();
 
-    // Subscribe to wallet state changes
-    const unsubscribe = walletConnectManager.addListener((state) => {
-      setConnectionState(state);
+    // Add listener for state changes
+    const handleStateChange = (state) => {
+      setIsConnected(state.isConnected);
+      setAddress(state.address);
+      setChainId(state.chainId);
       setError(null);
-    });
+    };
 
-    return unsubscribe;
+    walletConnectManager.addListener(handleStateChange);
+
+    // Cleanup
+    return () => {
+      // Note: We don't remove listeners in the current implementation
+      // as the manager doesn't have a removeListener method
+    };
   }, []);
 
-  // Connect wallet
   const connect = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const result = await walletConnectManager.connect();
-      
-      if (result.success) {
-        setConnectionState(walletConnectManager.getConnectionState());
-        return { success: true, address: result.address };
-      } else {
-        setError(result.error);
-        return { success: false, error: result.error };
-      }
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      await walletConnectManager.connect();
+    } catch (error) {
+      console.error('Failed to connect:', error);
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Disconnect wallet
   const disconnect = useCallback(async () => {
     try {
       setIsLoading(true);
-      setError(null);
-      
-      const result = await walletConnectManager.disconnect();
-      
-      if (result.success) {
-        setConnectionState(walletConnectManager.getConnectionState());
-        return { success: true };
-      } else {
-        setError(result.error);
-        return { success: false, error: result.error };
-      }
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      await walletConnectManager.disconnect();
+    } catch (error) {
+      console.error('Failed to disconnect:', error);
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Sign message
   const signMessage = useCallback(async (message) => {
     try {
-      setError(null);
-      const signature = await walletConnectManager.signMessage(message);
-      return { success: true, signature };
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      return await walletConnectManager.signMessage(message);
+    } catch (error) {
+      console.error('Failed to sign message:', error);
+      throw error;
     }
   }, []);
 
-  // Send transaction
   const sendTransaction = useCallback(async (transaction) => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const hash = await walletConnectManager.sendTransaction(transaction);
-      return { success: true, hash };
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
-    } finally {
-      setIsLoading(false);
+      return await walletConnectManager.sendTransaction(transaction);
+    } catch (error) {
+      console.error('Failed to send transaction:', error);
+      throw error;
     }
   }, []);
 
-  // Open modal
   const openModal = useCallback(() => {
     openWalletModal();
   }, []);
 
-  // Close modal
   const closeModal = useCallback(() => {
     closeWalletModal();
   }, []);
 
-  // Format address for display
   const formatAddress = useCallback((address) => {
     if (!address) return '';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   }, []);
 
-  // Check if wallet is on correct network (Sepolia)
   const isCorrectNetwork = useCallback(() => {
-    return connectionState.chainId === '0xaa36a7' || connectionState.chainId === 11155111;
-  }, [connectionState.chainId]);
+    return chainId === 11155111; // Sepolia testnet
+  }, [chainId]);
 
-  // Switch to Sepolia network
   const switchToSepolia = useCallback(async () => {
     try {
-      if (!connectionState.provider) {
+      if (!walletConnectManager.provider) {
         throw new Error('Wallet not connected');
       }
 
-      await connectionState.provider.request({
+      await walletConnectManager.provider.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0xaa36a7' }] // Sepolia chain ID
+        params: [{ chainId: '0xaa36a7' }], // Sepolia chainId in hex
       });
-
-      return { success: true };
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+    } catch (error) {
+      console.error('Failed to switch network:', error);
+      throw error;
     }
-  }, [connectionState.provider]);
+  }, []);
 
   return {
     // State
-    isConnected: connectionState.isConnected,
-    address: connectionState.address,
-    chainId: connectionState.chainId,
-    provider: connectionState.provider,
+    isConnected,
+    address,
+    chainId,
     isLoading,
     error,
     
@@ -171,6 +142,6 @@ export const useWalletConnect = () => {
     // Utilities
     formatAddress,
     isCorrectNetwork,
-    switchToSepolia
+    switchToSepolia,
   };
 }; 
