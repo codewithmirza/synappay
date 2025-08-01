@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, RefreshCw, AlertCircle, CheckCircle, Wallet, Shield, Zap, Star } from 'lucide-react';
+import { ArrowRight, CheckCircle, AlertCircle, Loader, Shield, Zap, Star, ArrowLeft, RefreshCw } from 'lucide-react';
 import OneInchClient from '../lib/1inch-client';
 import ApiClient from '../lib/api-client';
 import { useCombinedWallet } from '../lib/useCombinedWallet';
@@ -12,7 +12,6 @@ import Image from 'next/image';
 
 export default function Swap() {
   const {
-    // Ethereum wallet
     ethConnected,
     ethAddress,
     ethChainId,
@@ -20,11 +19,10 @@ export default function Swap() {
     ethError,
     connectEth,
     disconnectEth,
-    formatEthAddress,
-    isCorrectEthNetwork,
     switchToSepolia,
+    isCorrectEthNetwork,
+    formatEthAddress,
     
-    // Stellar wallet
     stellarConnected,
     stellarPublicKey,
     stellarLoading,
@@ -32,9 +30,7 @@ export default function Swap() {
     connectStellar,
     disconnectStellar,
     formatStellarAddress,
-    isCorrectStellarNetwork,
     
-    // Combined state
     bothConnected,
     canSwap,
     isLoading,
@@ -49,19 +45,7 @@ export default function Swap() {
   const [loading, setLoading] = useState(false);
   const [swapError, setSwapError] = useState(null);
   const [slippage, setSlippage] = useState(1);
-  const [swapType, setSwapType] = useState('ETH_TO_STELLAR');
   const [showNetworkAlert, setShowNetworkAlert] = useState(false);
-
-  const oneInchClient = new OneInchClient();
-  const apiClient = new ApiClient();
-
-  // Token addresses for Sepolia testnet
-  const tokenAddresses = {
-    'ETH': '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-    'USDC': '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
-    'USDT': '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
-    'DAI': '0x3e622317f8C93f7328350cF0B56d9eD4C620C5d6'
-  };
 
   // Check network on connection
   useEffect(() => {
@@ -72,81 +56,31 @@ export default function Swap() {
     }
   }, [ethConnected, isCorrectEthNetwork]);
 
-  useEffect(() => {
-    // Update swap type based on token selection
-    if (fromToken === 'ETH' && toToken === 'XLM') {
-      setSwapType('ETH_TO_STELLAR');
-    } else if (fromToken === 'XLM' && toToken === 'ETH') {
-      setSwapType('STELLAR_TO_ETH');
-    }
-  }, [fromToken, toToken]);
-
-  const getQuote = async () => {
-    if (!fromAmount || parseFloat(fromAmount) <= 0) return;
-
-    setLoading(true);
+  const handleAmountChange = async (value) => {
+    setFromAmount(value);
+    setToAmount('');
+    setQuote(null);
     setSwapError(null);
 
+    if (!value || parseFloat(value) <= 0) return;
+
     try {
-      // Try to get quote from backend first
-      const quoteData = await apiClient.getBestRate(fromToken, toToken, fromAmount);
-      
-      if (quoteData.success) {
-        setQuote(quoteData.data);
-        
-        // Calculate output amount
-        const outputDecimals = config.tokens.decimals[toToken] || 18;
-        const outputAmount = parseFloat(quoteData.data.outputAmount) / Math.pow(10, outputDecimals);
-        setToAmount(outputAmount.toFixed(6));
-      } else {
-        // Fallback to 1inch client
-        const fromAddress = tokenAddresses[fromToken];
-        const toAddress = tokenAddresses[toToken];
-        
-        if (!fromAddress || !toAddress) {
-          throw new Error('Unsupported token pair');
-        }
-        
-        // Convert amount to wei (18 decimals for ETH, 6 for USDC)
-        const decimals = config.tokens.decimals[fromToken] || 18;
-        const amountInWei = (parseFloat(fromAmount) * Math.pow(10, decimals)).toString();
-
-        const quoteData = await oneInchClient.getQuote(
-          fromAddress,
-          toAddress,
-          amountInWei
-        );
-
-        setQuote(quoteData);
-        
-        // Calculate output amount
-        const outputDecimals = config.tokens.decimals[toToken] || 18;
-        const outputAmount = parseFloat(quoteData.dstAmount) / Math.pow(10, outputDecimals);
-        setToAmount(outputAmount.toFixed(6));
-      }
-
+      setLoading(true);
+      const quoteData = await OneInchClient.getQuote({
+        fromToken,
+        toToken,
+        amount: value,
+        fromAddress: ethAddress,
+        slippage
+      });
+      setQuote(quoteData);
+      setToAmount(quoteData.toTokenAmount);
     } catch (error) {
-      console.error('Error getting quote:', error);
+      console.error('Failed to get quote:', error);
       setSwapError('Failed to get quote. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (fromAmount && parseFloat(fromAmount) > 0) {
-        getQuote();
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [fromAmount, fromToken, toToken]);
-
-  const handleAmountChange = (value) => {
-    setFromAmount(value);
-    setToAmount('');
-    setQuote(null);
   };
 
   const handleTokenSwap = () => {
@@ -155,96 +89,58 @@ export default function Swap() {
     setFromAmount(toAmount);
     setToAmount('');
     setQuote(null);
+    setSwapError(null);
   };
 
-  const validateInput = () => {
-    if (!fromAmount || parseFloat(fromAmount) <= 0) {
-      return 'Please enter a valid amount';
+  const handleRetry = () => {
+    setSwapError(null);
+    if (fromAmount) {
+      handleAmountChange(fromAmount);
     }
-    if (!bothConnected) {
-      return 'Please connect both Ethereum and Stellar wallets';
-    }
-    if (!quote) {
-      return 'Please wait for quote to load';
-    }
-    if (parseFloat(fromAmount) < config.ui.minSwapAmount) {
-      return `Minimum swap amount is ${config.ui.minSwapAmount} ${fromToken}`;
-    }
-    if (parseFloat(fromAmount) > config.ui.maxSwapAmount) {
-      return `Maximum swap amount is ${config.ui.maxSwapAmount} ${fromToken}`;
-    }
-    return null;
   };
 
-  const handleReviewSwap = async () => {
-    const validationError = validateInput();
-    if (validationError) {
-      setSwapError(validationError);
-      return;
-    }
+  const handleReviewSwap = () => {
+    if (!quote || !bothConnected) return;
 
-    // Navigate to review page with swap data
     const swapData = {
       fromToken,
       toToken,
       fromAmount,
       toAmount,
-      quote,
-      slippage,
       ethAddress,
       stellarPublicKey,
-      swapType,
+      quote,
+      slippage,
+      swapType: 'cross-chain',
       contractAddress: config.ethereum.htlcContractAddress
     };
 
-    // Store in sessionStorage for review page
     sessionStorage.setItem('swapData', JSON.stringify(swapData));
     window.location.href = '/review';
   };
 
-  const handleRetry = () => {
-    setSwapError(null);
-    if (fromAmount && parseFloat(fromAmount) > 0) {
-      getQuote();
+  const handleNetworkSwitch = async () => {
+    try {
+      await switchToSepolia();
+      setShowNetworkAlert(false);
+    } catch (error) {
+      console.error('Failed to switch network:', error);
     }
   };
 
   return (
     <div className="min-h-screen bg-[#f2f2f7]">
-      {/* Top Navigation with Wallet Connection */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <Image 
-                src="/icon.png" 
-                alt="SynapPay Icon" 
-                width={32} 
-                height={32}
-                className="w-8 h-8"
-              />
-              <Image 
-                src="/synappay-logo.svg" 
-                alt="SynapPay" 
-                width={120} 
-                height={32}
-                className="h-8"
-              />
-            </div>
-
-            {/* Wallet Connection Button */}
-            <WalletConnectionButton />
-          </div>
-        </div>
+      {/* Wallet Connection Button - Fixed Top Right */}
+      <div className="fixed top-4 right-4 z-50">
+        <WalletConnectionButton />
       </div>
 
       {/* Main Content */}
-      <div className="pt-16 flex items-center justify-center p-4">
+      <div className="flex items-center justify-center p-4">
         <div className="p-6 md:p-8 max-w-[600px] w-full">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-[32px] font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl md:text-[32px] font-bold text-[#000000] font-inter mb-2">
               Cross-Chain Swap
             </h1>
             <p className="text-base md:text-[16px] text-gray-600">
@@ -288,7 +184,7 @@ export default function Swap() {
                 Please switch to Sepolia testnet to use SynapPay
               </p>
               <button
-                onClick={switchToSepolia}
+                onClick={handleNetworkSwitch}
                 className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
               >
                 Switch to Sepolia

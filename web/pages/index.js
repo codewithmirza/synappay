@@ -51,42 +51,19 @@ export default function Home() {
       await switchToSepolia();
       setShowNetworkAlert(false);
     } catch (error) {
-      console.error('Network switch failed:', error);
+      console.error('Failed to switch network:', error);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f2f2f7] via-white to-[#f8f9fa]">
-      {/* Top Navigation with Wallet Connection */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <Image 
-                src="/icon.png" 
-                alt="SynapPay Icon" 
-                width={32} 
-                height={32}
-                className="w-8 h-8"
-              />
-              <Image 
-                src="/synappay-logo.svg" 
-                alt="SynapPay" 
-                width={120} 
-                height={32}
-                className="h-8"
-              />
-            </div>
-
-            {/* Wallet Connection Button */}
-            <WalletConnectionButton />
-          </div>
-        </div>
+      {/* Wallet Connection Button - Fixed Top Right */}
+      <div className="fixed top-4 right-4 z-50">
+        <WalletConnectionButton />
       </div>
 
       {/* Main Content */}
-      <div className="pt-16 flex items-center justify-center p-4">
+      <div className="flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -107,9 +84,26 @@ export default function Home() {
               transition={{ delay: 0.2, duration: 0.6 }}
               className="space-y-4"
             >
-              <h2 className="text-4xl md:text-5xl font-bold leading-tight text-gray-900">
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <Image 
+                  src="/icon.png" 
+                  alt="SynapPay Icon" 
+                  width={40} 
+                  height={40}
+                  className="w-10 h-10"
+                />
+                <Image 
+                  src="/synappay-logo.svg" 
+                  alt="SynapPay" 
+                  width={140} 
+                  height={40}
+                  className="h-10"
+                />
+              </div>
+              
+              <h2 className="text-4xl md:text-5xl font-bold leading-tight text-[#000000] font-inter">
                 Trustless Cross-Chain
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                <span className="block text-[#000000] opacity-30">
                   Swap Protocol
                 </span>
               </h2>
@@ -208,54 +202,6 @@ export default function Home() {
                   transition={{ delay: 0.4, duration: 0.6 }}
                   className="space-y-6"
                 >
-                  {/* Features */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center">
-                      <Shield className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                      <h3 className="font-semibold text-blue-900">HTLC Security</h3>
-                      <p className="text-sm text-blue-700">Trustless atomic swaps</p>
-                    </div>
-                    
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center">
-                      <Zap className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                      <h3 className="font-semibold text-purple-900">1inch Fusion+</h3>
-                      <p className="text-sm text-purple-700">Best rates & MEV protection</p>
-                    </div>
-                    
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center">
-                      <Wallet className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                      <h3 className="font-semibold text-green-900">Multi-Chain</h3>
-                      <p className="text-sm text-green-700">ETH ↔ XLM seamless</p>
-                    </div>
-                  </div>
-
-                  {/* Connection Instructions */}
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-6">
-                    <div className="text-center space-y-4">
-                      <div className="flex items-center justify-center space-x-2">
-                        <Wallet className="w-6 h-6 text-blue-600" />
-                        <h3 className="text-lg font-semibold text-blue-900">Connect Your Wallets</h3>
-                      </div>
-                      <p className="text-blue-700 text-sm">
-                        Use the wallet connection button in the top-right corner to connect both Ethereum and Stellar wallets
-                      </p>
-                      
-                      <div className="flex flex-col space-y-3">
-                        <div className="flex items-center justify-center space-x-2 text-sm text-blue-700">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>Connect Ethereum wallet (MetaMask, Trust Wallet, etc.)</span>
-                        </div>
-                        <div className="flex items-center justify-center space-x-2 text-sm text-blue-700">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>Connect Stellar wallet (Freighter extension)</span>
-                        </div>
-                        <div className="flex items-center justify-center space-x-2 text-sm text-blue-700">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>Switch to Sepolia testnet for Ethereum</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Error Display */}
                   {error && (
