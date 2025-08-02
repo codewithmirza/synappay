@@ -253,14 +253,6 @@ export default function WalletConnectionButton() {
               <div className="pt-2 border-t border-gray-200">
                 <div className="space-y-2">
                   <button
-                    onClick={() => window.location.href = '/swap'}
-                    className="w-full px-4 py-3 text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
-                  >
-                    <Coins size={16} />
-                    <span>Start Cross-Chain Swap</span>
-                    <ArrowRight size={16} />
-                  </button>
-                  <button
                     onClick={handleDisconnect}
                     disabled={isLoading}
                     className="w-full px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50"
