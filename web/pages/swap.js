@@ -117,29 +117,22 @@ export default function Swap() {
     setAmount('');
   };
 
-  const handleExecuteSwap = async () => {
-    if (!swapService || !bothConnected) return;
-
-    try {
-      setSwapStatus('executing');
-      setError(null);
-
-      const swapParams = {
-        fromToken,
-        toToken,
-        amount,
-        fromAddress: ethAddress,
-        toAddress: stellarPublicKey,
-        quote
-      };
-
-      const result = await swapService.executeEthToStellarSwap(swapParams);
-      setSwapStatus('completed');
-    } catch (error) {
-      console.error('Swap execution failed:', error);
-      setError('Swap execution failed. Please try again.');
-      setSwapStatus('failed');
+  const handleReviewOrder = () => {
+    if (!quote || !amount) {
+      setError('Please enter an amount and get a quote first.');
+      return;
     }
+
+    // Redirect to review page with swap details
+    const params = new URLSearchParams({
+      fromToken,
+      toToken,
+      amount,
+      quote: quote.toTokenAmount || quote.quote,
+      rate: quote.rate || (quote.toTokenAmount / quote.fromTokenAmount)
+    });
+
+    window.location.href = `/review?${params.toString()}`;
   };
 
   const getTokenAddress = (symbol) => {
@@ -166,8 +159,8 @@ export default function Swap() {
     return parseFloat(amount).toFixed(decimals);
   };
 
-  const canExecuteSwap = () => {
-    return bothConnected && amount && quote && !loading && swapStatus === 'idle';
+  const canReviewOrder = () => {
+    return bothConnected && amount && quote && !loading;
   };
 
   if (!bothConnected) {
@@ -299,29 +292,20 @@ export default function Swap() {
           </div>
         )}
 
-        {/* Execute Button */}
+        {/* Review Order Button */}
         <button
-          onClick={handleExecuteSwap}
-          disabled={!canExecuteSwap()}
+          onClick={handleReviewOrder}
+          disabled={!canReviewOrder()}
           className={`
-            w-full py-3 px-6 rounded-lg font-semibold transition-all
-            ${canExecuteSwap()
+            w-full py-3 px-6 rounded-lg font-semibold transition-all flex items-center justify-center space-x-2
+            ${canReviewOrder()
               ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }
           `}
         >
-          {swapStatus === 'executing' ? (
-            <div className="flex items-center justify-center space-x-2">
-              <RefreshCw className="w-5 h-5 animate-spin" />
-              <span>Executing Swap...</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center space-x-2">
-              <Zap className="w-5 h-5" />
-              <span>Execute Swap</span>
-            </div>
-          )}
+          <Shield className="w-5 h-5" />
+          <span>Review Order</span>
         </button>
 
         {/* Status */}

@@ -24,7 +24,7 @@ export function useWalletManager() {
   } = useStellarWallet();
 
   // Computed states - ensure proper boolean values
-  const bothConnected = Boolean(ethConnected && stellarConnected);
+  const bothConnected = Boolean(ethConnected && stellarConnected && ethAddress && stellarPublicKey);
   const canSwap = Boolean(bothConnected && ethChainId === 11155111); // Sepolia testnet
   const isLoading = Boolean(ethLoading || stellarLoading);
 
@@ -83,14 +83,17 @@ export function useWalletManager() {
     }
   };
 
-  // Debug logging
+  // Debug logging with more detail
   console.log('Wallet Manager State:', {
-    ethConnected,
-    stellarConnected,
-    bothConnected,
-    canSwap,
+    ethConnected: Boolean(ethConnected),
+    stellarConnected: Boolean(stellarConnected),
+    bothConnected: Boolean(bothConnected),
+    canSwap: Boolean(canSwap),
     ethAddress: ethAddress ? formatEthAddress(ethAddress) : 'None',
-    stellarPublicKey: stellarPublicKey ? formatStellarAddress(stellarPublicKey) : 'None'
+    stellarPublicKey: stellarPublicKey ? formatStellarAddress(stellarPublicKey) : 'None',
+    ethChainId,
+    stellarSelectedWalletId,
+    isLoading: Boolean(isLoading)
   });
 
   return {

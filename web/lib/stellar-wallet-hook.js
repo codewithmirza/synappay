@@ -51,6 +51,7 @@ export function useStellarWallet() {
   const [error, setError] = useState(null);
   const [supportedWallets, setSupportedWallets] = useState([]);
   const [selectedWalletId, setSelectedWalletId] = useState(null);
+  const [modalOpened, setModalOpened] = useState(false);
 
   const kit = createStellarKit();
 
@@ -62,10 +63,17 @@ export function useStellarWallet() {
         const savedAddress = sessionStorage.getItem(STELLAR_ADDRESS_KEY);
         
         if (savedWalletId && savedAddress) {
+          console.log('Restoring Stellar wallet connection:', savedWalletId, savedAddress);
+          
+          // Set the wallet in the kit first
+          kit.setWallet(savedWalletId);
+          
+          // Update state
           setSelectedWalletId(savedWalletId);
           setPublicKey(savedAddress);
           setConnected(true);
-          console.log('Restored Stellar wallet connection:', savedAddress);
+          
+          console.log('Successfully restored Stellar wallet connection:', savedAddress);
         }
       } catch (err) {
         console.error('Failed to restore wallet connection:', err);
@@ -76,7 +84,7 @@ export function useStellarWallet() {
     };
     
     restoreConnection();
-  }, []);
+  }, [kit]);
 
   // Get supported wallets on mount
   useEffect(() => {
@@ -94,18 +102,29 @@ export function useStellarWallet() {
   }, [kit]);
 
   const connect = useCallback(async () => {
+    if (modalOpened) return; // Prevent multiple modals
+    
     try {
       setLoading(true);
       setError(null);
+      setModalOpened(true);
       
       await kit.openModal({
         onWalletSelected: async (option) => {
           try {
             console.log('User selected wallet:', option.name, option.id);
+            
+            // Clear any previous errors
+            setError(null);
+            
+            // Set the wallet in the kit
             kit.setWallet(option.id);
             setSelectedWalletId(option.id);
             
+            // Get the address
             const { address } = await kit.getAddress();
+            
+            // Update state
             setPublicKey(address);
             setConnected(true);
             
@@ -114,31 +133,40 @@ export function useStellarWallet() {
             sessionStorage.setItem(STELLAR_ADDRESS_KEY, address);
             
             console.log(`Connected to ${option.name} wallet:`, address);
+            
+            // Close modal
+            setModalOpened(false);
+            setLoading(false);
           } catch (err) {
+            console.error('Failed to connect wallet:', err);
             setError(err.message);
             setConnected(false);
-            console.error('Failed to connect wallet:', err);
+            setModalOpened(false);
+            setLoading(false);
           }
         },
         onClosed: (err) => {
+          setModalOpened(false);
+          setLoading(false);
           if (err) {
             setError(err.message);
             console.error('Modal closed with error:', err);
           }
-          setLoading(false);
         },
         onError: (err) => {
+          setModalOpened(false);
           setError(err.message);
           setLoading(false);
           console.error('Modal error:', err);
         }
       });
     } catch (err) {
+      setModalOpened(false);
       setError(err.message);
       setLoading(false);
       console.error('Failed to open wallet modal:', err);
     }
-  }, [kit]);
+  }, [kit, modalOpened]);
 
   const disconnect = useCallback(async () => {
     try {
@@ -147,6 +175,7 @@ export function useStellarWallet() {
       setPublicKey(null);
       setSelectedWalletId(null);
       setError(null);
+      setModalOpened(false);
       
       // Clear session storage
       sessionStorage.removeItem(STELLAR_WALLET_KEY);
@@ -159,29 +188,30 @@ export function useStellarWallet() {
     }
   }, [kit]);
 
-  // Verify connection is still valid
+  // Verify connection is still valid (but only after initial connection is established)
   useEffect(() => {
-    if (connected && selectedWalletId) {
+    if (connected && selectedWalletId && publicKey) {
       const verifyConnection = async () => {
         try {
+          // Set the wallet first before getting address
+          kit.setWallet(selectedWalletId);
           const { address } = await kit.getAddress();
           if (address !== publicKey) {
             // Connection changed, update state
             setPublicKey(address);
             sessionStorage.setItem(STELLAR_ADDRESS_KEY, address);
+            console.log('Updated Stellar wallet address:', address);
           }
         } catch (err) {
-          // Connection lost, clear state
-          console.log('Stellar wallet connection lost');
-          setConnected(false);
-          setPublicKey(null);
-          setSelectedWalletId(null);
-          sessionStorage.removeItem(STELLAR_WALLET_KEY);
-          sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+          // Only clear state if we're sure the connection is lost
+          console.warn('Stellar wallet verification failed, but keeping connection:', err.message);
+          // Don't automatically disconnect - let user manually disconnect if needed
         }
       };
       
-      verifyConnection();
+      // Add a delay to avoid interfering with initial connection
+      const timeoutId = setTimeout(verifyConnection, 2000);
+      return () => clearTimeout(timeoutId);
     }
   }, [connected, selectedWalletId, kit, publicKey]);
 

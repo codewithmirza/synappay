@@ -132,7 +132,8 @@ export default function Home() {
         <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
           ETH: {ethConnected ? 'Connected' : 'Not Connected'} | 
           Stellar: {stellarConnected ? 'Connected' : 'Not Connected'} | 
-          Both: {bothConnected ? 'Yes' : 'No'}
+          Both: {bothConnected ? 'Yes' : 'No'} | 
+          Can Swap: {canSwap ? 'Yes' : 'No'}
         </div>
         
         {/* Start Swap Button - Centered when both wallets connected */}
