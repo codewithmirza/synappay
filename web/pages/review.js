@@ -25,7 +25,9 @@ export default function Review() {
     // Get swap data from sessionStorage
     const storedData = sessionStorage.getItem('swapData');
     if (storedData) {
-      setSwapData(JSON.parse(storedData));
+      const parsedData = JSON.parse(storedData);
+      console.log('📋 Swap data loaded:', parsedData);
+      setSwapData(parsedData);
     }
   }, []);
 
@@ -148,8 +150,10 @@ export default function Review() {
             {/* From Chain */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">Ξ</span>
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                  </svg>
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Ethereum (Sepolia)</h3>
@@ -158,7 +162,9 @@ export default function Review() {
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">You Pay</p>
-                <p className="font-semibold text-gray-900">{swapData?.fromAmount} {swapData?.fromToken}</p>
+                <p className="font-semibold text-gray-900">
+                  {swapData?.fromAmount || '0'} {swapData?.fromToken || 'ETH'}
+                </p>
               </div>
             </div>
 
@@ -172,8 +178,10 @@ export default function Review() {
             {/* To Chain */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">★</span>
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Stellar (Testnet)</h3>
@@ -182,7 +190,9 @@ export default function Review() {
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">You Receive</p>
-                <p className="font-semibold text-gray-900">{swapData?.toAmount} {swapData?.toToken}</p>
+                <p className="font-semibold text-gray-900">
+                  {swapData?.toAmount || '0'} {swapData?.toToken || 'XLM'}
+                </p>
               </div>
             </div>
           </motion.div>
@@ -200,24 +210,24 @@ export default function Review() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Exchange Rate</span>
                   <span className="font-medium text-gray-900">
-                    1 {swapData.fromToken} = {swapData.quote.exchangeRate?.toFixed(6) || 'N/A'} {swapData.toToken}
+                    1 {swapData.fromToken} = {swapData.quote?.toTokenAmount ? (swapData.quote.toTokenAmount / swapData.quote.fromTokenAmount).toFixed(6) : 'N/A'} {swapData.toToken}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Price Impact</span>
                   <span className="font-medium text-green-600">
-                    {swapData.quote.priceImpact || 0}%
+                    {swapData.quote?.priceImpact || swapData.priceImpact || 0}%
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Network Fee</span>
                   <span className="font-medium text-gray-900">
-                    ~${swapData.quote.estimatedGas || 'Unknown'}
+                    ~${swapData.quote?.estimatedGas || swapData.estimatedGas || 'Unknown'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Slippage</span>
-                  <span className="font-medium text-gray-900">{swapData.slippage}%</span>
+                  <span className="font-medium text-gray-900">{swapData.slippage || 1}%</span>
                 </div>
               </div>
             </motion.div>

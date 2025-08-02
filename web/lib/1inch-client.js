@@ -49,7 +49,23 @@ class OneInchClient {
       if (!response.ok) {
         const errorData = await response.json();
         console.error(`❌ Quote request failed: ${response.status}`, errorData);
-        throw new Error(`Quote request failed: ${response.status} - ${errorData.details || errorData.error || 'Unknown error'}`);
+        
+        // Handle specific 1inch API errors based on documentation
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        } else if (response.status === 400) {
+          if (errorData.details?.includes('Insufficient liquidity')) {
+            throw new Error('Insufficient liquidity for this swap. Try a smaller amount.');
+          } else if (errorData.details?.includes('Amount is not set')) {
+            throw new Error('Invalid amount. Please check the amount format.');
+          } else if (errorData.details?.includes('Cannot Estimate')) {
+            throw new Error('Transaction cannot be estimated. Try adjusting slippage.');
+          } else {
+            throw new Error(`Quote request failed: ${errorData.details || errorData.error || 'Bad Request'}`);
+          }
+        } else {
+          throw new Error(`Quote request failed: ${response.status} - ${errorData.details || errorData.error || 'Unknown error'}`);
+        }
       }
 
       return await response.json();

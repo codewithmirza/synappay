@@ -214,3 +214,5 @@ debug-*.js
 # yarn.lock
 # pnpm-lock.yaml
 .vercel
+
+check-wallet.js

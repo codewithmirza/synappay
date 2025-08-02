@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     // Calculate contract ID
     const contractId = ethers.keccak256(
       ethers.AbiCoder.defaultAbiCoder().encode(
-        ['address', 'address', 'uint256', 'bytes32', 'uint256'],
+        ['address', 'string', 'uint256', 'bytes32', 'uint256'],
         [ethAddress, stellarPublicKey, ethers.parseEther(fromAmount), hashlock, timelock]
       )
     );
@@ -115,9 +115,10 @@ async function executeEthToStellarSwap(htlcContract, contractId, stellarPublicKe
   try {
     console.log('🚀 Executing ETH → Stellar swap...');
 
-    // Create HTLC on Ethereum
+    // For ETH → Stellar, we create HTLC on Ethereum with the Ethereum address as receiver
+    // The Stellar address will be used later when the swap is completed
     const tx = await htlcContract.newContract(
-      stellarPublicKey,
+      process.env.RELAYER_ADDRESS || "0x0000000000000000000000000000000000000000", // Use relayer address or zero address
       hashlock,
       timelock,
       { value: ethers.parseEther(fromAmount) }
@@ -137,7 +138,8 @@ async function executeEthToStellarSwap(htlcContract, contractId, stellarPublicKe
     return {
       swapId: swapId,
       txHash: receipt.hash,
-      phase: 'DEPOSIT'
+      phase: 'DEPOSIT',
+      stellarAddress: stellarPublicKey // Store Stellar address for later use
     };
 
   } catch (error) {

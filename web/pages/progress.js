@@ -28,14 +28,43 @@ export default function Progress() {
 
   const loadSwapData = () => {
     try {
-      const storedSwapResult = sessionStorage.getItem('swapResult');
-      if (storedSwapResult) {
-        const swapResult = JSON.parse(storedSwapResult);
-        setSwapData(swapResult);
+      // Try to get execution result first (from review page)
+      const storedExecutionResult = sessionStorage.getItem('executionResult');
+      const storedSwapData = sessionStorage.getItem('swapData');
+      
+      if (storedExecutionResult && storedSwapData) {
+        const executionResult = JSON.parse(storedExecutionResult);
+        const originalSwapData = JSON.parse(storedSwapData);
+        
+        // Combine both data sources
+        const combinedData = {
+          ...originalSwapData,
+          ...executionResult,
+          orderHash: executionResult.swapId || executionResult.txHash, // Use swapId or txHash as orderHash
+        };
+        
+        setSwapData(combinedData);
+        console.log('📋 Combined swap data loaded:', combinedData);
+        
+        // Set initial progress based on execution result
+        if (executionResult.success) {
+          setProgress(prev => ({
+            ...prev,
+            phase: executionResult.phase || 'DEPOSIT',
+            status: 'ACTIVE',
+            phaseTransitions: [
+              {
+                from: 'ANNOUNCEMENT',
+                to: executionResult.phase || 'DEPOSIT',
+                timestamp: new Date().toISOString()
+              }
+            ]
+          }));
+        }
         
         // Start monitoring the swap
-        if (swapResult.orderHash) {
-          startMonitoring(swapResult.orderHash);
+        if (combinedData.orderHash) {
+          startMonitoring(combinedData.orderHash);
         }
       } else {
         setError('No swap data found. Please start a new swap.');
@@ -52,35 +81,43 @@ export default function Progress() {
     try {
       console.log('🎯 Starting swap monitoring for order:', orderHash);
       
-      // Simulate real-time monitoring
-      const monitorInterval = setInterval(async () => {
+      // For now, simulate progress since we don't have a real status API
+      let currentPhaseIndex = 0;
+      const phases = ['ANNOUNCEMENT', 'DEPOSIT', 'WITHDRAWAL'];
+      
+      const monitorInterval = setInterval(() => {
         try {
-          // Get current status from API
-          const statusResponse = await apiClient.getSwapStatus(orderHash);
-          
-          if (statusResponse.success) {
-            const newProgress = {
-              phase: statusResponse.data.phase || 'ANNOUNCEMENT',
-              status: statusResponse.data.status || 'ACTIVE',
-              auctionActive: statusResponse.data.auctionActive || false,
-              resolvers: statusResponse.data.resolvers || 0,
-              bestOffer: statusResponse.data.bestOffer,
-              timeRemaining: statusResponse.data.timeRemaining || 0,
-              phaseTransitions: statusResponse.data.phaseTransitions || []
-            };
+          // Simulate phase progression every 10 seconds
+          if (currentPhaseIndex < phases.length - 1) {
+            currentPhaseIndex++;
+            const newPhase = phases[currentPhaseIndex];
             
-            setProgress(newProgress);
+            setProgress(prev => ({
+              ...prev,
+              phase: newPhase,
+              status: newPhase === 'WITHDRAWAL' ? 'READY_TO_CLAIM' : 'ACTIVE',
+              phaseTransitions: [
+                ...prev.phaseTransitions,
+                {
+                  from: phases[currentPhaseIndex - 1],
+                  to: newPhase,
+                  timestamp: new Date().toISOString()
+                }
+              ]
+            }));
             
-            // Check if swap is complete
-            if (newProgress.status === 'COMPLETED' || newProgress.status === 'FAILED') {
+            console.log(`📈 Phase updated to: ${newPhase}`);
+            
+            // Stop monitoring when we reach WITHDRAWAL phase
+            if (newPhase === 'WITHDRAWAL') {
               clearInterval(monitorInterval);
-              console.log('🏁 Swap monitoring completed');
+              console.log('🏁 Swap monitoring completed - ready for claim');
             }
           }
         } catch (error) {
-          console.error('Error monitoring swap:', error);
+          console.error('Error in monitoring simulation:', error);
         }
-      }, 5000); // Update every 5 seconds
+      }, 10000); // Update every 10 seconds
 
       // Cleanup interval on component unmount
       return () => clearInterval(monitorInterval);
@@ -189,21 +226,40 @@ export default function Progress() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-600">From</p>
-                <p className="font-medium">{swapData.fromToken} {swapData.fromAmount}</p>
+                <p className="font-medium">{swapData.fromAmount} {swapData.fromToken}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">To</p>
-                <p className="font-medium">{swapData.toToken} {swapData.toAmount}</p>
+                <p className="font-medium">{swapData.toAmount} {swapData.toToken}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Order Hash</p>
+                <p className="text-sm text-gray-600">Transaction Hash</p>
+                {swapData.txHash ? (
+                  <a
+                    href={`https://sepolia.etherscan.io/tx/${swapData.txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-sm text-blue-600 hover:text-blue-800 break-all underline"
+                  >
+                    {swapData.txHash.slice(0, 10)}...{swapData.txHash.slice(-8)}
+                  </a>
+                ) : (
+                  <p className="font-mono text-sm text-gray-700">N/A</p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Swap ID</p>
                 <p className="font-mono text-sm text-gray-700 break-all">
-                  {swapData.orderHash?.slice(0, 10)}...{swapData.orderHash?.slice(-8)}
+                  {swapData.swapId ? `${swapData.swapId.slice(0, 10)}...${swapData.swapId.slice(-8)}` : 'N/A'}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Status</p>
-                <p className="font-medium">{progress.status}</p>
+                <p className="font-medium">{swapData.success ? 'Initiated' : 'Failed'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Phase</p>
+                <p className="font-medium">{swapData.phase || 'ANNOUNCEMENT'}</p>
               </div>
             </div>
           </div>
