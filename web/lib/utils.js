@@ -1,5 +1,6 @@
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import TokenIcon from '../components/TokenIcon';
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -14,8 +15,6 @@ export function formatAmount(amount, decimals = 6) {
   if (!amount) return '0';
   return parseFloat(amount).toFixed(decimals);
 }
-
-export import TokenIcon from '../components/TokenIcon';
 
 function getAssetIcon(asset, size = 24) {
   // Return the TokenIcon component instead of emoji

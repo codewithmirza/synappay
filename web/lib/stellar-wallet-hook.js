@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StellarWalletsKit,
   WalletNetwork,
@@ -43,6 +43,7 @@ const createStellarKit = () => {
 // Session storage keys
 const STELLAR_WALLET_KEY = 'stellar_wallet_connection';
 const STELLAR_ADDRESS_KEY = 'stellar_wallet_address';
+const BACK_NAVIGATION_KEY = 'stellar_back_navigation';
 
 export function useStellarWallet() {
   const [connected, setConnected] = useState(false);
@@ -52,13 +53,52 @@ export function useStellarWallet() {
   const [supportedWallets, setSupportedWallets] = useState([]);
   const [selectedWalletId, setSelectedWalletId] = useState(null);
   const [modalOpened, setModalOpened] = useState(false);
+  
+  // Use ref to track if modal is currently open to prevent multiple modals
+  const modalOpenRef = useRef(false);
+  // Use ref to track if we're in restoration mode
+  const isRestoringRef = useRef(false);
+  // Use ref to track if we're in back navigation
+  const isBackNavigationRef = useRef(false);
 
   const kit = createStellarKit();
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      console.log('Back navigation detected, preventing modal');
+      isBackNavigationRef.current = true;
+      sessionStorage.setItem(BACK_NAVIGATION_KEY, 'true');
+      
+      // Hide any visible modals immediately
+      if (modalOpenRef.current) {
+        setModalOpened(false);
+        modalOpenRef.current = false;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   // Restore connection from session storage on mount
   useEffect(() => {
     const restoreConnection = async () => {
       try {
+        isRestoringRef.current = true;
+        
+        // Check if we're coming from back navigation
+        const isBackNavigation = sessionStorage.getItem(BACK_NAVIGATION_KEY) === 'true';
+        if (isBackNavigation) {
+          console.log('Skipping restoration due to back navigation');
+          sessionStorage.removeItem(BACK_NAVIGATION_KEY);
+          isBackNavigationRef.current = true;
+          return;
+        }
+        
         const savedWalletId = sessionStorage.getItem(STELLAR_WALLET_KEY);
         const savedAddress = sessionStorage.getItem(STELLAR_ADDRESS_KEY);
         
@@ -80,6 +120,8 @@ export function useStellarWallet() {
         // Clear invalid session data
         sessionStorage.removeItem(STELLAR_WALLET_KEY);
         sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+      } finally {
+        isRestoringRef.current = false;
       }
     };
     
@@ -101,13 +143,45 @@ export function useStellarWallet() {
     getSupportedWallets();
   }, [kit]);
 
+  // Ensure kit is properly initialized and no modal is pending
+  useEffect(() => {
+    // Small delay to ensure kit is fully initialized
+    const timer = setTimeout(() => {
+      if (connected && !modalOpenRef.current && !isRestoringRef.current && !isBackNavigationRef.current) {
+        console.log('Kit initialization check completed');
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [connected]);
+
   const connect = useCallback(async () => {
-    if (modalOpened) return; // Prevent multiple modals
+    // Prevent multiple modals using ref instead of state
+    if (modalOpenRef.current) return;
+    
+    // Don't open modal if we're in restoration mode
+    if (isRestoringRef.current) {
+      console.log('Skipping modal open during restoration');
+      return;
+    }
+    
+    // Don't open modal if we're in back navigation
+    if (isBackNavigationRef.current) {
+      console.log('Skipping modal open during back navigation');
+      return;
+    }
+    
+    // Don't open modal if already connected
+    if (connected && publicKey) {
+      console.log('Already connected to Stellar wallet, skipping modal');
+      return;
+    }
     
     try {
       setLoading(true);
       setError(null);
       setModalOpened(true);
+      modalOpenRef.current = true;
       
       await kit.openModal({
         onWalletSelected: async (option) => {
@@ -136,17 +210,20 @@ export function useStellarWallet() {
             
             // Close modal
             setModalOpened(false);
+            modalOpenRef.current = false;
             setLoading(false);
           } catch (err) {
             console.error('Failed to connect wallet:', err);
             setError(err.message);
             setConnected(false);
             setModalOpened(false);
+            modalOpenRef.current = false;
             setLoading(false);
           }
         },
         onClosed: (err) => {
           setModalOpened(false);
+          modalOpenRef.current = false;
           setLoading(false);
           if (err) {
             setError(err.message);
@@ -155,6 +232,7 @@ export function useStellarWallet() {
         },
         onError: (err) => {
           setModalOpened(false);
+          modalOpenRef.current = false;
           setError(err.message);
           setLoading(false);
           console.error('Modal error:', err);
@@ -162,11 +240,12 @@ export function useStellarWallet() {
       });
     } catch (err) {
       setModalOpened(false);
+      modalOpenRef.current = false;
       setError(err.message);
       setLoading(false);
       console.error('Failed to open wallet modal:', err);
     }
-  }, [kit, modalOpened]);
+  }, [kit, connected, publicKey]); // Added connected and publicKey to prevent modal when already connected
 
   const disconnect = useCallback(async () => {
     try {
@@ -176,10 +255,13 @@ export function useStellarWallet() {
       setSelectedWalletId(null);
       setError(null);
       setModalOpened(false);
+      modalOpenRef.current = false;
+      isBackNavigationRef.current = false;
       
       // Clear session storage
       sessionStorage.removeItem(STELLAR_WALLET_KEY);
       sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
+      sessionStorage.removeItem(BACK_NAVIGATION_KEY);
       
       console.log('Disconnected from Stellar wallet');
     } catch (err) {

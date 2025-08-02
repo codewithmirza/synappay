@@ -11,12 +11,12 @@ export function useWalletManager() {
   const { address: ethAddress, isConnected: ethConnected, chainId: ethChainId } = useAccount();
   const { disconnect: disconnectEth } = useDisconnect();
   const { switchChain, isPending: switchLoading } = useSwitchChain();
-  
+
   // Reown AppKit hook
   const { open: openAppKit } = useAppKit();
 
   // Stellar Wallet Kit hooks
-  const { 
+  const {
     connected: stellarConnected,
     publicKey: stellarPublicKey,
     loading: stellarLoading,
@@ -66,7 +66,10 @@ export function useWalletManager() {
   const connectEthereum = async () => {
     try {
       console.log('Opening Reown AppKit modal...');
-      await openAppKit();
+      // Only open if not already connected
+      if (!ethConnected) {
+        await openAppKit();
+      }
     } catch (error) {
       console.error('Failed to open Ethereum wallet modal:', error);
       throw error;

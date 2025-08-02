@@ -1,4 +1,4 @@
-import { StellarSdk } from 'stellar-sdk';
+import { Server, Networks, Asset, TransactionBuilder, Operation, Claimant, Predicate, Keypair, BASE_FEE, hash, xdr } from 'stellar-sdk';
 
 /**
  * Stellar HTLC Manager for Soroban Smart Contracts
@@ -6,8 +6,8 @@ import { StellarSdk } from 'stellar-sdk';
  */
 export class StellarHTLCManager {
   constructor(horizonUrl = 'https://horizon-testnet.stellar.org') {
-    this.server = new StellarSdk.Server(horizonUrl);
-    this.networkPassphrase = StellarSdk.Networks.TESTNET;
+    this.server = new Server(horizonUrl);
+    this.networkPassphrase = Networks.TESTNET;
   }
 
   /**
@@ -40,31 +40,31 @@ export class StellarHTLCManager {
     } = params;
 
     try {
-      const senderKeypair = StellarSdk.Keypair.fromSecret(senderSecretKey);
+      const senderKeypair = Keypair.fromSecret(senderSecretKey);
       const senderAccount = await this.server.loadAccount(senderKeypair.publicKey());
 
       // Create HTLC transaction
-      const transaction = new StellarSdk.TransactionBuilder(senderAccount, {
-        fee: StellarSdk.BASE_FEE,
+      const transaction = new TransactionBuilder(senderAccount, {
+        fee: BASE_FEE,
         networkPassphrase: this.networkPassphrase,
       })
         .addOperation(
-          StellarSdk.Operation.createClaimableBalance({
+          Operation.createClaimableBalance({
             asset: assetCode === 'XLM' 
-              ? StellarSdk.Asset.native() 
-              : new StellarSdk.Asset(assetCode, assetIssuer),
+              ? Asset.native() 
+              : new Asset(assetCode, assetIssuer),
             amount: amount.toString(),
             claimants: [
-              new StellarSdk.Claimant(
+              new Claimant(
                 receiverPublicKey,
-                StellarSdk.Predicate.hashX(hashlock)
+                Predicate.hashX(hashlock)
               ),
-              new StellarSdk.Claimant(
+              new Claimant(
                 senderKeypair.publicKey(),
-                StellarSdk.Predicate.not(
-                  StellarSdk.Predicate.or(
-                    StellarSdk.Predicate.hashX(hashlock),
-                    StellarSdk.Predicate.beforeAbsoluteTime(timelock)
+                Predicate.not(
+                  Predicate.or(
+                    Predicate.hashX(hashlock),
+                    Predicate.beforeAbsoluteTime(timelock)
                   )
                 )
               ),
@@ -102,16 +102,16 @@ export class StellarHTLCManager {
     } = params;
 
     try {
-      const receiverKeypair = StellarSdk.Keypair.fromSecret(receiverSecretKey);
+      const receiverKeypair = Keypair.fromSecret(receiverSecretKey);
       const receiverAccount = await this.server.loadAccount(receiverKeypair.publicKey());
 
       // Create claim transaction
-      const transaction = new StellarSdk.TransactionBuilder(receiverAccount, {
-        fee: StellarSdk.BASE_FEE,
+      const transaction = new TransactionBuilder(receiverAccount, {
+        fee: BASE_FEE,
         networkPassphrase: this.networkPassphrase,
       })
         .addOperation(
-          StellarSdk.Operation.claimClaimableBalance({
+          Operation.claimClaimableBalance({
             balanceId: balanceId,
           })
         )
@@ -122,9 +122,9 @@ export class StellarHTLCManager {
       transaction.sign(receiverKeypair);
       
       // Add preimage signature
-      const hashX = StellarSdk.hash(preimage);
+      const hashX = hash(preimage);
       const signature = receiverKeypair.sign(hashX);
-      transaction.signatures.push(new StellarSdk.xdr.DecoratedSignature({
+      transaction.signatures.push(new xdr.DecoratedSignature({
         hint: receiverKeypair.signatureHint(),
         signature: signature,
       }));
@@ -152,16 +152,16 @@ export class StellarHTLCManager {
     } = params;
 
     try {
-      const senderKeypair = StellarSdk.Keypair.fromSecret(senderSecretKey);
+      const senderKeypair = Keypair.fromSecret(senderSecretKey);
       const senderAccount = await this.server.loadAccount(senderKeypair.publicKey());
 
       // Create refund transaction
-      const transaction = new StellarSdk.TransactionBuilder(senderAccount, {
-        fee: StellarSdk.BASE_FEE,
+      const transaction = new TransactionBuilder(senderAccount, {
+        fee: BASE_FEE,
         networkPassphrase: this.networkPassphrase,
       })
         .addOperation(
-          StellarSdk.Operation.claimClaimableBalance({
+          Operation.claimClaimableBalance({
             balanceId: balanceId,
           })
         )
