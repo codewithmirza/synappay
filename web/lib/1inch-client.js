@@ -7,34 +7,49 @@ class OneInchClient {
   }
 
   // Get quote for token swap
-  async getQuote(fromToken, toToken, amount, chainId = 11155111) {
+  async getQuote(fromToken, toToken, amount, chainId = 1) {
     try {
-      // Convert token symbols to addresses for Sepolia testnet
+      // Convert token symbols to addresses for Ethereum mainnet
       const tokenAddresses = {
-        'ETH': '0x0000000000000000000000000000000000000000', // Native ETH
-        'WETH': '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9', // Wrapped ETH on Sepolia
-        'USDC': '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', // USDC on Sepolia
-        'DAI': '0x68194a729C2450ad26072b3D33ADaCbcef39D574', // DAI on Sepolia
-        'LINK': '0x779877A7B0D9E8603169DdbD7836e478b4624789' // LINK on Sepolia
+        'ETH': '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // Native ETH (1inch format)
+        'WETH': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // Wrapped ETH on mainnet
+        'USDC': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC on mainnet
+        'DAI': '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI on mainnet
+        'LINK': '0x514910771AF9Ca656af840dff83E8264EcF986CA' // LINK on mainnet
       };
 
       const fromAddress = tokenAddresses[fromToken] || fromToken;
       const toAddress = tokenAddresses[toToken] || toToken;
 
-      const response = await fetch(`${this.baseUrl}?path=quote`, {
-        method: 'POST',
+      // Convert amount to wei (18 decimals) for ETH, or use appropriate decimals for other tokens
+      let amountInWei;
+      if (fromToken === 'ETH') {
+        // Convert ETH amount to wei (1 ETH = 10^18 wei)
+        amountInWei = Math.floor(parseFloat(amount) * Math.pow(10, 18)).toString();
+      } else if (fromToken === 'USDC') {
+        // USDC has 6 decimals
+        amountInWei = Math.floor(parseFloat(amount) * Math.pow(10, 6)).toString();
+      } else {
+        // Default to 18 decimals for other tokens
+        amountInWei = Math.floor(parseFloat(amount) * Math.pow(10, 18)).toString();
+      }
+
+      // Use the correct 1inch API endpoint structure - v4.0 is the stable version
+      const targetUrl = `https://api.1inch.dev/swap/v4.0/${chainId}/quote?src=${fromAddress}&dst=${toAddress}&amount=${amountInWei}`;
+      
+      console.log(`🔄 Requesting quote: ${fromToken} -> ${toToken}, amount: ${amount} (${amountInWei} wei)`);
+      
+      const response = await fetch(`${this.baseUrl}?url=${encodeURIComponent(targetUrl)}`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          src: fromAddress,
-          dst: toAddress,
-          amount: amount.toString()
-        })
+        }
       });
 
       if (!response.ok) {
-        throw new Error(`Quote request failed: ${response.status}`);
+        const errorData = await response.json();
+        console.error(`❌ Quote request failed: ${response.status}`, errorData);
+        throw new Error(`Quote request failed: ${response.status} - ${errorData.details || errorData.error || 'Unknown error'}`);
       }
 
       return await response.json();
@@ -47,18 +62,24 @@ class OneInchClient {
   // Get swap data for transaction
   async getSwapData(fromToken, toToken, amount, fromAddress, slippage = 1, chainId = 11155111) {
     try {
-      const response = await fetch(`${this.baseUrl}?path=swap`, {
-        method: 'POST',
+      const tokenAddresses = {
+        'ETH': '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        'WETH': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+        'USDC': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        'DAI': '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        'LINK': '0x514910771AF9Ca656af840dff83E8264EcF986CA'
+      };
+
+      const fromAddressToken = tokenAddresses[fromToken] || fromToken;
+      const toAddressToken = tokenAddresses[toToken] || toToken;
+
+      const targetUrl = `https://api.1inch.dev/swap/v4.0/${chainId}/swap?src=${fromAddressToken}&dst=${toAddressToken}&amount=${amount}&from=${fromAddress}&slippage=${slippage}`;
+      
+      const response = await fetch(`${this.baseUrl}?url=${encodeURIComponent(targetUrl)}`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          src: fromToken,
-          dst: toToken,
-          amount: amount.toString(),
-          from: fromAddress,
-          slippage: slippage.toString()
-        })
+        }
       });
 
       if (!response.ok) {
@@ -75,7 +96,9 @@ class OneInchClient {
   // Get supported tokens
   async getSupportedTokens(chainId = 11155111) {
     try {
-      const response = await fetch(`${this.baseUrl}?path=tokens`, {
+      const targetUrl = `https://api.1inch.dev/swap/v4.0/${chainId}/tokens`;
+      
+      const response = await fetch(`${this.baseUrl}?url=${encodeURIComponent(targetUrl)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -96,7 +119,9 @@ class OneInchClient {
   // Get token approval data
   async getApprovalData(tokenAddress, amount, chainId = 11155111) {
     try {
-      const response = await fetch(`${this.baseUrl}?path=approve/transaction&tokenAddress=${tokenAddress}&amount=${amount}`, {
+      const targetUrl = `https://api.1inch.dev/swap/v4.0/${chainId}/approve/transaction?tokenAddress=${tokenAddress}&amount=${amount}`;
+      
+      const response = await fetch(`${this.baseUrl}?url=${encodeURIComponent(targetUrl)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -117,7 +142,9 @@ class OneInchClient {
   // Get token allowance
   async getAllowance(tokenAddress, walletAddress, chainId = 11155111) {
     try {
-      const response = await fetch(`${this.baseUrl}?path=approve/allowance&tokenAddress=${tokenAddress}&walletAddress=${walletAddress}`, {
+      const targetUrl = `https://api.1inch.dev/swap/v4.0/${chainId}/approve/allowance?tokenAddress=${tokenAddress}&walletAddress=${walletAddress}`;
+      
+      const response = await fetch(`${this.baseUrl}?url=${encodeURIComponent(targetUrl)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'

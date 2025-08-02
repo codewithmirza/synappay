@@ -73,10 +73,12 @@ export default function Swap() {
         fromToken,
         toToken,
         value,
-        11155111 // Sepolia chain ID
+        1 // Ethereum mainnet chain ID
       );
       setQuote(quoteData);
-      setToAmount(quoteData.toTokenAmount || quoteData.toAmount || '0');
+      // Handle different response structures from 1inch API
+      const toAmount = quoteData.toTokenAmount || quoteData.toAmount || quoteData.dstAmount || '0';
+      setToAmount(toAmount);
     } catch (error) {
       console.error('Failed to get quote:', error);
       setSwapError('Failed to get quote. Please try again.');

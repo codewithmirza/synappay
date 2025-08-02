@@ -12,66 +12,44 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { path } = req.query;
+    const { url } = req.query;
     const apiKey = process.env.ONEINCH_API_KEY;
     
     if (!apiKey) {
       return res.status(500).json({ error: '1inch API key not configured' });
     }
 
-    // Route to appropriate 1inch API endpoint
-    let url;
-    let method = 'GET';
-    let headers = {
-      'Authorization': `Bearer ${apiKey}`,
-      'Accept': 'application/json'
-    };
-    let body = null;
-
-    if (path === 'quote' && req.method === 'POST') {
-      const { src, dst, amount } = req.body;
-      if (!src || !dst || !amount) {
-        return res.status(400).json({ error: 'Missing required parameters: src, dst, amount' });
-      }
-      url = `https://api.1inch.dev/swap/v6.0/11155111/quote?src=${src}&dst=${dst}&amount=${amount}`;
-    } else if (path === 'swap' && req.method === 'POST') {
-      const { src, dst, amount, from, slippage } = req.body;
-      if (!src || !dst || !amount || !from) {
-        return res.status(400).json({ error: 'Missing required parameters' });
-      }
-      url = `https://api.1inch.dev/swap/v6.0/11155111/swap?src=${src}&dst=${dst}&amount=${amount}&from=${from}&slippage=${slippage || 1}`;
-    } else if (path === 'tokens') {
-      url = 'https://api.1inch.dev/swap/v6.0/11155111/tokens';
-    } else if (path === 'approve/transaction') {
-      const { tokenAddress, amount } = req.query;
-      if (!tokenAddress || !amount) {
-        return res.status(400).json({ error: 'Missing required parameters' });
-      }
-      url = `https://api.1inch.dev/swap/v6.0/11155111/approve/transaction?tokenAddress=${tokenAddress}&amount=${amount}`;
-    } else if (path === 'approve/allowance') {
-      const { tokenAddress, walletAddress } = req.query;
-      if (!tokenAddress || !walletAddress) {
-        return res.status(400).json({ error: 'Missing required parameters' });
-      }
-      url = `https://api.1inch.dev/swap/v6.0/11155111/approve/allowance?tokenAddress=${tokenAddress}&walletAddress=${walletAddress}`;
-    } else {
-      return res.status(404).json({ error: 'Invalid endpoint' });
+    if (!url) {
+      return res.status(400).json({ error: 'Missing URL parameter' });
     }
 
-    console.log(`🔄 1inch API request: ${method} ${url}`);
+    // Validate that the URL is a 1inch API URL
+    if (!url.includes('api.1inch.dev')) {
+      return res.status(400).json({ error: 'Invalid 1inch API URL' });
+    }
+
+    console.log(`🔄 1inch API request: ${req.method} ${url}`);
 
     const response = await fetch(url, {
-      method,
-      headers,
-      body
+      method: req.method,
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        ...(req.headers['content-type'] && { 'Content-Type': req.headers['content-type'] })
+      },
+      body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`❌ 1inch API error: ${response.status} - ${errorText}`);
+      console.error(`🔍 Request URL: ${url}`);
+      console.error(`🔍 Request method: ${req.method}`);
       return res.status(response.status).json({
         error: `1inch API error: ${response.status}`,
-        details: errorText
+        details: errorText,
+        requestUrl: url
       });
     }
 

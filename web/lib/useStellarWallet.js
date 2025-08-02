@@ -181,9 +181,9 @@ export const useStellarWallet = () => {
             console.log('Connected to wallet:', address);
             
             setPublicKey(address);
-            setIsConnected(true);
+        setIsConnected(true);
             setConnectionMethod(option.id);
-            setError(null);
+        setError(null);
             
             // Store selected wallet preference and public key
             localStorage.setItem('selectedWallet', option.id);
