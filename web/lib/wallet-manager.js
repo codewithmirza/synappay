@@ -1,4 +1,5 @@
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useStellarWallet } from './stellar-wallet-hook';
 
 /**
  * React hook for unified wallet management
@@ -10,22 +11,19 @@ export function useWalletManager() {
   const { connect: connectEth, isPending: ethLoading } = useConnect();
   const { disconnect: disconnectEth } = useDisconnect();
 
-  // Stellar Wallet Kit hooks - temporarily disabled
-  const stellarConnected = false; // Mock: Stellar wallet not connected
-  const stellarPublicKey = null; // Mock: No Stellar public key
-  const stellarLoading = false; // Mock: Not loading
-  const connectStellar = async () => {
-    console.warn('Stellar wallet connection not implemented yet');
-    return Promise.resolve();
-  };
-  const disconnectStellar = async () => {
-    console.warn('Stellar wallet disconnection not implemented yet');
-    return Promise.resolve();
-  };
+  // Stellar Wallet Kit hooks
+  const { 
+    connected: stellarConnected,
+    publicKey: stellarPublicKey,
+    loading: stellarLoading,
+    error: stellarError,
+    connect: connectStellar,
+    disconnect: disconnectStellar
+  } = useStellarWallet();
 
   // Computed states
   const bothConnected = ethConnected && stellarConnected;
-  const canSwap = ethConnected && ethChainId === 11155111; // Sepolia testnet (Ethereum only for now)
+  const canSwap = bothConnected && ethChainId === 11155111; // Sepolia testnet
   const isLoading = ethLoading || stellarLoading;
 
   // Helper functions
@@ -86,11 +84,11 @@ export function useWalletManager() {
     ethChain: null, // Removed useNetwork for now
     ethError: null, // Add error handling if needed
 
-    // Stellar state (mock for now)
+    // Stellar state
     stellarConnected,
     stellarPublicKey,
     stellarLoading,
-    stellarError: null, // Add error handling if needed
+    stellarError,
 
     // Combined state
     bothConnected,
