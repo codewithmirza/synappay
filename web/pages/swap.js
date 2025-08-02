@@ -37,8 +37,11 @@ export default function Swap() {
     error
   } = useCombinedWallet();
 
+  // Initialize 1inch client
+  const oneInchClient = new OneInchClient();
+
   const [fromToken, setFromToken] = useState('ETH');
-  const [toToken, setToToken] = useState('XLM');
+  const [toToken, setToToken] = useState('USDC');
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
   const [quote, setQuote] = useState(null);
@@ -66,14 +69,14 @@ export default function Swap() {
 
     try {
       setLoading(true);
-      const quoteData = await OneInchClient.getQuote(
+      const quoteData = await oneInchClient.getQuote(
         fromToken,
         toToken,
         value,
         11155111 // Sepolia chain ID
       );
       setQuote(quoteData);
-      setToAmount(quoteData.toTokenAmount);
+      setToAmount(quoteData.toTokenAmount || quoteData.toAmount || '0');
     } catch (error) {
       console.error('Failed to get quote:', error);
       setSwapError('Failed to get quote. Please try again.');
@@ -206,7 +209,7 @@ export default function Swap() {
                   {/* Balance Display */}
                   <div className="text-right">
                     <p className="text-sm text-gray-600">Balance</p>
-                    <p className="font-semibold text-gray-900">0.0 ETH</p>
+                    <p className="font-semibold text-gray-900">0.0 {fromToken}</p>
                   </div>
                 </div>
 
@@ -219,9 +222,10 @@ export default function Swap() {
                       className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="ETH">ETH</option>
+                      <option value="WETH">WETH</option>
                       <option value="USDC">USDC</option>
-                      <option value="USDT">USDT</option>
                       <option value="DAI">DAI</option>
+                      <option value="LINK">LINK</option>
                     </select>
                   </div>
                   <input
@@ -270,7 +274,7 @@ export default function Swap() {
                   {/* Balance Display */}
                   <div className="text-right">
                     <p className="text-sm text-gray-600">Balance</p>
-                    <p className="font-semibold text-gray-900">0.0 XLM</p>
+                    <p className="font-semibold text-gray-900">0.0 {toToken}</p>
                   </div>
                 </div>
 
@@ -282,9 +286,11 @@ export default function Swap() {
                       onChange={(e) => setToToken(e.target.value)}
                       className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
-                      <option value="XLM">XLM</option>
                       <option value="USDC">USDC</option>
-                      <option value="USDT">USDT</option>
+                      <option value="ETH">ETH</option>
+                      <option value="WETH">WETH</option>
+                      <option value="DAI">DAI</option>
+                      <option value="LINK">LINK</option>
                     </select>
                   </div>
                   <input

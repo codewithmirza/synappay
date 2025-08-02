@@ -11,60 +11,60 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const { method, path } = req.query;
-
-  if (!method || !path) {
-    return res.status(400).json({ error: 'Missing method or path parameter' });
-  }
-
   try {
-    // Get the API key from environment (server-side only)
+    const { path } = req.query;
     const apiKey = process.env.ONEINCH_API_KEY;
     
     if (!apiKey) {
       return res.status(500).json({ error: '1inch API key not configured' });
     }
 
-    // Construct the 1inch API URL
-    const baseUrl = 'https://api.1inch.dev';
-    let url = `${baseUrl}${path}`;
-
-    // Prepare headers
-    const headers = {
+    // Route to appropriate 1inch API endpoint
+    let url;
+    let method = 'GET';
+    let headers = {
       'Authorization': `Bearer ${apiKey}`,
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
+      'Accept': 'application/json'
     };
+    let body = null;
 
-    // Prepare request options
-    const options = {
-      method: method.toUpperCase(),
-      headers: headers
-    };
-
-    // Add body for POST requests
-    if (method.toUpperCase() === 'POST' && req.body) {
-      options.body = JSON.stringify(req.body);
-    }
-
-    // Add query parameters for GET requests
-    if (method.toUpperCase() === 'GET' && Object.keys(req.query).length > 2) {
-      const queryParams = new URLSearchParams();
-      Object.keys(req.query).forEach(key => {
-        if (key !== 'method' && key !== 'path') {
-          queryParams.append(key, req.query[key]);
-        }
-      });
-      const queryString = queryParams.toString();
-      if (queryString) {
-        url += `?${queryString}`;
+    if (path === 'quote' && req.method === 'POST') {
+      const { src, dst, amount } = req.body;
+      if (!src || !dst || !amount) {
+        return res.status(400).json({ error: 'Missing required parameters: src, dst, amount' });
       }
+      url = `https://api.1inch.dev/swap/v6.0/11155111/quote?src=${src}&dst=${dst}&amount=${amount}`;
+    } else if (path === 'swap' && req.method === 'POST') {
+      const { src, dst, amount, from, slippage } = req.body;
+      if (!src || !dst || !amount || !from) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      url = `https://api.1inch.dev/swap/v6.0/11155111/swap?src=${src}&dst=${dst}&amount=${amount}&from=${from}&slippage=${slippage || 1}`;
+    } else if (path === 'tokens') {
+      url = 'https://api.1inch.dev/swap/v6.0/11155111/tokens';
+    } else if (path === 'approve/transaction') {
+      const { tokenAddress, amount } = req.query;
+      if (!tokenAddress || !amount) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      url = `https://api.1inch.dev/swap/v6.0/11155111/approve/transaction?tokenAddress=${tokenAddress}&amount=${amount}`;
+    } else if (path === 'approve/allowance') {
+      const { tokenAddress, walletAddress } = req.query;
+      if (!tokenAddress || !walletAddress) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      url = `https://api.1inch.dev/swap/v6.0/11155111/approve/allowance?tokenAddress=${tokenAddress}&walletAddress=${walletAddress}`;
+    } else {
+      return res.status(404).json({ error: 'Invalid endpoint' });
     }
 
-    console.log(`🔄 Proxying ${method} request to: ${url}`);
+    console.log(`🔄 1inch API request: ${method} ${url}`);
 
-    // Make the request to 1inch API
-    const response = await fetch(url, options);
+    const response = await fetch(url, {
+      method,
+      headers,
+      body
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -76,15 +76,14 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    
-    console.log(`✅ Successfully proxied ${method} request to 1inch API`);
+    console.log(`✅ Successfully retrieved data from 1inch API`);
     
     return res.status(200).json(data);
 
   } catch (error) {
-    console.error('❌ Proxy error:', error);
+    console.error('❌ 1inch proxy error:', error);
     return res.status(500).json({
-      error: 'Proxy error',
+      error: '1inch proxy error',
       details: error.message
     });
   }

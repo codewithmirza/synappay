@@ -9,19 +9,28 @@ class OneInchClient {
   // Get quote for token swap
   async getQuote(fromToken, toToken, amount, chainId = 11155111) {
     try {
-      const params = new URLSearchParams({
-        src: fromToken,
-        dst: toToken,
-        amount: amount.toString(),
-        includeTokensInfo: 'true',
-        includeProtocols: 'true'
-      });
+      // Convert token symbols to addresses for Sepolia testnet
+      const tokenAddresses = {
+        'ETH': '0x0000000000000000000000000000000000000000', // Native ETH
+        'WETH': '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9', // Wrapped ETH on Sepolia
+        'USDC': '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', // USDC on Sepolia
+        'DAI': '0x68194a729C2450ad26072b3D33ADaCbcef39D574', // DAI on Sepolia
+        'LINK': '0x779877A7B0D9E8603169DdbD7836e478b4624789' // LINK on Sepolia
+      };
 
-      const response = await fetch(`${this.baseUrl}/swap/v6.0/${chainId}/quote?${params}`, {
-        method: 'GET',
+      const fromAddress = tokenAddresses[fromToken] || fromToken;
+      const toAddress = tokenAddresses[toToken] || toToken;
+
+      const response = await fetch(`${this.baseUrl}?path=quote`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          src: fromAddress,
+          dst: toAddress,
+          amount: amount.toString()
+        })
       });
 
       if (!response.ok) {
@@ -38,21 +47,18 @@ class OneInchClient {
   // Get swap data for transaction
   async getSwapData(fromToken, toToken, amount, fromAddress, slippage = 1, chainId = 11155111) {
     try {
-      const params = new URLSearchParams({
-        src: fromToken,
-        dst: toToken,
-        amount: amount.toString(),
-        from: fromAddress,
-        slippage: slippage.toString(),
-        includeTokensInfo: 'true',
-        includeProtocols: 'true'
-      });
-
-      const response = await fetch(`${this.baseUrl}/swap/v6.0/${chainId}/swap?${params}`, {
-        method: 'GET',
+      const response = await fetch(`${this.baseUrl}?path=swap`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          src: fromToken,
+          dst: toToken,
+          amount: amount.toString(),
+          from: fromAddress,
+          slippage: slippage.toString()
+        })
       });
 
       if (!response.ok) {
@@ -69,7 +75,7 @@ class OneInchClient {
   // Get supported tokens
   async getSupportedTokens(chainId = 11155111) {
     try {
-      const response = await fetch(`${this.baseUrl}/swap/v6.0/${chainId}/tokens`, {
+      const response = await fetch(`${this.baseUrl}?path=tokens`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -90,12 +96,7 @@ class OneInchClient {
   // Get token approval data
   async getApprovalData(tokenAddress, amount, chainId = 11155111) {
     try {
-      const params = new URLSearchParams({
-        tokenAddress: tokenAddress,
-        amount: amount.toString()
-      });
-
-      const response = await fetch(`${this.baseUrl}/swap/v6.0/${chainId}/approve/transaction?${params}`, {
+      const response = await fetch(`${this.baseUrl}?path=approve/transaction&tokenAddress=${tokenAddress}&amount=${amount}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -116,12 +117,7 @@ class OneInchClient {
   // Get token allowance
   async getAllowance(tokenAddress, walletAddress, chainId = 11155111) {
     try {
-      const params = new URLSearchParams({
-        tokenAddress: tokenAddress,
-        walletAddress: walletAddress
-      });
-
-      const response = await fetch(`${this.baseUrl}/swap/v6.0/${chainId}/approve/allowance?${params}`, {
+      const response = await fetch(`${this.baseUrl}?path=approve/allowance&tokenAddress=${tokenAddress}&walletAddress=${walletAddress}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
