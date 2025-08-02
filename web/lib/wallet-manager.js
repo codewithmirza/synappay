@@ -23,10 +23,10 @@ export function useWalletManager() {
     selectedWalletId: stellarSelectedWalletId
   } = useStellarWallet();
 
-  // Computed states
-  const bothConnected = ethConnected && stellarConnected;
-  const canSwap = bothConnected && ethChainId === 11155111; // Sepolia testnet
-  const isLoading = ethLoading || stellarLoading;
+  // Computed states - ensure proper boolean values
+  const bothConnected = Boolean(ethConnected && stellarConnected);
+  const canSwap = Boolean(bothConnected && ethChainId === 11155111); // Sepolia testnet
+  const isLoading = Boolean(ethLoading || stellarLoading);
 
   // Helper functions
   const formatEthAddress = (address) => {
@@ -82,6 +82,16 @@ export function useWalletManager() {
       throw error;
     }
   };
+
+  // Debug logging
+  console.log('Wallet Manager State:', {
+    ethConnected,
+    stellarConnected,
+    bothConnected,
+    canSwap,
+    ethAddress: ethAddress ? formatEthAddress(ethAddress) : 'None',
+    stellarPublicKey: stellarPublicKey ? formatStellarAddress(stellarPublicKey) : 'None'
+  });
 
   return {
     // Ethereum state

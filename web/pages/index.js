@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Wallet, Shield, Zap, CheckCircle, AlertCircle, RefreshCw, Coins, Target, Lock, Zap as ZapIcon, Gift } from 'lucide-react';
 import { useWalletManager } from '../lib/wallet-manager';
@@ -35,6 +35,18 @@ export default function Home() {
   } = useWalletManager();
 
   const [showNetworkAlert, setShowNetworkAlert] = useState(false);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Landing Page State:', {
+      ethConnected,
+      stellarConnected,
+      bothConnected,
+      canSwap,
+      ethAddress: ethAddress ? formatEthAddress(ethAddress) : 'None',
+      stellarPublicKey: stellarPublicKey ? formatStellarAddress(stellarPublicKey) : 'None'
+    });
+  }, [ethConnected, stellarConnected, bothConnected, canSwap, ethAddress, stellarPublicKey, formatEthAddress, formatStellarAddress]);
 
   // Check network on connection
   useEffect(() => {
@@ -133,6 +145,13 @@ export default function Home() {
               <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-md mx-auto">
                 Trustless ETH ↔️ XLM transfers powered by 1inch Fusion+ and HTLC security
               </p>
+              
+              {/* Debug info */}
+              <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                ETH: {ethConnected ? 'Connected' : 'Not Connected'} | 
+                Stellar: {stellarConnected ? 'Connected' : 'Not Connected'} | 
+                Both: {bothConnected ? 'Yes' : 'No'}
+              </div>
               
               {/* Start Swap Button - Centered when both wallets connected */}
               {bothConnected && (

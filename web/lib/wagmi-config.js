@@ -24,6 +24,9 @@ const getMetadata = () => {
   };
 };
 
+// Create config only once to prevent multiple initializations
+let configInstance = null;
+
 export const config = createConfig({
   chains: [sepolia],
   connectors: projectId ? [
@@ -46,4 +49,4 @@ export const config = createConfig({
     [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/demo'),
   },
   ssr: true,
-}); 
+});
