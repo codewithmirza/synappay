@@ -18,16 +18,16 @@ export default function Claim() {
     try {
       const storedExecutionResult = sessionStorage.getItem('executionResult');
       const storedSwapData = sessionStorage.getItem('swapData');
-      
+
       if (storedExecutionResult && storedSwapData) {
         const executionResult = JSON.parse(storedExecutionResult);
         const originalSwapData = JSON.parse(storedSwapData);
-        
+
         const combinedData = {
           ...originalSwapData,
           ...executionResult,
         };
-        
+
         setSwapData(combinedData);
         console.log('📋 Claim data loaded:', combinedData);
       } else {
@@ -50,17 +50,18 @@ export default function Claim() {
 
     try {
       console.log('🎯 Claiming tokens with secret:', swapData.secret);
-      
+
       // For demo purposes, simulate successful claim
+      // In a real implementation, this would call the actual claim API
       setTimeout(() => {
         setClaimResult({
           success: true,
-          txHash: '0x' + Math.random().toString(16).substr(2, 64),
-          message: 'Tokens successfully claimed!'
+          txHash: swapData.txHash, // Use the original HTLC transaction hash
+          message: 'Tokens successfully claimed! (Demo - in production this would be a separate claim transaction)'
         });
         setIsClaiming(false);
       }, 3000);
-      
+
     } catch (error) {
       setError('Failed to claim tokens: ' + error.message);
       setIsClaiming(false);
