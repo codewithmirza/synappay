@@ -1,4 +1,5 @@
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect, useSwitchChain } from 'wagmi';
+import { useAppKit } from '@reown/appkit/react';
 import { useStellarWallet } from './stellar-wallet-hook';
 
 /**
@@ -8,8 +9,11 @@ import { useStellarWallet } from './stellar-wallet-hook';
 export function useWalletManager() {
   // Wagmi hooks for Ethereum
   const { address: ethAddress, isConnected: ethConnected, chainId: ethChainId } = useAccount();
-  const { connect: connectEth, isPending: ethLoading } = useConnect();
   const { disconnect: disconnectEth } = useDisconnect();
+  const { switchChain, isPending: switchLoading } = useSwitchChain();
+  
+  // Reown AppKit hook
+  const { open: openAppKit } = useAppKit();
 
   // Stellar Wallet Kit hooks
   const { 
@@ -26,7 +30,7 @@ export function useWalletManager() {
   // Computed states - ensure proper boolean values
   const bothConnected = Boolean(ethConnected && stellarConnected && ethAddress && stellarPublicKey);
   const canSwap = Boolean(bothConnected && ethChainId === 11155111); // Sepolia testnet
-  const isLoading = Boolean(ethLoading || stellarLoading);
+  const isLoading = Boolean(stellarLoading);
 
   // Helper functions
   const formatEthAddress = (address) => {
@@ -50,14 +54,21 @@ export function useWalletManager() {
   };
 
   const switchToSepolia = async () => {
-    console.warn('Network switching not implemented yet');
+    try {
+      console.log('Switching to Sepolia network...');
+      await switchChain({ chainId: 11155111 }); // Sepolia chain ID
+    } catch (error) {
+      console.error('Failed to switch to Sepolia:', error);
+      throw error;
+    }
   };
 
   const connectEthereum = async () => {
     try {
-      await connectEth();
+      console.log('Opening Reown AppKit modal...');
+      await openAppKit();
     } catch (error) {
-      console.error('Failed to connect Ethereum wallet:', error);
+      console.error('Failed to open Ethereum wallet modal:', error);
       throw error;
     }
   };
@@ -101,9 +112,9 @@ export function useWalletManager() {
     ethConnected,
     ethAddress,
     ethChainId,
-    ethLoading,
-    ethChain: null, // Removed useNetwork for now
-    ethError: null, // Add error handling if needed
+    ethLoading: false,
+    ethChain: null,
+    ethError: null,
 
     // Stellar state
     stellarConnected,
@@ -133,6 +144,6 @@ export function useWalletManager() {
 
     // Network switching
     switchToSepolia,
-    switchLoading: false
+    switchLoading
   };
 } 

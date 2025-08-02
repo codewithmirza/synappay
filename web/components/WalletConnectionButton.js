@@ -168,7 +168,7 @@ export default function WalletConnectionButton() {
                       disabled={ethLoading}
                       className="w-full flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {ethLoading ? 'Connecting...' : 'Connect Ethereum'}
+                      {ethLoading ? 'Connecting...' : 'Connect Ethereum Wallet'}
                     </button>
                   )}
                 </div>
