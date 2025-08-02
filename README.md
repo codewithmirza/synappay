@@ -1,6 +1,18 @@
 # SynapPay - Cross-Chain Atomic Swaps
 
-A decentralized application enabling secure, trustless swaps between Ethereum and Stellar networks using Hash Time-Locked Contracts (HTLCs) and 1inch Fusion+ for optimal pricing.
+A decentralized application that combines **Stellar's fast, low-cost transactions** with **1inch's DEX aggregation technology** to create innovative cross-chain trading solutions. SynapPay enables secure, trustless swaps between Ethereum and Stellar networks using Hash Time-Locked Contracts (HTLCs) and 1inch Fusion+ for optimal pricing.
+
+## 🎯 **Vision & Mission**
+
+### **Core Vision**
+SynapPay bridges the gap between Ethereum's DeFi ecosystem and Stellar's fast, cost-effective network by creating a unified platform that leverages the best of both worlds:
+
+- **Stellar's Speed**: Sub-second transaction finality and minimal fees
+- **1inch's Liquidity**: Access to the largest DEX aggregation network
+- **Cross-Chain Innovation**: Seamless asset movement between ecosystems
+
+### **Key Innovation**
+We've created the first platform that meaningfully integrates both Stellar blockchain and 1inch API/protocols to deliver superior user experiences and unlock new financial use cases in cross-chain DeFi.
 
 ## 🚀 **Quick Start**
 
@@ -51,7 +63,7 @@ Visit [http://localhost:3000](http://localhost:3000) to see the application.
 ### **Technology Stack**
 - **Frontend**: Next.js 14, React 18, Tailwind CSS, Framer Motion
 - **Ethereum**: Wagmi, WalletConnect, Ethers.js, Hardhat
-- **Stellar**: Stellar SDK, Freighter wallet integration
+- **Stellar**: Stellar SDK, Stellar Wallets Kit (Freighter, xBull, Albedo, etc.)
 - **DeFi**: 1inch Fusion+ API, HTLC contracts
 - **Deployment**: Vercel, Hardhat
 
@@ -75,20 +87,32 @@ NEXT_PUBLIC_STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
 NEXT_PUBLIC_STELLAR_NETWORK=testnet
 ```
 
-## 🎨 **UI/UX Features**
+## 🎨 **User Experience Flow**
 
-### **Wallet Connection**
+### **1. Landing Page**
+- **Clean, minimalist design** with focus on wallet connection
+- **Single "Start Swap" button** appears when both wallets connected
+- **No redundant content** - streamlined user journey
+
+### **2. Wallet Connection**
 - **Top-right wallet button** with dropdown
 - **Reown AppKit** for Ethereum (WalletConnect v2)
-- **Freighter extension** for Stellar
+- **Stellar Wallets Kit** for Stellar (Freighter, xBull, Albedo, etc.)
 - **Network validation** (Sepolia testnet)
-- **Clean black styling** for consistency
+- **Persistent connections** across route changes
 
-### **Swap Interface**
+### **3. Swap Interface**
+- **Stacked chain cards** (Ethereum top, Stellar bottom)
+- **3D micro-motion swap arrows** with gradient animations
 - **Real-time quotes** from 1inch Fusion+
-- **Slippage protection** with user controls
-- **Cross-chain validation** before execution
-- **Progress tracking** with HTLC phases
+- **Token dropdown selectors** for each chain
+- **Balance displays** and amount inputs
+- **Best price badge** via 1inch (Live)
+
+### **4. Review & Execution**
+- **Clean swap confirmation** with chain details
+- **HTLC security information** and quote details
+- **Cross-chain atomic execution** with progress tracking
 - **Error handling** with retry mechanisms
 
 ## 🔒 **Security Features**
@@ -135,13 +159,18 @@ vercel --prod
 - **Quote generation**: < 2 seconds
 - **Mobile compatibility**: 100% responsive
 
-## 🎯 **Submission Strategy**
+## 🎯 **Qualification Requirements Met**
 
-### **Track 1 Pitch**
-"We extended 1inch Fusion+ to Stellar, implemented secure HTLCs on both chains, and built a working cross-chain relayer."
+### **Core Requirements** ✅
+- **Preserve hashlock and timelock functionality** for non-EVM implementation
+- **Bidirectional swap functionality** (Ethereum ↔ Stellar)
+- **Onchain execution** of token transfers on testnets
+- **Meaningful integration** of both Stellar blockchain and 1inch API/protocols
 
-### **Track 2 Pitch**
-"We combined Stellar's fast transactions with 1inch's DEX APIs to create a seamless cross-chain DeFi experience."
+### **Stretch Goals** ✅
+- **Modern UI/UX** with stacked chain cards and micro-animations
+- **Partial fills** support via 1inch Fusion+ aggregation
+- **Cross-chain DeFi primitives** unlocking new financial use cases
 
 ## 🤝 **Contributing**
 
@@ -157,16 +186,20 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**Built with ❤️ for the ETHGlobal Unite DeFi Hackathon** 
+**Built with ❤️ for the ETHGlobal Unite DeFi Hackathon**
 
 ## Stellar Wallet Support
 
-The application now uses **Stellar Wallets Kit** which supports multiple Stellar wallets:
+The application uses **Stellar Wallets Kit** which supports multiple Stellar wallets:
 
 - **Freighter** (Browser Extension)
-- **xBull** (Mobile App)
-- **Rabet** (Browser Extension)
+- **xBull** (Mobile App & Extension)
 - **Albedo** (Browser Extension)
+- **Rabet** (Browser Extension)
+- **Lobstr** (Mobile App & Extension)
+- **Hana** (Mobile App)
 - **Ledger** (Hardware Wallet)
+- **Trezor** (Hardware Wallet)
+- **HOT Wallet** (Mobile App)
 
-Users can select their preferred wallet through a unified interface. If no wallets are available, users can still connect manually by entering their secret key. 
+Users can select their preferred wallet through a unified interface with persistent connections across route changes. 

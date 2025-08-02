@@ -111,6 +111,25 @@ export default function Home() {
               <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-md mx-auto">
                 Seamless ETH ↔️ XLM transfers powered by 1inch Fusion+ and HTLC security
               </p>
+              
+              {/* Start Swap Button - Centered when both wallets connected */}
+              {bothConnected && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.6 }}
+                  className="pt-4"
+                >
+                  <button
+                    onClick={() => window.location.href = '/swap'}
+                    className="bg-black text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-800 transition-all transform hover:scale-105 flex items-center justify-center space-x-3 mx-auto"
+                  >
+                    <Coins className="w-5 h-5" />
+                    <span>Start Your First Swap</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                </motion.div>
+              )}
             </motion.div>
 
             {/* Connection Status */}
@@ -134,126 +153,28 @@ export default function Home() {
                     <h3 className="text-green-800 font-semibold text-lg mb-2">
                       🎉 Wallets Connected Successfully!
                     </h3>
-                    <p className="text-green-700 text-sm mb-4">
+                    <p className="text-green-700 text-sm">
                       You're ready to start cross-chain swaps between Ethereum and Stellar
                     </p>
-                    <button
-                      onClick={() => window.location.href = '/swap'}
-                      className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all transform hover:scale-105 flex items-center justify-center space-x-2 mx-auto"
-                    >
-                      <Coins className="w-5 h-5" />
-                      <span>Start Your First Swap</span>
-                      <ArrowRight className="w-5 h-5" />
-                    </button>
                   </motion.div>
-
-                  {/* Wallet Status Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Ethereum Status */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <span className="text-blue-800 font-medium">Ethereum</span>
-                      </div>
-                      <div className="text-sm text-blue-700 space-y-1">
-                        <div className="font-mono">{formatEthAddress(ethAddress)}</div>
-                        <div className="flex items-center justify-between">
-                          <span>Network:</span>
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            isCorrectEthNetwork() 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {isCorrectEthNetwork() ? 'Sepolia' : 'Wrong Network'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Stellar Status */}
-                    <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                        <span className="text-purple-800 font-medium">Stellar</span>
-                      </div>
-                      <div className="text-sm text-purple-700">
-                        <div className="font-mono">{formatStellarAddress(stellarPublicKey)}</div>
-                        <div className="flex items-center justify-between">
-                          <span>Network:</span>
-                          <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">
-                            Testnet
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {showNetworkAlert && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-amber-50 border border-amber-200 rounded-xl p-4"
-                    >
-                      <div className="flex items-center space-x-2 mb-2">
-                        <AlertCircle className="w-5 h-5 text-amber-600" />
-                        <span className="text-amber-800 font-medium">Network Mismatch</span>
-                      </div>
-                      <p className="text-amber-700 text-sm mb-3">
-                        Please switch to Sepolia testnet to use SynapPay
-                      </p>
-                      <button
-                        onClick={handleNetworkSwitch}
-                        className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
-                      >
-                        Switch to Sepolia
-                      </button>
-                    </motion.div>
-                  )}
-
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => window.location.href = '/swap'}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
-                    >
-                      Start Swapping
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </button>
-                  </div>
                 </motion.div>
               ) : (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4, duration: 0.6 }}
-                  className="space-y-6"
+                  className="text-center space-y-6"
                 >
-                  {/* Error Display */}
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-red-50 border border-red-200 rounded-xl p-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <AlertCircle className="w-5 h-5 text-red-600" />
-                        <span className="text-red-800 font-medium">Connection Error</span>
-                      </div>
-                      <p className="text-red-700 text-sm mt-1">{error}</p>
-                    </motion.div>
-                  )}
-
-                  {/* Supported Wallets */}
-                  <div className="text-center space-y-2">
-                    <p className="text-sm text-gray-500">Supported Wallets</p>
-                    <div className="flex items-center justify-center space-x-4 text-xs text-gray-400">
-                      <span>MetaMask</span>
-                      <span>•</span>
-                      <span>Trust Wallet</span>
-                      <span>•</span>
-                      <span>StellarSnap</span>
-                      <span>•</span>
-                      <span>Rainbow</span>
-                    </div>
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                    <Wallet className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Connect Your Wallets
+                    </h3>
+                    <p className="text-gray-600">
+                      Use the wallet connection button in the top-right corner to connect both Ethereum and Stellar wallets
+                    </p>
                   </div>
                 </motion.div>
               )}

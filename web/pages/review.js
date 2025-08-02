@@ -112,194 +112,202 @@ export default function Review() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center p-4">
-      <div className="p-6 md:p-8 max-w-[600px] w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-[32px] font-bold text-gray-900 mb-2">
-            Review Swap
-          </h1>
-          <p className="text-base md:text-[16px] text-gray-600">
-            Confirm your cross-chain swap details
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#f2f2f7] via-white to-[#f8f9fa]">
+      {/* Header */}
+      <div className="fixed top-4 left-4 z-50">
+        <button
+          onClick={handleBack}
+          className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg hover:bg-white transition-all"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm font-medium">Back</span>
+        </button>
+      </div>
 
-        {/* Swap Details */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-          <div className="space-y-6">
-            {/* Swap Direction */}
-            <div className="text-center">
-              <div className="flex items-center justify-center space-x-4 mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">{swapData.fromToken[0]}</span>
-                  </div>
-                  <span className="text-lg font-semibold">{swapData.fromAmount} {swapData.fromToken}</span>
-                </div>
-                <ArrowRight className="w-6 h-6 text-gray-400" />
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">{swapData.toToken[0]}</span>
-                  </div>
-                  <span className="text-lg font-semibold">{swapData.toAmount} {swapData.toToken}</span>
-                </div>
-              </div>
-              <p className="text-sm text-gray-500">
-                {swapData.fromToken} → {swapData.toToken} via 1inch Fusion+
-              </p>
-            </div>
-
-            {/* Quote Details */}
-            {swapData.quote && (
-              <div className="bg-blue-50 rounded-xl p-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Quote Details</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Exchange Rate</span>
-                    <span className="text-sm font-semibold">
-                      1 {swapData.fromToken} = {(swapData.toAmount / swapData.fromAmount).toFixed(6)} {swapData.toToken}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Price Impact</span>
-                    <span className="text-sm font-semibold text-green-600">
-                      {swapData.quote.priceImpact || 0}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Slippage</span>
-                    <span className="text-sm font-semibold">{swapData.slippage}%</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Wallet Information */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-700">Wallet Information</h3>
-              
-              {/* Ethereum Wallet */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Shield className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Ethereum</p>
-                    <p className="text-xs text-gray-600 font-mono">{formatEthAddress(swapData.ethAddress)}</p>
-                  </div>
-                </div>
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-
-              {/* Stellar Wallet */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Star className="w-5 h-5 text-yellow-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Stellar</p>
-                    <p className="text-xs text-gray-600 font-mono">{formatStellarAddress(swapData.stellarPublicKey)}</p>
-                  </div>
-                </div>
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-
-            {/* Security Information */}
-            <div className="bg-green-50 rounded-xl p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <Shield className="w-5 h-5 text-green-600" />
-                <h3 className="text-sm font-medium text-green-900">HTLC Security</h3>
-              </div>
-              <p className="text-xs text-green-700">
-                Your swap is protected by Hash Time Locked Contracts (HTLCs) on both chains. 
-                Funds are secured and can be refunded if the swap fails.
-              </p>
-            </div>
-
-            {/* Contract Information */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Contract Details</h3>
-              <p className="text-xs text-gray-600 font-mono">
-                {swapData.contractAddress}
-              </p>
-            </div>
+      {/* Main Content */}
+      <div className="min-h-screen flex items-center justify-center p-4 pt-20">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-white rounded-[30px] shadow-[0px_20px_60px_0px_rgba(0,0,0,0.1)] p-8 md:p-12 max-w-[500px] w-full"
+        >
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Review Swap</h1>
+            <p className="text-gray-600">Confirm your cross-chain transaction</p>
           </div>
-        </div>
 
-        {/* Error Message */}
-        {error && (
+          {/* Swap Details Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl"
+            transition={{ delay: 0.1 }}
+            className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 mb-6"
           >
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-red-500" />
-              <span className="text-sm text-red-700">{error}</span>
+            {/* From Chain */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">Ξ</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Ethereum (Sepolia)</h3>
+                  <p className="text-sm text-gray-600">{formatEthAddress(swapData?.ethAddress)}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-600">You Pay</p>
+                <p className="font-semibold text-gray-900">{swapData?.fromAmount} {swapData?.fromToken}</p>
+              </div>
             </div>
-            <button
-              onClick={handleRetry}
-              className="mt-2 text-sm text-red-600 hover:text-red-700 font-medium"
-            >
-              Try again
-            </button>
+
+            {/* Arrow */}
+            <div className="flex justify-center mb-4">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <ArrowRight className="w-4 h-4 text-white" />
+              </div>
+            </div>
+
+            {/* To Chain */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">★</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Stellar (Testnet)</h3>
+                  <p className="text-sm text-gray-600">{formatStellarAddress(swapData?.stellarPublicKey)}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-600">You Receive</p>
+                <p className="font-semibold text-gray-900">{swapData?.toAmount} {swapData?.toToken}</p>
+              </div>
+            </div>
           </motion.div>
-        )}
 
-        {/* Success Message */}
-        {executionResult && (
+          {/* Quote Details */}
+          {swapData?.quote && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6"
+            >
+              <h3 className="font-semibold text-gray-900 mb-3">Swap Details</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Exchange Rate</span>
+                  <span className="font-medium text-gray-900">
+                    1 {swapData.fromToken} = {swapData.quote.exchangeRate?.toFixed(6) || 'N/A'} {swapData.toToken}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Price Impact</span>
+                  <span className="font-medium text-green-600">
+                    {swapData.quote.priceImpact || 0}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Network Fee</span>
+                  <span className="font-medium text-gray-900">
+                    ~${swapData.quote.estimatedGas || 'Unknown'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Slippage</span>
+                  <span className="font-medium text-gray-900">{swapData.slippage}%</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Security Info */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl"
+            transition={{ delay: 0.3 }}
+            className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6"
           >
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <span className="text-sm text-green-700">Swap executed successfully!</span>
+            <div className="flex items-center space-x-2 mb-2">
+              <Shield className="w-5 h-5 text-green-600" />
+              <span className="font-semibold text-green-800">HTLC Security</span>
             </div>
-            <p className="text-xs text-green-600 mt-1">
-              Transaction Hash: {executionResult.txHash?.slice(0, 10)}...{executionResult.txHash?.slice(-8)}
+            <p className="text-sm text-green-700">
+              Your swap is secured by Hash Time-Locked Contracts (HTLC) ensuring atomic cross-chain execution.
             </p>
           </motion.div>
-        )}
 
-        {/* Action Buttons */}
-        <div className="flex space-x-4">
-          <button
-            onClick={handleBack}
-            disabled={isExecuting}
-            className="flex-1 py-3 px-6 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
-            <ArrowLeft className="w-5 h-5 inline mr-2" />
-            Back
-          </button>
+          {/* Error Display */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6"
+            >
+              <div className="flex items-center space-x-2 mb-2">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <span className="text-red-800 font-medium">Error</span>
+              </div>
+              <p className="text-red-700 text-sm">{error}</p>
+            </motion.div>
+          )}
 
-          <motion.button
-            onClick={handleSwapTokens}
-            disabled={isExecuting}
-            className="flex-1 py-3 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50"
-            whileHover={!isExecuting ? { scale: 1.02 } : {}}
-            whileTap={!isExecuting ? { scale: 0.98 } : {}}
+          {/* Success Message */}
+          {executionResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6"
+            >
+              <div className="flex items-center space-x-2 mb-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <span className="text-green-800 font-medium">Swap Initiated</span>
+              </div>
+              <p className="text-green-700 text-sm">
+                Your cross-chain swap has been initiated. Redirecting to progress page...
+              </p>
+            </motion.div>
+          )}
+
+          {/* Action Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="space-y-3"
           >
-            {isExecuting ? (
-              <>
-                <Loader className="w-5 h-5 inline mr-2 animate-spin" />
-                Executing...
-              </>
-            ) : (
-              <>
-                <Zap className="w-5 h-5 inline mr-2" />
-                Execute Swap
-              </>
+            {!executionResult && (
+              <button
+                onClick={handleSwapTokens}
+                disabled={isExecuting}
+                className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                {isExecuting ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    <span>Executing Swap...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-5 h-5" />
+                    <span>Execute Swap</span>
+                  </>
+                )}
+              </button>
             )}
-          </motion.button>
-        </div>
 
-        {/* Info Section */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Powered by 1inch Fusion+ • HTLC Security • Cross-Chain
-          </p>
-        </div>
+            {error && (
+              <button
+                onClick={handleRetry}
+                className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition-all"
+              >
+                Try Again
+              </button>
+            )}
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );

@@ -23,11 +23,7 @@ export const useCombinedWallet = () => {
     publicKey: stellarPublicKey,
     isLoading: stellarLoading,
     error: stellarError,
-    showManualInput,
-    manualSecretKey,
-    setManualSecretKey,
     connect: connectStellar,
-    connectWithManualKey,
     disconnect: disconnectStellar,
     signTransaction: signStellarTransaction,
     signMessage: signStellarMessage,
@@ -49,6 +45,16 @@ export const useCombinedWallet = () => {
     const canSwap = bothConnected && isCorrectEthNetwork() && isCorrectStellarNetwork();
     const isLoading = ethLoading || stellarLoading;
     const error = ethError || stellarError;
+
+    console.log('Wallet States:', {
+      ethConnected,
+      stellarConnected,
+      bothConnected,
+      ethAddress: ethAddress?.slice(0, 10) + '...',
+      stellarPublicKey: stellarPublicKey?.slice(0, 10) + '...',
+      isCorrectEthNetwork: isCorrectEthNetwork(),
+      isCorrectStellarNetwork: isCorrectStellarNetwork()
+    });
 
     setCombinedState({
       bothConnected,
@@ -102,11 +108,7 @@ export const useCombinedWallet = () => {
     stellarPublicKey,
     stellarLoading,
     stellarError,
-    showManualInput,
-    manualSecretKey,
-    setManualSecretKey,
     connectStellar,
-    connectWithManualKey,
     disconnectStellar,
     signStellarTransaction,
     signStellarMessage,

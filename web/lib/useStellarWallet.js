@@ -88,6 +88,67 @@ export const useStellarWallet = () => {
     };
   }, [initializeKit]);
 
+  // Check for existing connection on mount - REMOVED to prevent auto-connection
+  // useEffect(() => {
+  //   const checkExistingConnection = async () => {
+  //     if (kitRef && !isConnected) {
+  //       try {
+  //         // Check if we have a stored wallet preference
+  //         const selectedWallet = localStorage.getItem('selectedWallet');
+  //         if (selectedWallet) {
+  //           console.log('Attempting to reconnect to stored wallet:', selectedWallet);
+  //           await kitRef.setWallet(selectedWallet);
+  //           const { address } = await kitRef.getAddress();
+  //           console.log('Reconnected to wallet:', address);
+  //           
+  //           setPublicKey(address);
+  //           setIsConnected(true);
+  //           setConnectionMethod(selectedWallet);
+  //           setError(null);
+  //         }
+  //       } catch (err) {
+  //         console.log('No existing connection found, user needs to connect manually');
+  //         // Clear invalid stored preference
+  //         localStorage.removeItem('selectedWallet');
+  //       }
+  //     }
+  //   };
+  //
+  //   if (kitRef) {
+  //     checkExistingConnection();
+  //   }
+  // }, [kitRef, isConnected]);
+
+  // Persist connection state across route changes
+  useEffect(() => {
+    const checkPersistedConnection = async () => {
+      if (kitRef && !isConnected) {
+        try {
+          const persistedWallet = localStorage.getItem('selectedWallet');
+          const persistedPublicKey = localStorage.getItem('stellarPublicKey');
+          
+          if (persistedWallet && persistedPublicKey) {
+            console.log('Restoring persisted Stellar connection...');
+            await kitRef.setWallet(persistedWallet);
+            setPublicKey(persistedPublicKey);
+            setIsConnected(true);
+            setConnectionMethod(persistedWallet);
+            setError(null);
+            console.log('Stellar wallet connection restored:', persistedPublicKey);
+          }
+        } catch (err) {
+          console.log('Failed to restore persisted connection, clearing storage');
+          localStorage.removeItem('selectedWallet');
+          localStorage.removeItem('stellarPublicKey');
+        }
+      }
+    };
+
+    if (kitRef) {
+      checkPersistedConnection();
+    }
+  }, [kitRef, isConnected]);
+
   const isAnyStellarWalletAvailable = useCallback(async () => {
     if (!kitRef) return false;
     
@@ -124,8 +185,9 @@ export const useStellarWallet = () => {
             setConnectionMethod(option.id);
             setError(null);
             
-            // Store selected wallet preference
+            // Store selected wallet preference and public key
             localStorage.setItem('selectedWallet', option.id);
+            localStorage.setItem('stellarPublicKey', address);
           } catch (err) {
             console.error('Failed to connect to selected wallet:', err);
             setError(`Failed to connect to ${option.name}: ${err.message}`);
@@ -152,7 +214,7 @@ export const useStellarWallet = () => {
       }
     } catch (err) {
       console.error('Failed to connect Stellar wallet:', err);
-      setError(err.message || 'Failed to connect Stellar wallet');
+        setError(err.message || 'Failed to connect Stellar wallet');
     } finally {
       setIsLoading(false);
     }
@@ -169,6 +231,10 @@ export const useStellarWallet = () => {
       setIsConnected(false);
       setConnectionMethod(null);
       setError(null);
+      
+      // Clear persisted wallet data
+      localStorage.removeItem('selectedWallet');
+      localStorage.removeItem('stellarPublicKey');
       console.log('Stellar wallet disconnected');
     } catch (err) {
       console.error('Failed to disconnect Stellar wallet:', err);
