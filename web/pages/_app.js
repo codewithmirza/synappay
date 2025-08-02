@@ -4,21 +4,24 @@ import { config } from '../lib/wagmi-config';
 import '../styles/globals.css';
 
 // Create a client
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-// Suppress hydration warnings for external scripts
-if (typeof window !== 'undefined') {
-  // Suppress console warnings about hydration mismatches
-  const originalError = console.error;
-  console.error = (...args) => {
-    if (args[0]?.includes?.('Warning: Extra attributes from the server')) {
-      return; // Suppress hydration warnings
-    }
-    originalError.apply(console, args);
-  };
-}
+// Prevent multiple WalletConnect initializations
+let wagmiInitialized = false;
 
 export default function App({ Component, pageProps }) {
+  // Initialize Wagmi only once
+  if (!wagmiInitialized) {
+    wagmiInitialized = true;
+  }
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
