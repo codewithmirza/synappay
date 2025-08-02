@@ -1,216 +1,116 @@
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { useWalletKit } from '@stellar/wallet-kit';
 
 /**
- * Unified Wallet Manager for Ethereum and Stellar
- * Handles wallet connections for both chains
- */
-export class WalletManager {
-  constructor() {
-    this.ethereumWallet = null;
-    this.stellarWallet = null;
-    this.listeners = [];
-  }
-
-  /**
-   * Initialize wallet connections
-   */
-  async initialize() {
-    try {
-      // Initialize Ethereum wallet (Wagmi)
-      await this.initializeEthereumWallet();
-      
-      // Initialize Stellar wallet (WalletKit)
-      await this.initializeStellarWallet();
-      
-      console.log('✅ Wallets initialized successfully');
-      return true;
-    } catch (error) {
-      console.error('❌ Failed to initialize wallets:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Initialize Ethereum wallet using Wagmi
-   */
-  async initializeEthereumWallet() {
-    try {
-      // This would be handled by Wagmi hooks in React components
-      console.log('🔗 Ethereum wallet ready');
-      return true;
-    } catch (error) {
-      console.error('❌ Failed to initialize Ethereum wallet:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Initialize Stellar wallet using WalletKit
-   */
-  async initializeStellarWallet() {
-    try {
-      // This would be handled by WalletKit in React components
-      console.log('⭐ Stellar wallet ready');
-      return true;
-    } catch (error) {
-      console.error('❌ Failed to initialize Stellar wallet:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Get Ethereum account
-   */
-  getEthereumAccount() {
-    return this.ethereumWallet?.account;
-  }
-
-  /**
-   * Get Stellar account
-   */
-  getStellarAccount() {
-    return this.stellarWallet?.account;
-  }
-
-  /**
-   * Check if both wallets are connected
-   */
-  areWalletsConnected() {
-    return this.ethereumWallet && this.stellarWallet;
-  }
-
-  /**
-   * Sign Ethereum transaction
-   */
-  async signEthereumTransaction(transaction) {
-    if (!this.ethereumWallet) {
-      throw new Error('Ethereum wallet not connected');
-    }
-    
-    try {
-      const signature = await this.ethereumWallet.signTransaction(transaction);
-      return signature;
-    } catch (error) {
-      console.error('Error signing Ethereum transaction:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Sign Stellar transaction
-   */
-  async signStellarTransaction(transaction) {
-    if (!this.stellarWallet) {
-      throw new Error('Stellar wallet not connected');
-    }
-    
-    try {
-      const signature = await this.stellarWallet.signTransaction(transaction);
-      return signature;
-    } catch (error) {
-      console.error('Error signing Stellar transaction:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Disconnect all wallets
-   */
-  async disconnect() {
-    try {
-      if (this.ethereumWallet) {
-        await this.ethereumWallet.disconnect();
-      }
-      
-      if (this.stellarWallet) {
-        await this.stellarWallet.disconnect();
-      }
-      
-      this.ethereumWallet = null;
-      this.stellarWallet = null;
-      
-      console.log('✅ Wallets disconnected');
-    } catch (error) {
-      console.error('❌ Error disconnecting wallets:', error);
-    }
-  }
-
-  /**
-   * Add event listener
-   */
-  addListener(callback) {
-    this.listeners.push(callback);
-  }
-
-  /**
-   * Remove event listener
-   */
-  removeListener(callback) {
-    this.listeners = this.listeners.filter(listener => listener !== callback);
-  }
-
-  /**
-   * Notify all listeners
-   */
-  notifyListeners(event, data) {
-    this.listeners.forEach(listener => {
-      try {
-        listener(event, data);
-      } catch (error) {
-        console.error('Error in wallet listener:', error);
-      }
-    });
-  }
-}
-
-/**
- * React hook for wallet management
+ * React hook for unified wallet management
+ * Combines Wagmi and Stellar Wallet Kit functionality
  */
 export function useWalletManager() {
-  const { address: ethereumAddress, isConnected: isEthereumConnected } = useAccount();
-  const { connect: connectEthereum, disconnect: disconnectEthereum } = useConnect();
-  const { disconnect: disconnectWagmi } = useDisconnect();
-  
-  // Stellar wallet would be handled by WalletKit hooks
-  // This is a simplified version
+  // Wagmi hooks for Ethereum
+  const { address: ethAddress, isConnected: ethConnected, chainId: ethChainId } = useAccount();
+  const { connect: connectEth, isPending: ethLoading } = useConnect();
+  const { disconnect: disconnectEth } = useDisconnect();
 
-  const connectEthereumWallet = async () => {
+  // Stellar Wallet Kit hooks - temporarily disabled
+  const stellarConnected = false; // Mock: Stellar wallet not connected
+  const stellarPublicKey = null; // Mock: No Stellar public key
+  const stellarLoading = false; // Mock: Not loading
+  const connectStellar = async () => {
+    console.warn('Stellar wallet connection not implemented yet');
+    return Promise.resolve();
+  };
+  const disconnectStellar = async () => {
+    console.warn('Stellar wallet disconnection not implemented yet');
+    return Promise.resolve();
+  };
+
+  // Computed states
+  const bothConnected = ethConnected && stellarConnected;
+  const canSwap = ethConnected && ethChainId === 11155111; // Sepolia testnet (Ethereum only for now)
+  const isLoading = ethLoading || stellarLoading;
+
+  // Helper functions
+  const formatEthAddress = (address) => {
+    if (!address) return 'Not Connected';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const formatStellarAddress = (address) => {
+    if (!address) return 'Not Connected';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const isCorrectEthNetwork = () => {
+    return ethChainId === 11155111; // Sepolia testnet
+  };
+
+  const switchToSepolia = async () => {
+    console.warn('Network switching not implemented yet');
+  };
+
+  const connectEthereum = async () => {
     try {
-      await connectEthereum();
-      return true;
+      await connectEth();
     } catch (error) {
       console.error('Failed to connect Ethereum wallet:', error);
-      return false;
+      throw error;
     }
   };
 
   const connectStellarWallet = async () => {
     try {
-      // This would use WalletKit's connect function
-      console.log('Connecting Stellar wallet...');
-      return true;
+      await connectStellar();
     } catch (error) {
       console.error('Failed to connect Stellar wallet:', error);
-      return false;
+      throw error;
     }
   };
 
-  const disconnectWallets = async () => {
+  const disconnectAll = async () => {
     try {
-      disconnectWagmi();
-      // Disconnect Stellar wallet
-      console.log('Wallets disconnected');
+      await Promise.all([
+        disconnectEth(),
+        disconnectStellar()
+      ]);
     } catch (error) {
-      console.error('Error disconnecting wallets:', error);
+      console.error('Failed to disconnect wallets:', error);
+      throw error;
     }
   };
 
   return {
-    ethereumAddress,
-    isEthereumConnected,
-    connectEthereumWallet,
-    connectStellarWallet,
-    disconnectWallets,
+    // Ethereum state
+    ethConnected,
+    ethAddress,
+    ethChainId,
+    ethLoading,
+    ethChain: null, // Removed useNetwork for now
+    ethError: null, // Add error handling if needed
+
+    // Stellar state (mock for now)
+    stellarConnected,
+    stellarPublicKey,
+    stellarLoading,
+    stellarError: null, // Add error handling if needed
+
+    // Combined state
+    bothConnected,
+    canSwap,
+    isLoading,
+
+    // Helper functions
+    formatEthAddress,
+    formatStellarAddress,
+    isCorrectEthNetwork,
+
+    // Connection functions
+    connectEth: connectEthereum,
+    connectStellar: connectStellarWallet,
+    disconnectEth,
+    disconnectStellar,
+    disconnectAll,
+
+    // Network switching
+    switchToSepolia,
+    switchLoading: false
   };
 } 

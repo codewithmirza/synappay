@@ -7,8 +7,8 @@ const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 
 if (!projectId) {
   console.warn('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID environment variable is not set. Please set it to your WalletConnect project ID from https://cloud.reown.com/sign-in');
-  // Temporary fallback for development - replace with your actual project ID
-  throw new Error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID environment variable is required. Please create a .env.local file with your WalletConnect project ID.');
+  // For development, we'll use a demo project ID
+  console.warn('Using demo WalletConnect project ID for development');
 }
 
 // Dynamic metadata based on environment
@@ -26,7 +26,7 @@ const getMetadata = () => {
 
 export const config = createConfig({
   chains: [sepolia],
-  connectors: [
+  connectors: projectId ? [
     walletConnect({
       projectId,
       metadata: getMetadata(),
@@ -41,7 +41,7 @@ export const config = createConfig({
       optionalChains: [sepolia],
       optionalMethods: ['eth_sendTransaction', 'eth_signTransaction', 'eth_sign', 'personal_sign'],
     }),
-  ],
+  ] : [],
   transports: {
     [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/demo'),
   },

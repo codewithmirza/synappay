@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, AlertCircle, Download, RefreshCw, Info, Coins, ArrowRight } from 'lucide-react';
-import { useCombinedWallet } from '../lib/useCombinedWallet';
+import { useWalletManager } from '../lib/wallet-manager';
 
 export default function WalletConnectionButton() {
   const {
@@ -29,8 +29,7 @@ export default function WalletConnectionButton() {
     bothConnected,
     canSwap,
     isLoading,
-    error
-  } = useCombinedWallet();
+  } = useWalletManager();
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
@@ -264,11 +263,11 @@ export default function WalletConnectionButton() {
             )}
 
             {/* Error Display */}
-            {error && (
+            {(ethError || stellarError) && (
               <div className="pt-2 border-t border-gray-200">
                 <div className="flex items-center space-x-2 text-red-600 text-sm">
                   <AlertCircle size={14} />
-                  <span>{error}</span>
+                  <span>{ethError || stellarError}</span>
                 </div>
               </div>
             )}
