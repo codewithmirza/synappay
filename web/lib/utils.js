@@ -53,4 +53,52 @@ export function getStatusBadge(status) {
     PENDING: 'bg-yellow-100 text-yellow-800',
   };
   return badges[status] || 'bg-gray-100 text-gray-800';
-} 
+}
+
+// Global modal prevention utility
+export class ModalPreventionManager {
+  static instance = null;
+  
+  constructor() {
+    this.isPreventing = false;
+    this.preventionTimeout = null;
+  }
+  
+  static getInstance() {
+    if (!ModalPreventionManager.instance) {
+      ModalPreventionManager.instance = new ModalPreventionManager();
+    }
+    return ModalPreventionManager.instance;
+  }
+  
+  preventModals(duration = 2000) {
+    this.isPreventing = true;
+    
+    // Clear existing timeout
+    if (this.preventionTimeout) {
+      clearTimeout(this.preventionTimeout);
+    }
+    
+    // Set new timeout
+    this.preventionTimeout = setTimeout(() => {
+      this.isPreventing = false;
+    }, duration);
+    
+    console.log(`Modal prevention active for ${duration}ms`);
+  }
+  
+  isModalPrevented() {
+    return this.isPreventing;
+  }
+  
+  clearPrevention() {
+    this.isPreventing = false;
+    if (this.preventionTimeout) {
+      clearTimeout(this.preventionTimeout);
+      this.preventionTimeout = null;
+    }
+  }
+}
+
+// Global instance
+export const modalPrevention = ModalPreventionManager.getInstance(); 

@@ -17,6 +17,7 @@ import {
   HanaModule,
   HotWalletModule
 } from '@creit.tech/stellar-wallets-kit';
+import { modalPrevention } from './utils';
 
 // Create a singleton instance
 let stellarKit = null;
@@ -44,6 +45,7 @@ const createStellarKit = () => {
 const STELLAR_WALLET_KEY = 'stellar_wallet_connection';
 const STELLAR_ADDRESS_KEY = 'stellar_wallet_address';
 const BACK_NAVIGATION_KEY = 'stellar_back_navigation';
+const MODAL_PREVENTION_KEY = 'stellar_modal_prevention';
 
 export function useStellarWallet() {
   const [connected, setConnected] = useState(false);
@@ -60,6 +62,8 @@ export function useStellarWallet() {
   const isRestoringRef = useRef(false);
   // Use ref to track if we're in back navigation
   const isBackNavigationRef = useRef(false);
+  // Use ref to track if we should prevent modal
+  const preventModalRef = useRef(false);
 
   const kit = createStellarKit();
 
@@ -68,7 +72,10 @@ export function useStellarWallet() {
     const handlePopState = () => {
       console.log('Back navigation detected, preventing modal');
       isBackNavigationRef.current = true;
+      preventModalRef.current = true;
+      modalPrevention.preventModals(3000); // Prevent modals for 3 seconds
       sessionStorage.setItem(BACK_NAVIGATION_KEY, 'true');
+      sessionStorage.setItem(MODAL_PREVENTION_KEY, 'true');
       
       // Hide any visible modals immediately
       if (modalOpenRef.current) {
@@ -89,13 +96,19 @@ export function useStellarWallet() {
     const restoreConnection = async () => {
       try {
         isRestoringRef.current = true;
+        preventModalRef.current = true;
+        modalPrevention.preventModals(2000); // Prevent modals during restoration
         
         // Check if we're coming from back navigation
         const isBackNavigation = sessionStorage.getItem(BACK_NAVIGATION_KEY) === 'true';
-        if (isBackNavigation) {
-          console.log('Skipping restoration due to back navigation');
+        const modalPreventionFlag = sessionStorage.getItem(MODAL_PREVENTION_KEY) === 'true';
+        
+        if (isBackNavigation || modalPreventionFlag) {
+          console.log('Skipping restoration due to back navigation or modal prevention');
           sessionStorage.removeItem(BACK_NAVIGATION_KEY);
+          sessionStorage.removeItem(MODAL_PREVENTION_KEY);
           isBackNavigationRef.current = true;
+          preventModalRef.current = true;
           return;
         }
         
@@ -122,6 +135,10 @@ export function useStellarWallet() {
         sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
       } finally {
         isRestoringRef.current = false;
+        // Keep modal prevention active for a short time after restoration
+        setTimeout(() => {
+          preventModalRef.current = false;
+        }, 1000);
       }
     };
     
@@ -147,7 +164,7 @@ export function useStellarWallet() {
   useEffect(() => {
     // Small delay to ensure kit is fully initialized
     const timer = setTimeout(() => {
-      if (connected && !modalOpenRef.current && !isRestoringRef.current && !isBackNavigationRef.current) {
+      if (connected && !modalOpenRef.current && !isRestoringRef.current && !isBackNavigationRef.current && !preventModalRef.current && !modalPrevention.isModalPrevented()) {
         console.log('Kit initialization check completed');
       }
     }, 100);
@@ -156,8 +173,17 @@ export function useStellarWallet() {
   }, [connected]);
 
   const connect = useCallback(async () => {
+    // Check global modal prevention
+    if (modalPrevention.isModalPrevented()) {
+      console.log('Skipping modal open due to global modal prevention');
+      return;
+    }
+    
     // Prevent multiple modals using ref instead of state
-    if (modalOpenRef.current) return;
+    if (modalOpenRef.current) {
+      console.log('Modal already open, skipping');
+      return;
+    }
     
     // Don't open modal if we're in restoration mode
     if (isRestoringRef.current) {
@@ -168,6 +194,12 @@ export function useStellarWallet() {
     // Don't open modal if we're in back navigation
     if (isBackNavigationRef.current) {
       console.log('Skipping modal open during back navigation');
+      return;
+    }
+    
+    // Don't open modal if modal prevention is active
+    if (preventModalRef.current) {
+      console.log('Skipping modal open due to modal prevention');
       return;
     }
     
@@ -257,11 +289,14 @@ export function useStellarWallet() {
       setModalOpened(false);
       modalOpenRef.current = false;
       isBackNavigationRef.current = false;
+      preventModalRef.current = false;
+      modalPrevention.clearPrevention();
       
       // Clear session storage
       sessionStorage.removeItem(STELLAR_WALLET_KEY);
       sessionStorage.removeItem(STELLAR_ADDRESS_KEY);
       sessionStorage.removeItem(BACK_NAVIGATION_KEY);
+      sessionStorage.removeItem(MODAL_PREVENTION_KEY);
       
       console.log('Disconnected from Stellar wallet');
     } catch (err) {
