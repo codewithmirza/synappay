@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Loader, ArrowLeft, ExternalLink } from 'lucide-react';
+import TokenIcon from '../components/TokenIcon';
 
 export default function Claim() {
   const [swapData, setSwapData] = useState(null);
@@ -126,11 +127,17 @@ export default function Claim() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">From</span>
-                  <span className="font-medium">{swapData.fromAmount} {swapData.fromToken}</span>
+                  <div className="flex items-center space-x-2">
+                    <TokenIcon symbol={swapData.fromToken} size={16} />
+                    <span className="font-medium">{swapData.fromAmount} {swapData.fromToken}</span>
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">To</span>
-                  <span className="font-medium">{swapData.toAmount} {swapData.toToken}</span>
+                  <div className="flex items-center space-x-2">
+                    <TokenIcon symbol={swapData.toToken} size={16} />
+                    <span className="font-medium">{swapData.toAmount} {swapData.toToken}</span>
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Transaction</span>

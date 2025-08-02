@@ -7,6 +7,8 @@ import OneInchClient from '../lib/1inch-client';
 import ApiClient from '../lib/api-client';
 import { useCombinedWallet } from '../lib/useCombinedWallet';
 import WalletConnectionButton from '../components/WalletConnectionButton';
+import TokenIcon, { ChainIcon } from '../components/TokenIcon';
+import TokenSelector from '../components/TokenSelector';
 import config from '../lib/config';
 import Image from 'next/image';
 
@@ -208,11 +210,7 @@ export default function Swap() {
                 {/* Chain Logo & Label */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                      </svg>
-                    </div>
+                    <ChainIcon chain="ethereum" size={40} />
                     <div>
                       <h3 className="font-semibold text-gray-900">Ethereum</h3>
                       <p className="text-sm text-gray-600">Sepolia Testnet</p>
@@ -228,17 +226,11 @@ export default function Swap() {
                 {/* Token Selector & Amount Input */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <select
+                    <TokenSelector
                       value={fromToken}
-                      onChange={(e) => setFromToken(e.target.value)}
-                      className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="ETH">ETH</option>
-                      <option value="WETH">WETH</option>
-                      <option value="USDC">USDC</option>
-                      <option value="DAI">DAI</option>
-                      <option value="LINK">LINK</option>
-                    </select>
+                      onChange={setFromToken}
+                      className="min-w-[120px]"
+                    />
                   </div>
                   <input
                     type="number"
@@ -275,11 +267,7 @@ export default function Swap() {
                 {/* Chain Logo & Label */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                      </svg>
-                    </div>
+                    <ChainIcon chain="stellar" size={40} />
                     <div>
                       <h3 className="font-semibold text-gray-900">Stellar</h3>
                       <p className="text-sm text-gray-600">Testnet</p>
@@ -295,17 +283,11 @@ export default function Swap() {
                 {/* Token Selector & Amount Input */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <select
+                    <TokenSelector
                       value={toToken}
-                      onChange={(e) => setToToken(e.target.value)}
-                      className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    >
-                      <option value="USDC">USDC</option>
-                      <option value="ETH">ETH</option>
-                      <option value="WETH">WETH</option>
-                      <option value="DAI">DAI</option>
-                      <option value="LINK">LINK</option>
-                    </select>
+                      onChange={setToToken}
+                      className="min-w-[120px]"
+                    />
                   </div>
                   <input
                     type="text"

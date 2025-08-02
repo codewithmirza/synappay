@@ -15,7 +15,15 @@ export function formatAmount(amount, decimals = 6) {
   return parseFloat(amount).toFixed(decimals);
 }
 
-export function getAssetIcon(asset) {
+export import TokenIcon from '../components/TokenIcon';
+
+function getAssetIcon(asset, size = 24) {
+  // Return the TokenIcon component instead of emoji
+  return <TokenIcon symbol={asset} size={size} />;
+}
+
+// For cases where you need just the emoji fallback
+function getAssetEmoji(asset) {
   const icons = {
     ETH: '🔷',
     XLM: '⭐',

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, Clock, AlertCircle, Loader, ArrowRight, X } from 'lucide-react';
 import ApiClient from '../lib/api-client';
+import TokenIcon from '../components/TokenIcon';
 import config from '../lib/config';
 
 export default function Progress() {
@@ -226,11 +227,17 @@ export default function Progress() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-600">From</p>
-                <p className="font-medium">{swapData.fromAmount} {swapData.fromToken}</p>
+                <div className="flex items-center space-x-2">
+                  <TokenIcon symbol={swapData.fromToken} size={16} />
+                  <p className="font-medium">{swapData.fromAmount} {swapData.fromToken}</p>
+                </div>
               </div>
               <div>
                 <p className="text-sm text-gray-600">To</p>
-                <p className="font-medium">{swapData.toAmount} {swapData.toToken}</p>
+                <div className="flex items-center space-x-2">
+                  <TokenIcon symbol={swapData.toToken} size={16} />
+                  <p className="font-medium">{swapData.toAmount} {swapData.toToken}</p>
+                </div>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Transaction Hash</p>

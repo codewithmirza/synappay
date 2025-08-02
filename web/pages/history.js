@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ExternalLink, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import TokenIcon from '../components/TokenIcon';
 
 export default function History() {
   const [swapHistory, setSwapHistory] = useState([]);
@@ -108,9 +109,13 @@ export default function History() {
                     <div className="flex items-center space-x-3">
                       {getStatusIcon(swap.status)}
                       <div>
-                        <h3 className="font-semibold text-gray-900">
-                          {swap.fromAmount} {swap.fromToken} → {swap.toAmount} {swap.toToken}
-                        </h3>
+                        <div className="flex items-center space-x-2">
+                          <TokenIcon symbol={swap.fromToken} size={16} />
+                          <h3 className="font-semibold text-gray-900">
+                            {swap.fromAmount} {swap.fromToken} → {swap.toAmount} {swap.toToken}
+                          </h3>
+                          <TokenIcon symbol={swap.toToken} size={16} />
+                        </div>
                         <p className="text-sm text-gray-600">
                           {new Date(swap.timestamp).toLocaleString()}
                         </p>
