@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, Wallet, CheckCircle, AlertCircle } from 'lucide-react';
+import { ChevronDown, Wallet, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { useWalletManager } from '../lib/wallet-manager';
 
 export default function WalletConnectionButton() {
@@ -24,6 +24,7 @@ export default function WalletConnectionButton() {
     connectStellar,
     disconnectStellar,
     formatStellarAddress,
+    getStellarWalletName,
     
     bothConnected,
     canSwap,
@@ -115,17 +116,51 @@ export default function WalletConnectionButton() {
           {/* Dropdown */}
           <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
             <div className="space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                <h3 className="text-sm font-semibold text-gray-900">Wallet Connections</h3>
+                <button
+                  onClick={() => setShowDropdown(false)}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
+              </div>
+
               {/* Ethereum Section */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-2">Ethereum</h3>
                 <div className="space-y-2">
                   {ethConnected ? (
-                    <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-green-700">{formatEthAddress(ethAddress)}</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-2 bg-green-50 rounded">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-green-700">{formatEthAddress(ethAddress)}</span>
+                        </div>
+                        <span className="text-xs text-green-600">Connected</span>
                       </div>
-                      <span className="text-xs text-green-600">Connected</span>
+                      
+                      {!isCorrectEthNetwork() && (
+                        <div className="p-2 bg-yellow-50 border border-yellow-200 rounded">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-yellow-700">Wrong Network</span>
+                            <button
+                              onClick={handleSwitchToSepolia}
+                              className="px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                            >
+                              Switch to Sepolia
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <button
+                        onClick={disconnectEth}
+                        className="w-full px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                      >
+                        Disconnect ETH
+                      </button>
                     </div>
                   ) : (
                     <button
@@ -136,15 +171,6 @@ export default function WalletConnectionButton() {
                       {ethLoading ? 'Connecting...' : 'Connect Ethereum'}
                     </button>
                   )}
-                  
-                  {ethConnected && !isCorrectEthNetwork() && (
-                    <button
-                      onClick={handleSwitchToSepolia}
-                      className="w-full px-3 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm"
-                    >
-                      Switch to Sepolia
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -153,12 +179,24 @@ export default function WalletConnectionButton() {
                 <h3 className="text-sm font-semibold text-gray-900 mb-2">Stellar</h3>
                 <div className="space-y-2">
                   {stellarConnected ? (
-                    <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-green-700">{formatStellarAddress(stellarPublicKey)}</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-2 bg-green-50 rounded">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <div className="flex flex-col">
+                            <span className="text-sm text-green-700">{formatStellarAddress(stellarPublicKey)}</span>
+                            <span className="text-xs text-green-600">{getStellarWalletName()}</span>
+                          </div>
+                        </div>
+                        <span className="text-xs text-green-600">Connected</span>
                       </div>
-                      <span className="text-xs text-green-600">Connected</span>
+                      
+                      <button
+                        onClick={disconnectStellar}
+                        className="w-full px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                      >
+                        Disconnect Stellar
+                      </button>
                     </div>
                   ) : (
                     <button
@@ -184,13 +222,13 @@ export default function WalletConnectionButton() {
                 </div>
               )}
 
-              {/* Disconnect Button */}
+              {/* Disconnect All Button */}
               {(ethConnected || stellarConnected) && (
                 <button
                   onClick={handleDisconnect}
                   className="w-full px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
                 >
-                  Disconnect All
+                  Disconnect All Wallets
                 </button>
               )}
             </div>

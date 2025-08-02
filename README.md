@@ -189,16 +189,25 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Stellar Wallet Support
 
-The application uses **Stellar Wallets Kit** which supports multiple Stellar wallets:
+The application uses **[Stellar Wallets Kit](https://stellarwalletskit.dev)** which supports multiple Stellar wallets:
 
+### **Supported Wallets:**
+
+- **xBull Wallet** (All versions: iOS, Android, Extension and PWA)
 - **Freighter** (Browser Extension)
-- **xBull** (Mobile App & Extension)
 - **Albedo** (Browser Extension)
 - **Rabet** (Browser Extension)
 - **Lobstr** (Mobile App & Extension)
-- **Hana** (Mobile App)
+- **Hana Wallet** (Mobile App)
+- **HOT Wallet** (Mobile App)
 - **Ledger** (Hardware Wallet)
 - **Trezor** (Hardware Wallet)
-- **HOT Wallet** (Mobile App)
 
-Users can select their preferred wallet through a unified interface with persistent connections across route changes. 
+### **Features:**
+- **Built-in UI Modal** - Users can select from available wallets through a clean interface
+- **Automatic Detection** - Only shows wallets that are installed/available on the user's device
+- **Cross-Platform Support** - Works on mobile and desktop browsers
+- **Persistent Connections** - Wallet connections persist across page refreshes
+- **Error Handling** - Clear error messages for connection issues
+
+Users can select their preferred wallet through a unified interface with persistent connections across route changes. The modal automatically detects which wallets are available on the user's device and only shows those options. 

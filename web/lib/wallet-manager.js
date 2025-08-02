@@ -18,7 +18,9 @@ export function useWalletManager() {
     loading: stellarLoading,
     error: stellarError,
     connect: connectStellar,
-    disconnect: disconnectStellar
+    disconnect: disconnectStellar,
+    supportedWallets: stellarSupportedWallets,
+    selectedWalletId: stellarSelectedWalletId
   } = useStellarWallet();
 
   // Computed states
@@ -35,6 +37,12 @@ export function useWalletManager() {
   const formatStellarAddress = (address) => {
     if (!address) return 'Not Connected';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const getStellarWalletName = () => {
+    if (!stellarSelectedWalletId) return 'Not Connected';
+    const wallet = stellarSupportedWallets.find(w => w.id === stellarSelectedWalletId);
+    return wallet ? wallet.name : 'Unknown Wallet';
   };
 
   const isCorrectEthNetwork = () => {
@@ -89,6 +97,8 @@ export function useWalletManager() {
     stellarPublicKey,
     stellarLoading,
     stellarError,
+    stellarSupportedWallets,
+    stellarSelectedWalletId,
 
     // Combined state
     bothConnected,
@@ -98,6 +108,7 @@ export function useWalletManager() {
     // Helper functions
     formatEthAddress,
     formatStellarAddress,
+    getStellarWalletName,
     isCorrectEthNetwork,
 
     // Connection functions
