@@ -1,18 +1,18 @@
-# SynapPay - Cross-Chain Atomic Swaps
+# SynapPay - Extending Fusion+ to Stellar
 
-A decentralized application that combines **Stellar's fast, low-cost transactions** with **1inch's DEX aggregation technology** to create innovative cross-chain trading solutions. SynapPay enables secure, trustless swaps between Ethereum and Stellar networks using Hash Time-Locked Contracts (HTLCs) and 1inch Fusion+ for optimal pricing.
+A decentralized application that extends **1inch Fusion+** to the **Stellar blockchain**, enabling cross-chain atomic swaps between Ethereum and Stellar networks. SynapPay creates a marketplace where users can place swap intents that anyone can fulfill, leveraging the best of both ecosystems.
 
 ## 🎯 **Vision & Mission**
 
 ### **Core Vision**
-SynapPay bridges the gap between Ethereum's DeFi ecosystem and Stellar's fast, cost-effective network by creating a unified platform that leverages the best of both worlds:
+SynapPay extends 1inch's Fusion+ protocol to Stellar, creating the first true cross-chain atomic swap marketplace that combines:
 
-- **Stellar's Speed**: Sub-second transaction finality and minimal fees
-- **1inch's Liquidity**: Access to the largest DEX aggregation network
-- **Cross-Chain Innovation**: Seamless asset movement between ecosystems
+- **1inch Fusion+**: Intent-based, trustless atomic swaps with Dutch auction pricing
+- **Stellar Soroban**: Fast, low-cost smart contracts with native HTLC support
+- **Cross-Chain Innovation**: Seamless asset movement between Ethereum and Stellar ecosystems
 
 ### **Key Innovation**
-We've created the first platform that meaningfully integrates both Stellar blockchain and 1inch API/protocols to deliver superior user experiences and unlock new financial use cases in cross-chain DeFi.
+We've created the first platform that extends 1inch Fusion+ to Stellar, enabling public marketplace-style swaps where users create intents that anyone can fulfill, not just personal wallet bridges.
 
 ## 🚀 **Quick Start**
 
@@ -54,11 +54,10 @@ Visit [http://localhost:3000](http://localhost:3000) to see the application.
 ## 🏗️ **Architecture**
 
 ### **Core Components**
-- **Smart Contracts**: HTLC contracts on both Ethereum and Stellar
+- **1inch Fusion+ Integration**: Intent-based swaps with Dutch auction pricing
+- **Stellar Soroban Smart Contracts**: HTLC implementation with hashlock and timelock
 - **Frontend**: Next.js 14 with React 18, Wagmi, WalletConnect
-- **Backend**: Node.js with Ethers.js and Stellar SDK
-- **Cross-Chain Relayer**: Handles atomic swap execution
-- **1inch Fusion+**: DEX aggregation and MEV protection
+- **Cross-Chain Marketplace**: Public order book where anyone can fulfill swaps
 
 ### **Technology Stack**
 - **Frontend**: Next.js 14, React 18, Tailwind CSS, Framer Motion
@@ -123,7 +122,7 @@ NEXT_PUBLIC_STELLAR_NETWORK=testnet
 - **Cross-chain atomicity** (both succeed or both fail)
 - **No trust required** (fully decentralized)
 
-### **1inch Integration**
+### **1inch Fusion+ Integration**
 - **Official Fusion+ SDK** usage
 - **MEV protection** against front-running
 - **Slippage control** with dynamic adjustment

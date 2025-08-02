@@ -1,385 +1,397 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle, AlertCircle, Loader, Shield, Zap, Star, ArrowLeft, RefreshCw, Wallet } from 'lucide-react';
-import OneInchClient from '../lib/1inch-client';
-import ApiClient from '../lib/api-client';
-import { useCombinedWallet } from '../lib/useCombinedWallet';
-import WalletConnectionButton from '../components/WalletConnectionButton';
-import TokenIcon, { ChainIcon } from '../components/TokenIcon';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useWalletKit } from '@stellar/wallet-kit';
+import { SwapService } from '../lib/swap-service.js';
+import { FusionPlusClient } from '../lib/fusion-plus-client.js';
+import { StellarHTLCManager } from '../lib/stellar-htlc-manager.js';
 import TokenSelector from '../components/TokenSelector';
-import config from '../lib/config';
-import Image from 'next/image';
+import TokenIcon from '../components/TokenIcon';
+import WalletConnectionButton from '../components/WalletConnectionButton';
+import { ethers } from 'ethers';
 
 export default function Swap() {
-  const {
-    ethConnected,
-    ethAddress,
-    ethChainId,
-    ethLoading,
-    ethError,
-    connectEth,
-    disconnectEth,
-    switchToSepolia,
-    isCorrectEthNetwork,
-    formatEthAddress,
-    
-    stellarConnected,
-    stellarPublicKey,
-    stellarLoading,
-    stellarError,
-    connectStellar,
-    disconnectStellar,
-    formatStellarAddress,
-    
-    bothConnected,
-    canSwap,
-    isLoading,
-    error
-  } = useCombinedWallet();
+  // Wallet states
+  const { address: ethereumAddress, isConnected: isEthereumConnected } = useAccount();
+  const { connect: connectEthereum } = useConnect();
+  const { disconnect: disconnectWagmi } = useDisconnect();
+  const { connect: connectStellar, connected: isStellarConnected, publicKey: stellarAddress } = useWalletKit();
 
-  // Initialize 1inch client
-  const oneInchClient = new OneInchClient();
-
+  // Swap states
+  const [swapDirection, setSwapDirection] = useState('ethereum-to-stellar'); // or 'stellar-to-ethereum'
   const [fromToken, setFromToken] = useState('ETH');
-  const [toToken, setToToken] = useState('USDC');
-  const [fromAmount, setFromAmount] = useState('');
-  const [toAmount, setToAmount] = useState('');
+  const [toToken, setToToken] = useState('XLM');
+  const [amount, setAmount] = useState('');
   const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [swapError, setSwapError] = useState(null);
-  const [slippage, setSlippage] = useState(1);
-  const [showNetworkAlert, setShowNetworkAlert] = useState(false);
+  const [error, setError] = useState(null);
+  const [swapStatus, setSwapStatus] = useState(null);
 
-  // Check network on connection
+  // Services
+  const [swapService, setSwapService] = useState(null);
+  const [fusionClient, setFusionClient] = useState(null);
+
   useEffect(() => {
-    if (ethConnected && !isCorrectEthNetwork()) {
-      setShowNetworkAlert(true);
-    } else {
-      setShowNetworkAlert(false);
+    initializeServices();
+  }, []);
+
+  const initializeServices = async () => {
+    try {
+      const service = new SwapService();
+      await service.initialize();
+      setSwapService(service);
+
+      const client = new FusionPlusClient();
+      setFusionClient(client);
+    } catch (error) {
+      console.error('Failed to initialize services:', error);
+      setError('Failed to initialize swap services');
     }
-  }, [ethConnected, isCorrectEthNetwork]);
+  };
 
   const handleAmountChange = async (value) => {
-    setFromAmount(value);
-    setToAmount('');
-    setQuote(null);
-    setSwapError(null);
+    setAmount(value);
+    setError(null);
 
-    if (!value || parseFloat(value) <= 0) return;
+    if (!value || !isEthereumConnected || !isStellarConnected) {
+      setQuote(null);
+      return;
+    }
 
     try {
       setLoading(true);
-      const quoteData = await oneInchClient.getQuote(
-        fromToken,
-        toToken,
-        value,
-        1 // Ethereum mainnet chain ID
+      
+      // Get quote from 1inch Fusion+
+      const quoteData = await fusionClient.getQuote(
+        getTokenAddress(fromToken),
+        getTokenAddress(toToken),
+        ethers.utils.parseEther(value)
       );
+      
       setQuote(quoteData);
-      // Handle different response structures from 1inch API
-      const toAmount = quoteData.toTokenAmount || quoteData.toAmount || quoteData.dstAmount || '0';
-      setToAmount(toAmount);
     } catch (error) {
-      console.error('Failed to get quote:', error);
-      setSwapError('Failed to get quote. Please try again.');
+      console.error('Error getting quote:', error);
+      setError('Failed to get quote. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleTokenSwap = () => {
+    setSwapDirection(swapDirection === 'ethereum-to-stellar' ? 'stellar-to-ethereum' : 'ethereum-to-stellar');
     setFromToken(toToken);
     setToToken(fromToken);
-    setFromAmount(toAmount);
-    setToAmount('');
     setQuote(null);
-    setSwapError(null);
+    setError(null);
   };
 
-  const handleRetry = () => {
-    setSwapError(null);
-    if (fromAmount) {
-      handleAmountChange(fromAmount);
+  const handleExecuteSwap = async () => {
+    if (!swapService || !ethereumAddress || !stellarAddress) {
+      setError('Please connect both wallets');
+      return;
     }
-  };
 
-  const handleReviewSwap = () => {
-    if (!quote || !bothConnected) return;
+    if (!amount || !quote) {
+      setError('Please enter an amount and get a quote');
+      return;
+    }
 
-    // Determine swap type based on tokens
-    const swapType = fromToken === 'ETH' ? 'ETH_TO_STELLAR' : 'STELLAR_TO_ETH';
-
-    const swapData = {
-      fromToken,
-      toToken,
-      fromAmount,
-      toAmount,
-      ethAddress,
-      stellarPublicKey,
-      quote,
-      slippage,
-      swapType,
-      contractAddress: config.ethereum.htlcContractAddress,
-      // Add additional data for better UX
-      estimatedGas: quote?.estimatedGas || '21000',
-      priceImpact: quote?.priceImpact || '0.1',
-      protocols: quote?.protocols || ['1inch']
-    };
-
-    console.log('📋 Saving swap data:', swapData);
-    sessionStorage.setItem('swapData', JSON.stringify(swapData));
-    window.location.href = '/review';
-  };
-
-  const handleNetworkSwitch = async () => {
     try {
-      await switchToSepolia();
-      setShowNetworkAlert(false);
+      setLoading(true);
+      setError(null);
+
+      // Create swap intent
+      const swapIntent = await swapService.createSwapIntent({
+        fromChain: swapDirection === 'ethereum-to-stellar' ? 'ethereum' : 'stellar',
+        toChain: swapDirection === 'ethereum-to-stellar' ? 'stellar' : 'ethereum',
+        fromToken,
+        toToken,
+        amount: ethers.utils.parseEther(amount),
+        fromAddress: swapDirection === 'ethereum-to-stellar' ? ethereumAddress : stellarAddress,
+        toAddress: swapDirection === 'ethereum-to-stellar' ? stellarAddress : ethereumAddress,
+      });
+
+      // Execute swap based on direction
+      let result;
+      if (swapDirection === 'ethereum-to-stellar') {
+        result = await swapService.executeEthToStellarSwap({
+          ...swapIntent,
+          fromToken: getTokenAddress(fromToken),
+          toToken: getTokenAddress(toToken),
+          amount: ethers.utils.parseEther(amount),
+          fromAddress: ethereumAddress,
+          toAddress: stellarAddress,
+        });
+      } else {
+        result = await swapService.executeStellarToEthSwap({
+          ...swapIntent,
+          fromToken: getTokenAddress(fromToken),
+          toToken: getTokenAddress(toToken),
+          amount: ethers.utils.parseEther(amount),
+          fromAddress: stellarAddress,
+          toAddress: ethereumAddress,
+        });
+      }
+
+      setSwapStatus({
+        swapId: swapIntent.swapId,
+        status: 'EXECUTING',
+        message: 'Swap is being executed on both chains...',
+      });
+
+      // Start monitoring
+      swapService.startMonitoring(swapIntent.swapId, (status) => {
+        setSwapStatus({
+          ...status,
+          message: getStatusMessage(status.status),
+        });
+      });
+
     } catch (error) {
-      console.error('Failed to switch network:', error);
+      console.error('Error executing swap:', error);
+      setError(error.message || 'Failed to execute swap');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const getTokenAddress = (symbol) => {
+    const addresses = {
+      'ETH': '0x0000000000000000000000000000000000000000',
+      'USDC': '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
+      'XLM': 'XLM', // Native Stellar asset
+    };
+    return addresses[symbol] || symbol;
+  };
+
+  const getStatusMessage = (status) => {
+    switch (status) {
+      case 'PENDING':
+        return 'Creating swap intent...';
+      case 'EXECUTING':
+        return 'Executing swap on both chains...';
+      case 'COMPLETED':
+        return 'Swap completed successfully!';
+      case 'REFUNDED':
+        return 'Swap was refunded';
+      default:
+        return 'Processing...';
+    }
+  };
+
+  const formatAmount = (amount, decimals = 6) => {
+    return parseFloat(amount).toFixed(decimals);
+  };
+
+  const canExecuteSwap = () => {
+    return isEthereumConnected && isStellarConnected && amount && quote && !loading;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f2f2f7] via-white to-[#f8f9fa]">
-      {/* Header */}
-      <div className="fixed top-4 left-4 z-50">
-        <button
-          onClick={() => window.history.back()}
-          className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg hover:bg-white transition-all"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm font-medium">Back</span>
-        </button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+            Cross-Chain Swap
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Swap between Ethereum and Stellar using 1inch Fusion+ and HTLCs
+          </p>
+        </div>
 
-      {/* Wallet Connection Button - Fixed Top Right */}
-      <div className="fixed top-4 right-4 z-50">
-        <WalletConnectionButton />
-      </div>
+        {/* Wallet Connection */}
+        <div className="mb-8">
+          <WalletConnectionButton />
+        </div>
 
-      {/* Main Content */}
-      <div className="min-h-screen flex items-center justify-center p-4 pt-20">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="bg-white rounded-[30px] shadow-[0px_20px_60px_0px_rgba(0,0,0,0.1)] p-8 md:p-12 max-w-[500px] w-full"
-        >
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Cross-Chain Swap</h1>
-            <p className="text-gray-600">Swap between Ethereum and Stellar networks</p>
-          </div>
-
-          {/* Network Alert */}
-          {showNetworkAlert && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6"
-            >
-              <div className="flex items-center space-x-2 mb-2">
-                <AlertCircle className="w-5 h-5 text-amber-600" />
-                <span className="text-amber-800 font-medium">Network Mismatch</span>
-              </div>
-              <p className="text-amber-700 text-sm mb-3">
-                Please switch to Sepolia testnet to continue
-              </p>
-              <button
-                onClick={handleNetworkSwitch}
-                className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-amber-700 transition-colors"
-              >
-                Switch to Sepolia
-              </button>
-            </motion.div>
-          )}
-
-          {/* Stacked Chain Cards */}
-          {bothConnected && !showNetworkAlert && (
-            <div className="space-y-6">
-              {/* Ethereum Card (Top) */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 relative"
-              >
-                {/* Chain Logo & Label */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <ChainIcon chain="ethereum" size={40} />
-                    <div>
-                      <h3 className="font-semibold text-gray-900">Ethereum</h3>
-                      <p className="text-sm text-gray-600">Sepolia Testnet</p>
-                    </div>
-                  </div>
-                  {/* Balance Display */}
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">Balance</p>
-                    <p className="font-semibold text-gray-900">0.0 {fromToken}</p>
-                  </div>
-                </div>
-
-                {/* Token Selector & Amount Input */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <TokenSelector
-                      value={fromToken}
-                      onChange={setFromToken}
-                      className="min-w-[120px]"
-                    />
-                  </div>
-                  <input
-                    type="number"
-                    value={fromAmount}
-                    onChange={(e) => handleAmountChange(e.target.value)}
-                    placeholder="0.0"
-                    className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-2xl font-semibold text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </motion.div>
-
-              {/* 3D Swap Arrows */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-                className="flex justify-center"
-              >
+        {/* Swap Interface */}
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+            {/* Swap Direction */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Swap Direction
+                </h3>
                 <button
                   onClick={handleTokenSwap}
-                  className="p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
                 >
-                  <ArrowRight className="w-6 h-6 text-white" />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
                 </button>
-              </motion.div>
+              </div>
 
-              {/* Stellar Card (Bottom) */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6 relative"
-              >
-                {/* Chain Logo & Label */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <ChainIcon chain="stellar" size={40} />
+              {/* Chain Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* From Chain */}
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                  <div className="flex items-center mb-4">
+                    <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                      </svg>
+                    </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">Stellar</h3>
-                      <p className="text-sm text-gray-600">Testnet</p>
+                      <h4 className="font-semibold">From</h4>
+                      <p className="text-sm opacity-90">
+                        {swapDirection === 'ethereum-to-stellar' ? 'Ethereum' : 'Stellar'}
+                      </p>
                     </div>
                   </div>
-                  {/* Balance Display */}
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">Balance</p>
-                    <p className="font-semibold text-gray-900">0.0 {toToken}</p>
-                  </div>
-                </div>
-
-                {/* Token Selector & Amount Input */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <TokenSelector
-                      value={toToken}
-                      onChange={setToToken}
-                      className="min-w-[120px]"
-                    />
-                  </div>
+                  
+                  <TokenSelector
+                    value={fromToken}
+                    onChange={setFromToken}
+                    className="mb-3"
+                  />
+                  
                   <input
-                    type="text"
-                    value={toAmount}
-                    readOnly
+                    type="number"
                     placeholder="0.0"
-                    className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-2xl font-semibold text-gray-900 placeholder-gray-400 focus:outline-none"
+                    value={amount}
+                    onChange={(e) => handleAmountChange(e.target.value)}
+                    className="w-full bg-white bg-opacity-20 rounded-lg px-4 py-3 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
                   />
                 </div>
-              </motion.div>
 
-              {/* Best Price Badge */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="flex justify-end"
-              >
-                <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                  Best price via 1inch (Live)
-                </div>
-              </motion.div>
-
-              {/* Review Swap Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <button
-                  onClick={handleReviewSwap}
-                  disabled={!fromAmount || !toAmount || loading}
-                  className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
-                >
-                  {loading ? (
-                    <>
-                      <Loader className="w-5 h-5 animate-spin" />
-                      <span>Getting Quote...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="w-5 h-5" />
-                      <span>Review Swap</span>
-                    </>
-                  )}
-                </button>
-              </motion.div>
-
-              {/* Error Display */}
-              {swapError && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-red-50 border border-red-200 rounded-xl p-4"
-                >
-                  <div className="flex items-center space-x-2 mb-2">
-                    <AlertCircle className="w-5 h-5 text-red-600" />
-                    <span className="text-red-800 font-medium">Error</span>
+                {/* To Chain */}
+                <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+                  <div className="flex items-center mb-4">
+                    <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">To</h4>
+                      <p className="text-sm opacity-90">
+                        {swapDirection === 'ethereum-to-stellar' ? 'Stellar' : 'Ethereum'}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-red-700 text-sm mb-3">{swapError}</p>
-                  <button
-                    onClick={handleRetry}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors"
-                  >
-                    Retry
-                  </button>
-                </motion.div>
-              )}
+                  
+                  <TokenSelector
+                    value={toToken}
+                    onChange={setToToken}
+                    className="mb-3"
+                  />
+                  
+                  <div className="w-full bg-white bg-opacity-20 rounded-lg px-4 py-3 text-white">
+                    {quote ? (
+                      <div className="text-center">
+                        <div className="text-lg font-semibold">
+                          {formatAmount(ethers.utils.formatEther(quote.toTokenAmount))}
+                        </div>
+                        <div className="text-sm opacity-90">
+                          ≈ ${formatAmount(quote.toTokenUSD || 0)}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center text-white text-opacity-70">
+                        Enter amount to see quote
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
 
-          {/* Not Connected State */}
-          {!bothConnected && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center space-y-6"
+            {/* Quote Details */}
+            {quote && (
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Quote Details</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Rate:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      1 {fromToken} = {formatAmount(quote.rate || 0)} {toToken}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Slippage:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {quote.slippage || 0.1}%
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Gas Fee:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {formatAmount(quote.gas || 0)} ETH
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Protocol:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {quote.protocol || '1inch Fusion+'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-red-700 dark:text-red-400">{error}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Swap Status */}
+            {swapStatus && (
+              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse mr-3"></div>
+                  <div>
+                    <div className="font-semibold text-blue-900 dark:text-blue-100">
+                      {swapStatus.message}
+                    </div>
+                    <div className="text-sm text-blue-700 dark:text-blue-300">
+                      Swap ID: {swapStatus.swapId}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Execute Button */}
+            <button
+              onClick={handleExecuteSwap}
+              disabled={!canExecuteSwap() || loading}
+              className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
+                canExecuteSwap() && !loading
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
+                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              }`}
             >
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                <Wallet className="w-8 h-8 text-gray-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Connect Your Wallets
-                </h3>
-                <p className="text-gray-600">
-                  Please connect both Ethereum and Stellar wallets to start swapping
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </motion.div>
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </div>
+              ) : (
+                'Execute Swap'
+              )}
+            </button>
+
+            {/* Info */}
+            <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+              <p>This swap uses 1inch Fusion+ for Ethereum and HTLCs for Stellar</p>
+              <p className="mt-1">Atomic execution ensures both chains succeed or both fail</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

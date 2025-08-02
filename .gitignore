@@ -215,4 +215,5 @@ debug-*.js
 # pnpm-lock.yaml
 .vercel
 
-check-wallet.js
+# Development requirements and documentation
+Update-correct requirements, user flow.md
