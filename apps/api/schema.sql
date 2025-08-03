@@ -55,6 +55,41 @@ CREATE TABLE IF NOT EXISTS fusion_plus_orders (
     FOREIGN KEY (swap_intent_id) REFERENCES swap_intents(id)
 );
 
+-- Partial Fills Table
+CREATE TABLE IF NOT EXISTS partial_fills (
+    id TEXT PRIMARY KEY,
+    swap_id TEXT NOT NULL,
+    original_amount TEXT NOT NULL,
+    filled_amount TEXT NOT NULL,
+    remaining_amount TEXT NOT NULL,
+    fill_percentage REAL NOT NULL,
+    tx_hash TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (swap_id) REFERENCES swap_intents(id)
+);
+
+-- Relayer Events Table
+CREATE TABLE IF NOT EXISTS relayer_events (
+    id TEXT PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    swap_id TEXT NOT NULL,
+    chain TEXT NOT NULL CHECK (chain IN ('ethereum', 'stellar')),
+    details TEXT, -- JSON string
+    timestamp INTEGER NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (swap_id) REFERENCES swap_intents(id)
+);
+
+-- Token Prices Cache Table
+CREATE TABLE IF NOT EXISTS token_prices (
+    token_id TEXT PRIMARY KEY,
+    price_usd REAL NOT NULL,
+    price_change_24h REAL,
+    last_updated INTEGER NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_swap_intents_status ON swap_intents(status);
 CREATE INDEX IF NOT EXISTS idx_swap_intents_created_at ON swap_intents(created_at);
@@ -62,3 +97,7 @@ CREATE INDEX IF NOT EXISTS idx_swap_intents_expires_at ON swap_intents(expires_a
 CREATE INDEX IF NOT EXISTS idx_htlc_contracts_swap_intent_id ON htlc_contracts(swap_intent_id);
 CREATE INDEX IF NOT EXISTS idx_htlc_contracts_status ON htlc_contracts(status);
 CREATE INDEX IF NOT EXISTS idx_fusion_plus_orders_swap_intent_id ON fusion_plus_orders(swap_intent_id);
+CREATE INDEX IF NOT EXISTS idx_partial_fills_swap_id ON partial_fills(swap_id);
+CREATE INDEX IF NOT EXISTS idx_relayer_events_swap_id ON relayer_events(swap_id);
+CREATE INDEX IF NOT EXISTS idx_relayer_events_timestamp ON relayer_events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_token_prices_last_updated ON token_prices(last_updated);

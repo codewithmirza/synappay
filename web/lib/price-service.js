@@ -1,188 +1,208 @@
-/**
- * CoinGecko Price Service
- * Fetches real-time token prices like Synappay
- */
-
+// SynapPay Price Service with CoinGecko Integration
 class PriceService {
   constructor() {
-    this.baseUrl = 'https://api.coingecko.com/api/v3';
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
     this.cache = new Map();
-    this.cacheTimeout = 60000; // 1 minute cache
+    this.cacheTimeout = 30000; // 30 seconds
   }
 
-  /**
-   * Get token prices from CoinGecko
-   */
   async getTokenPrices(tokenIds) {
-    const cacheKey = tokenIds.sort().join(',');
-    const cached = this.cache.get(cacheKey);
-    
-    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-      return cached.data;
-    }
-
     try {
-      const response = await fetch(
-        `${this.baseUrl}/simple/price?ids=${tokenIds.join(',')}&vs_currencies=usd&include_24hr_change=true`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`CoinGecko API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Cache the result
-      this.cache.set(cacheKey, {
-        data,
-        timestamp: Date.now()
+      const response = await fetch(`${this.baseUrl}/api/v1/prices/multiple`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tokenIds }),
       });
-      
-      return data;
-    } catch (error) {
-      console.error('Failed to fetch token prices:', error);
-      
-      // Return cached data if available, otherwise mock data
-      if (cached) {
-        return cached.data;
+
+      if (!response.ok) {
+        throw new Error(`Price API error: ${response.statusText}`);
       }
-      
+
+      const data = await response.json();
+      return data.data || [];
+    } catch (error) {
+      console.error('Error fetching token prices:', error);
+      // Fallback to mock prices
       return this.getMockPrices(tokenIds);
     }
   }
 
-  /**
-   * Get specific token price
-   */
   async getTokenPrice(tokenId) {
-    const prices = await this.getTokenPrices([tokenId]);
-    return prices[tokenId];
-  }
-
-  /**
-   * Get ETH price
-   */
-  async getEthPrice() {
-    return await this.getTokenPrice('ethereum');
-  }
-
-  /**
-   * Get XLM price
-   */
-  async getXlmPrice() {
-    return await this.getTokenPrice('stellar');
-  }
-
-  /**
-   * Get exchange rate between two tokens
-   */
-  async getExchangeRate(fromTokenId, toTokenId) {
-    const prices = await this.getTokenPrices([fromTokenId, toTokenId]);
-    
-    const fromPrice = prices[fromTokenId]?.usd || 0;
-    const toPrice = prices[toTokenId]?.usd || 0;
-    
-    if (fromPrice === 0 || toPrice === 0) {
-      return 0;
-    }
-    
-    return fromPrice / toPrice;
-  }
-
-  /**
-   * Calculate swap quote with real prices
-   */
-  async calculateSwapQuote(fromToken, toToken, fromAmount) {
     try {
-      const tokenMap = {
-        'ETH': 'ethereum',
-        'XLM': 'stellar',
-        'USDC': 'usd-coin',
-        'USDT': 'tether'
-      };
-
-      const fromTokenId = tokenMap[fromToken];
-      const toTokenId = tokenMap[toToken];
-
-      if (!fromTokenId || !toTokenId) {
-        throw new Error(`Unsupported token: ${fromToken} or ${toToken}`);
+      const response = await fetch(`${this.baseUrl}/api/v1/prices/${tokenId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Price API error: ${response.statusText}`);
       }
 
-      const rate = await this.getExchangeRate(fromTokenId, toTokenId);
-      const toAmount = parseFloat(fromAmount) * rate;
-
-      // Apply a small spread (0.3% like Synappay)
-      const spreadFactor = 0.997;
-      const finalAmount = toAmount * spreadFactor;
-
-      return {
-        fromToken,
-        toToken,
-        fromAmount: parseFloat(fromAmount),
-        toAmount: finalAmount,
-        rate,
-        spread: 0.3,
-        priceImpact: 0.1,
-        timestamp: Date.now()
-      };
+      const data = await response.json();
+      return data.data;
     } catch (error) {
-      console.error('Failed to calculate swap quote:', error);
-      
-      // Fallback to mock quote
-      return {
-        fromToken,
-        toToken,
-        fromAmount: parseFloat(fromAmount),
-        toAmount: parseFloat(fromAmount) * 0.95, // Mock rate
-        rate: 0.95,
-        spread: 0.3,
-        priceImpact: 0.1,
-        timestamp: Date.now(),
-        error: 'Using fallback pricing'
-      };
+      console.error('Error fetching token price:', error);
+      // Fallback to mock price
+      return this.getMockPrice(tokenId);
     }
   }
 
-  /**
-   * Mock prices for fallback
-   */
+  async getExchangeRate(fromToken, toToken) {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/prices/exchange-rate/${fromToken}/${toToken}`);
+      
+      if (!response.ok) {
+        throw new Error(`Exchange rate API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error);
+      // Fallback to mock rate
+      return this.getMockExchangeRate(fromToken, toToken);
+    }
+  }
+
+  async calculateSwapQuote(fromToken, toToken, amount, slippage = 0.5) {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/prices/swap-quote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fromToken,
+          toToken,
+          amount,
+          slippage
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Swap quote API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.error('Error calculating swap quote:', error);
+      // Fallback to mock quote
+      return this.calculateMockSwapQuote(fromToken, toToken, amount);
+    }
+  }
+
+  async getEthPrice() {
+    return this.getTokenPrice('ethereum');
+  }
+
+  async getXlmPrice() {
+    return this.getTokenPrice('stellar');
+  }
+
+  // Mock data for fallback
   getMockPrices(tokenIds) {
     const mockPrices = {
-      'ethereum': { usd: 2000, usd_24h_change: 2.5 },
-      'stellar': { usd: 0.12, usd_24h_change: -1.2 },
-      'usd-coin': { usd: 1.0, usd_24h_change: 0.1 },
-      'tether': { usd: 1.0, usd_24h_change: 0.0 }
+      'ethereum': { current_price: 2500, price_change_24h: 2.5 },
+      'stellar': { current_price: 0.12, price_change_24h: -1.2 },
+      'usd-coin': { current_price: 1.00, price_change_24h: 0.0 },
+      'tether': { current_price: 1.00, price_change_24h: 0.0 },
+      'dai': { current_price: 1.00, price_change_24h: 0.0 }
     };
 
-    const result = {};
-    tokenIds.forEach(id => {
-      if (mockPrices[id]) {
-        result[id] = mockPrices[id];
-      }
-    });
-
-    return result;
+    return tokenIds.map(id => ({
+      id,
+      symbol: id.toUpperCase(),
+      name: id,
+      current_price: mockPrices[id]?.current_price || 0,
+      price_change_24h: mockPrices[id]?.price_change_24h || 0,
+      price_change_percentage_24h: mockPrices[id]?.price_change_24h || 0,
+      last_updated: new Date().toISOString()
+    }));
   }
 
-  /**
-   * Format price for display
-   */
+  getMockPrice(tokenId) {
+    const mockPrices = {
+      'ethereum': { current_price: 2500, price_change_24h: 2.5 },
+      'stellar': { current_price: 0.12, price_change_24h: -1.2 },
+      'usd-coin': { current_price: 1.00, price_change_24h: 0.0 },
+      'tether': { current_price: 1.00, price_change_24h: 0.0 },
+      'dai': { current_price: 1.00, price_change_24h: 0.0 }
+    };
+
+    return {
+      id: tokenId,
+      symbol: tokenId.toUpperCase(),
+      name: tokenId,
+      current_price: mockPrices[tokenId]?.current_price || 0,
+      price_change_24h: mockPrices[tokenId]?.price_change_24h || 0,
+      price_change_percentage_24h: mockPrices[tokenId]?.price_change_24h || 0,
+      last_updated: new Date().toISOString()
+    };
+  }
+
+  getMockExchangeRate(fromToken, toToken) {
+    const rates = {
+      'ethereum-stellar': 20833.33, // 1 ETH = ~20,833 XLM
+      'stellar-ethereum': 0.000048, // 1 XLM = ~0.000048 ETH
+      'ethereum-usd-coin': 2500, // 1 ETH = 2500 USDC
+      'stellar-usd-coin': 0.12, // 1 XLM = 0.12 USDC
+    };
+
+    const key = `${fromToken}-${toToken}`;
+    const rate = rates[key] || 1;
+
+    return {
+      fromToken,
+      toToken,
+      rate,
+      inverseRate: 1 / rate,
+      lastUpdated: Date.now()
+    };
+  }
+
+  calculateMockSwapQuote(fromToken, toToken, amount) {
+    const exchangeRate = this.getMockExchangeRate(fromToken, toToken);
+    const fromAmount = parseFloat(amount);
+    const toAmount = fromAmount * exchangeRate.rate;
+
+    return {
+      fromAmount: amount,
+      toAmount: toAmount.toFixed(6),
+      rate: exchangeRate.rate,
+      priceImpact: 0.1,
+      estimatedGas: fromToken === 'ethereum' ? '150000' : '0',
+      timeEstimate: fromToken === 'ethereum' ? 180 : 5
+    };
+  }
+
   formatPrice(price, decimals = 2) {
-    if (price >= 1) {
-      return `$${price.toFixed(decimals)}`;
-    } else {
-      return `$${price.toFixed(6)}`;
-    }
+    if (!price) return '$0.00';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(price);
   }
 
-  /**
-   * Format percentage change
-   */
   formatPriceChange(change) {
+    if (!change) return '0.00%';
     const sign = change >= 0 ? '+' : '';
     return `${sign}${change.toFixed(2)}%`;
   }
+
+  // Get supported tokens for SynapPay
+  getSupportedTokens() {
+    return {
+      'ethereum': 'ethereum',
+      'stellar': 'stellar',
+      'ETH': 'ethereum',
+      'XLM': 'stellar',
+      'USDC': 'usd-coin',
+      'USDT': 'tether',
+      'DAI': 'dai'
+    };
+  }
 }
 
-// Export singleton instance
 export default new PriceService();

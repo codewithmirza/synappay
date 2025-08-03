@@ -1,0 +1,37 @@
+# SynapPay Cloudflare Workers Configuration
+
+name = "synappay-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Development environment
+[env.development]
+name = "synappay-api-dev"
+vars = { ENVIRONMENT = "development" }
+
+# Staging environment
+[env.staging]
+name = "synappay-api-staging"
+vars = { ENVIRONMENT = "staging" }
+
+# Production environment
+[env.production]
+name = "synappay-api-prod"
+vars = { ENVIRONMENT = "production" }
+
+# Database configuration
+[[d1_databases]]
+binding = "DB"
+database_name = "synappay-swaps"
+database_id = "ca82f87e-2e4b-40b3-83cc-a38fa13a68f6"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+
+# Secrets (set via wrangler secret put)
+# ONEINCH_API_KEY
+# RELAYER_PRIVATE_KEY
+# RELAYER_STELLAR_SECRET
+# ETHEREUM_RPC_URL
+# STELLAR_HORIZON_URL 

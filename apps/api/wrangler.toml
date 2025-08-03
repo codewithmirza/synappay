@@ -1,15 +1,10 @@
-# Cloudflare Workers configuration
 name = "synappay-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
 [env.production]
 name = "synappay-api-prod"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "synappay-swaps"
-database_id = "ca82f87e-2e4b-40b3-83cc-a38fa13a68f6"
+vars = { ENVIRONMENT = "production" }
 
 [vars]
-ENVIRONMENT = "production"
+ENVIRONMENT = "development"
