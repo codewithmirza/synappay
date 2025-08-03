@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import WalletConnectionButton from './WalletConnectionButton';
+// import BackendStatus from './BackendStatus';
 
 export default function UnifiedLayout({ children, title, subtitle, showWalletButton = true }) {
   return (
@@ -61,6 +62,9 @@ export default function UnifiedLayout({ children, title, subtitle, showWalletBut
           </div>
         </motion.div>
       </div>
+
+      {/* Backend Status - Show in development */}
+      {/* {process.env.NODE_ENV === 'development' && <BackendStatus />} */}
     </div>
   );
 } 
