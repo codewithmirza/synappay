@@ -1,16 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useFreighter } from '../hooks/useFreighter';
-import { 
-  Horizon, 
-  Asset, 
-  Operation, 
-  TransactionBuilder, 
-  Memo
-} from '@stellar/stellar-sdk';
-import { isTestnet, getCurrentNetwork } from '../config/networks';
-import { oneInchService } from '../services/oneInch';
 import { useToast } from './Toast';
-import { ArrowUpDown, Settings, Info, RefreshCw, Zap, Shield, Clock, Coins } from 'lucide-react';
+import { ArrowUpDown, Settings, Info, RefreshCw } from 'lucide-react';
+import TokenIcon, { ETH_TOKEN, XLM_TOKEN } from './TokenIcon';
 
 // Web3 imports for contract interaction
 declare global {
@@ -27,103 +18,8 @@ interface SwapInterfaceProps {
   stellarAddress: string;
 }
 
-// Fixed token information
-const ETH_TOKEN = {
-  symbol: 'ETH',
-  name: 'Ethereum',
-  logo: '/images/eth.png',
-  chain: 'Ethereum',
-  decimals: 18
-};
-
-const XLM_TOKEN = {
-  symbol: 'XLM',
-  name: 'Stellar Lumens',
-  logo: '/images/xlm.png',
-  chain: 'Stellar',
-  decimals: 7
-};
-
 // Fixed exchange rate (in real application, this would be fetched from API)
 const ETH_TO_XLM_RATE = 10000; // 1 ETH = 10,000 XLM
-
-// Network configuration
-const MAINNET_CHAIN_ID = '0x1'; // Ethereum Mainnet (1)
-
-// Helper function to fetch real-time crypto prices with adaptive rate limiting
-const fetchCryptoPrices = async (currentInterval: number, rateLimitCount: number, 
-  setUpdateInterval: (interval: number) => void, setRateLimitCount: (count: number) => void, 
-  setLastRateLimitTime: (time: Date | null) => void) => {
-  try {
-    console.log('💱 Fetching real-time crypto prices...');
-    
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum,stellar&vs_currencies=usd'
-    );
-    
-    // Check for rate limiting
-    if (response.status === 429) {
-      const newRateLimitCount = rateLimitCount + 1;
-      const newInterval = Math.min(currentInterval * 2, 60000); // Max 60 seconds
-      
-      console.warn(`⚠️ Rate limited! Increasing interval: ${currentInterval}ms → ${newInterval}ms`);
-      console.warn(`   Rate limit count: ${newRateLimitCount}`);
-      
-      setRateLimitCount(newRateLimitCount);
-      setLastRateLimitTime(new Date());
-      setUpdateInterval(newInterval);
-      
-      // Return fallback data
-      return {
-        ethPrice: null,
-        xlmPrice: null,
-        ethToXlmRate: ETH_TO_XLM_RATE,
-        success: false,
-        rateLimited: true,
-        newInterval
-      };
-    }
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    const prices = await response.json();
-    
-    const ethPrice = prices.ethereum?.usd;
-    const xlmPrice = prices.stellar?.usd;
-    
-    if (!ethPrice || !xlmPrice) {
-      throw new Error('Price data incomplete');
-    }
-    
-    // Calculate ETH to XLM rate: 1 ETH = how many XLM
-    const ethToXlmRate = ethPrice / xlmPrice;
-    
-    console.log('💱 Real-time prices:');
-    console.log(`   ETH: $${ethPrice}`);
-    console.log(`   XLM: $${xlmPrice}`);
-    console.log(`   Rate: 1 ETH = ${ethToXlmRate.toFixed(2)} XLM`);
-    
-    return {
-      ethPrice,
-      xlmPrice,
-      ethToXlmRate,
-      success: true,
-      rateLimited: false
-    };
-  } catch (error) {
-    console.error('❌ Error fetching crypto prices:', error);
-    return {
-      ethPrice: null,
-      xlmPrice: null,
-      ethToXlmRate: ETH_TO_XLM_RATE,
-      success: false,
-      rateLimited: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-};
 
 const saveTransactionToHistory = (transaction: {
   orderId: string;
@@ -182,28 +78,27 @@ export default function SwapInterface({ ethAddress, stellarAddress }: SwapInterf
   const [toToken, setToToken] = useState('XLM');
   const [amount, setAmount] = useState('');
   const [estimatedAmount, setEstimatedAmount] = useState('');
-  const [exchangeRate, setExchangeRate] = useState(ETH_TO_XLM_RATE);
+  const [exchangeRate] = useState(ETH_TO_XLM_RATE);
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [slippage, setSlippage] = useState(1.0);
-  const [swapStep, setSwapStep] = useState<'input' | 'quote' | 'executing'>('input');
-  const [quoteData, setQuoteData] = useState<any>(null);
-  const [lastRateLimitTime, setLastRateLimitTime] = useState<Date | null>(null);
-  const [rateLimitCount, setRateLimitCount] = useState(0);
-  const [updateInterval, setUpdateInterval] = useState(30000); // 30 seconds
 
   const toast = useToast();
+
+  // Get current token objects
+  const getFromToken = () => fromToken === 'ETH' ? ETH_TOKEN : XLM_TOKEN;
+  const getToToken = () => toToken === 'ETH' ? ETH_TOKEN : XLM_TOKEN;
 
   // Auto-refresh quotes every 30 seconds
   useEffect(() => {
     if (!amount || !ethAddress || !stellarAddress || parseFloat(amount) <= 0) return;
 
     const interval = setInterval(() => {
-      handleAmountChange({ target: { value: amount } });
-    }, updateInterval);
+      handleAmountChange({ target: { value: amount } } as React.ChangeEvent<HTMLInputElement>);
+    }, 30000);
 
     return () => clearInterval(interval);
-  }, [amount, fromToken, toToken, ethAddress, stellarAddress, updateInterval]);
+  }, [amount, fromToken, toToken, ethAddress, stellarAddress]);
 
   const handleAmountChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -242,7 +137,6 @@ export default function SwapInterface({ ethAddress, stellarAddress }: SwapInterf
     }
 
     setIsLoading(true);
-    setSwapStep('executing');
 
     try {
       console.log('🚀 Starting cross-chain swap...');
@@ -276,21 +170,13 @@ export default function SwapInterface({ ethAddress, stellarAddress }: SwapInterf
       // Reset form
       setAmount('');
       setEstimatedAmount('');
-      setSwapStep('input');
       
     } catch (error) {
       console.error('❌ Swap execution error:', error);
       toast.error('Swap Failed', error instanceof Error ? error.message : 'Unknown error occurred');
-      setSwapStep('input');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const formatAmount = (amount: string, decimals: number = 6) => {
-    const num = parseFloat(amount);
-    if (isNaN(num)) return '0';
-    return num.toFixed(decimals);
   };
 
   const canExecuteSwap = () => {
@@ -342,8 +228,8 @@ export default function SwapInterface({ ethAddress, stellarAddress }: SwapInterf
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-gray-300">From</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">🦊</span>
-                  <span className="text-sm">{fromToken}</span>
+                  <TokenIcon token={getFromToken()} size={24} />
+                  <span className="text-sm font-medium">{fromToken}</span>
                 </div>
               </div>
               <input
@@ -377,8 +263,8 @@ export default function SwapInterface({ ethAddress, stellarAddress }: SwapInterf
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-gray-300">To</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">🚀</span>
-                  <span className="text-sm">{toToken}</span>
+                  <TokenIcon token={getToToken()} size={24} />
+                  <span className="text-sm font-medium">{toToken}</span>
                 </div>
               </div>
               <input
@@ -398,7 +284,11 @@ export default function SwapInterface({ ethAddress, stellarAddress }: SwapInterf
           <div className="p-3 bg-white/5 rounded-lg">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-400">Exchange Rate</span>
-              <span className="text-white">1 {fromToken} = {exchangeRate.toFixed(2)} {toToken}</span>
+              <div className="flex items-center gap-2">
+                <TokenIcon token={getFromToken()} size={16} />
+                <span className="text-white">1 {fromToken} = {exchangeRate.toFixed(2)} {toToken}</span>
+                <TokenIcon token={getToToken()} size={16} />
+              </div>
             </div>
           </div>
 

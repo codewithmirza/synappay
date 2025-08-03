@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, Copy, Filter } from 'lucide-react';
 import { useToast } from './Toast';
+import TokenIcon, { ETH_TOKEN, XLM_TOKEN } from './TokenIcon';
 
 interface TransactionHistoryProps {
   ethAddress: string;
@@ -26,7 +27,6 @@ export default function TransactionHistory({ ethAddress, stellarAddress }: Trans
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed' | 'failed'>('all');
   const [showFilters, setShowFilters] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const toast = useToast();
 
@@ -60,9 +60,27 @@ export default function TransactionHistory({ ethAddress, stellarAddress }: Trans
     return () => clearInterval(interval);
   }, []);
 
-  const filteredTransactions = transactions.filter(tx => {
-    if (filter === 'all') return true;
-    return tx.status === filter;
+  // Filter transactions by connected addresses
+  const filteredTransactions = transactions.filter((tx: Transaction) => {
+    // First filter by status
+    if (filter !== 'all' && tx.status !== filter) return false;
+    
+    // Then filter by connected addresses (if both are connected)
+    if (ethAddress && stellarAddress) {
+      return tx.ethAddress === ethAddress && tx.stellarAddress === stellarAddress;
+    }
+    
+    // If only one wallet is connected, show transactions for that wallet
+    if (ethAddress) {
+      return tx.ethAddress === ethAddress;
+    }
+    
+    if (stellarAddress) {
+      return tx.stellarAddress === stellarAddress;
+    }
+    
+    // If no wallets connected, show all transactions
+    return true;
   });
 
   const getStatusIcon = (status: Transaction['status']) => {
@@ -210,7 +228,7 @@ export default function TransactionHistory({ ethAddress, stellarAddress }: Trans
               </div>
             </div>
           ) : (
-            filteredTransactions.map((tx) => (
+            filteredTransactions.map((tx: Transaction) => (
               <div
                 key={tx.id}
                 className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
@@ -219,9 +237,19 @@ export default function TransactionHistory({ ethAddress, stellarAddress }: Trans
                   <div className="flex items-center gap-3">
                     {getStatusIcon(tx.status)}
                     <div>
-                      <h3 className="font-semibold text-white">
-                        {tx.direction === 'eth-to-xlm' ? 'ETH → XLM' : 'XLM → ETH'}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <TokenIcon 
+                          token={tx.direction === 'eth-to-xlm' ? ETH_TOKEN : XLM_TOKEN} 
+                          size={20} 
+                        />
+                        <h3 className="font-semibold text-white">
+                          {tx.direction === 'eth-to-xlm' ? 'ETH → XLM' : 'XLM → ETH'}
+                        </h3>
+                        <TokenIcon 
+                          token={tx.direction === 'eth-to-xlm' ? XLM_TOKEN : ETH_TOKEN} 
+                          size={20} 
+                        />
+                      </div>
                       <p className="text-sm text-gray-400">
                         {formatDate(tx.timestamp)}
                       </p>
@@ -235,15 +263,27 @@ export default function TransactionHistory({ ethAddress, stellarAddress }: Trans
                 <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
                     <p className="text-xs text-gray-400 mb-1">Amount</p>
-                    <p className="text-white font-medium">
-                      {tx.amount} {tx.direction === 'eth-to-xlm' ? 'ETH' : 'XLM'}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <TokenIcon 
+                        token={tx.direction === 'eth-to-xlm' ? ETH_TOKEN : XLM_TOKEN} 
+                        size={16} 
+                      />
+                      <p className="text-white font-medium">
+                        {tx.amount} {tx.direction === 'eth-to-xlm' ? 'ETH' : 'XLM'}
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 mb-1">Estimated</p>
-                    <p className="text-white font-medium">
-                      {tx.estimatedAmount} {tx.direction === 'eth-to-xlm' ? 'XLM' : 'ETH'}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <TokenIcon 
+                        token={tx.direction === 'eth-to-xlm' ? XLM_TOKEN : ETH_TOKEN} 
+                        size={16} 
+                      />
+                      <p className="text-white font-medium">
+                        {tx.estimatedAmount} {tx.direction === 'eth-to-xlm' ? 'XLM' : 'ETH'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
