@@ -27,11 +27,6 @@ export function useWalletManager() {
     selectedWalletId: stellarSelectedWalletId
   } = useStellarWallet();
 
-  // Computed states - ensure proper boolean values
-  const bothConnected = Boolean(ethConnected && stellarConnected && ethAddress && stellarPublicKey);
-  const canSwap = Boolean(bothConnected && ethChainId === 11155111); // Sepolia testnet
-  const isLoading = Boolean(stellarLoading);
-
   // Helper functions
   const formatEthAddress = (address) => {
     if (!address) return 'Not Connected';
@@ -42,6 +37,29 @@ export function useWalletManager() {
     if (!address) return 'Not Connected';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
+
+  // Computed states - ensure proper boolean values
+  const bothConnected = Boolean(ethConnected && stellarConnected && ethAddress && stellarPublicKey);
+  const canSwap = Boolean(bothConnected && (ethChainId === 11155111 || ethChainId === 1)); // Sepolia testnet or mainnet
+  const isLoading = Boolean(stellarLoading);
+
+  // Debug logging with more detail
+  console.log('Wallet Manager State:', {
+    ethConnected: Boolean(ethConnected),
+    stellarConnected: Boolean(stellarConnected),
+    bothConnected: Boolean(bothConnected),
+    canSwap: Boolean(canSwap),
+    ethAddress: ethAddress ? formatEthAddress(ethAddress) : 'None',
+    stellarPublicKey: stellarPublicKey ? formatStellarAddress(stellarPublicKey) : 'None',
+    ethChainId,
+    stellarSelectedWalletId,
+    isLoading: Boolean(isLoading),
+    // Add more detailed debugging
+    ethAddressExists: Boolean(ethAddress),
+    stellarPublicKeyExists: Boolean(stellarPublicKey),
+    rawEthConnected: ethConnected,
+    rawStellarConnected: stellarConnected
+  });
 
   const getStellarWalletName = () => {
     if (!stellarSelectedWalletId) return 'Not Connected';
@@ -96,19 +114,6 @@ export function useWalletManager() {
       throw error;
     }
   };
-
-  // Debug logging with more detail
-  console.log('Wallet Manager State:', {
-    ethConnected: Boolean(ethConnected),
-    stellarConnected: Boolean(stellarConnected),
-    bothConnected: Boolean(bothConnected),
-    canSwap: Boolean(canSwap),
-    ethAddress: ethAddress ? formatEthAddress(ethAddress) : 'None',
-    stellarPublicKey: stellarPublicKey ? formatStellarAddress(stellarPublicKey) : 'None',
-    ethChainId,
-    stellarSelectedWalletId,
-    isLoading: Boolean(isLoading)
-  });
 
   return {
     // Ethereum state

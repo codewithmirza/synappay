@@ -73,7 +73,7 @@ export function useStellarWallet() {
       console.log('Back navigation detected, preventing modal');
       isBackNavigationRef.current = true;
       preventModalRef.current = true;
-      modalPrevention.preventModals(3000); // Prevent modals for 3 seconds
+      modalPrevention.preventModals(5000); // Prevent modals for 5 seconds
       sessionStorage.setItem(BACK_NAVIGATION_KEY, 'true');
       sessionStorage.setItem(MODAL_PREVENTION_KEY, 'true');
       
@@ -84,10 +84,18 @@ export function useStellarWallet() {
       }
     };
 
+    // Prevent modal on page load/refresh
+    const handleBeforeUnload = () => {
+      sessionStorage.setItem(MODAL_PREVENTION_KEY, 'true');
+      modalPrevention.preventModals(3000);
+    };
+
     window.addEventListener('popstate', handlePopState);
+    window.addEventListener('beforeunload', handleBeforeUnload);
     
     return () => {
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
 

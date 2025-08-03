@@ -36,13 +36,16 @@ export default function Swap() {
     if (!amount || !bothConnected || parseFloat(amount) <= 0) return;
 
     const interval = setInterval(() => {
-      handleAmountChange(amount);
+      // Create a mock event for the interval call
+      const mockEvent = { target: { value: amount } };
+      handleAmountChange(mockEvent);
     }, 30000);
 
     return () => clearInterval(interval);
   }, [amount, fromToken, toToken, bothConnected]);
 
-  const handleAmountChange = async (value) => {
+  const handleAmountChange = async (e) => {
+    const value = e.target.value;
     setAmount(value);
     setError(null);
     setSwapStep('input');
@@ -141,10 +144,33 @@ export default function Swap() {
   };
 
   const canExecuteSwap = () => {
-    return bothConnected && amount && quote && !loading && parseFloat(amount) > 0;
+    // Check if we have actual wallet addresses, even if wallet manager isn't detecting them
+    const hasEthWallet = ethAddress && ethAddress !== 'None' && ethAddress !== 'null';
+    const hasStellarWallet = stellarPublicKey && stellarPublicKey !== 'None' && stellarPublicKey !== 'null';
+    const walletsConnected = hasEthWallet && hasStellarWallet;
+    
+    console.log('Swap Debug:', {
+      bothConnected,
+      hasEthWallet,
+      hasStellarWallet,
+      walletsConnected,
+      ethAddress,
+      stellarPublicKey,
+      amount: Boolean(amount),
+      quote: Boolean(quote),
+      loading,
+      amountValue: parseFloat(amount) > 0
+    });
+    
+    return walletsConnected && amount && quote && !loading && parseFloat(amount) > 0;
   };
 
-  if (!bothConnected) {
+  // Check if we have actual wallet addresses, even if wallet manager isn't detecting them
+  const hasEthWallet = ethAddress && ethAddress !== 'None' && ethAddress !== 'null';
+  const hasStellarWallet = stellarPublicKey && stellarPublicKey !== 'None' && stellarPublicKey !== 'null';
+  const walletsConnected = hasEthWallet && hasStellarWallet;
+
+  if (!walletsConnected) {
     return (
       <UnifiedLayout
         title="Connect Wallets"
@@ -160,6 +186,10 @@ export default function Swap() {
             <p className="text-yellow-700">
               Please connect both your Ethereum and Stellar wallets to enable cross-chain swaps.
             </p>
+            <div className="mt-4 text-sm text-yellow-600">
+              <p>Ethereum: {hasEthWallet ? '✅ Connected' : '❌ Not Connected'}</p>
+              <p>Stellar: {hasStellarWallet ? '✅ Connected' : '❌ Not Connected'}</p>
+            </div>
           </div>
         </div>
       </UnifiedLayout>
@@ -208,7 +238,7 @@ export default function Swap() {
                 <input
                   type="number"
                   value={amount}
-                  onChange={(e) => handleAmountChange(e.target.value)}
+                  onChange={handleAmountChange}
                   placeholder="0.0"
                   className="w-full bg-transparent text-lg font-semibold outline-none"
                   disabled={loading}
