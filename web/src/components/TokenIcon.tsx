@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 
-// Token information with proper icons from tokenicons.io
+// Token information with local icons
 export const ETH_TOKEN = {
   symbol: 'ETH',
   name: 'Ethereum',
-  logo: 'https://tokenicons.io/ethereum/0x0000000000000000000000000000000000000000/32.png',
+  logo: '/images/eth.png',
   chain: 'Ethereum',
   decimals: 18
 };
@@ -12,7 +12,7 @@ export const ETH_TOKEN = {
 export const XLM_TOKEN = {
   symbol: 'XLM',
   name: 'Stellar Lumens',
-  logo: 'https://tokenicons.io/stellar/native/32.png',
+  logo: '/images/xlm.png',
   chain: 'Stellar',
   decimals: 7
 };

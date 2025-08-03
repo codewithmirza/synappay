@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, Copy, Filter } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertCircle, ExternalLink, Copy, Filter, Download, Trash2 } from 'lucide-react';
 import { useToast } from './Toast';
 import TokenIcon, { ETH_TOKEN, XLM_TOKEN } from './TokenIcon';
 
@@ -109,6 +109,19 @@ export default function TransactionHistory({ ethAddress, stellarAddress }: Trans
     }
   };
 
+  const getStatusBgColor = (status: Transaction['status']) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-500/10 border-green-500/20';
+      case 'failed':
+        return 'bg-red-500/10 border-red-500/20';
+      case 'pending':
+        return 'bg-yellow-500/10 border-yellow-500/20';
+      case 'cancelled':
+        return 'bg-gray-500/10 border-gray-500/20';
+    }
+  };
+
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleString();
@@ -163,210 +176,229 @@ export default function TransactionHistory({ ethAddress, stellarAddress }: Trans
   };
 
   return (
-    <div className="swap-card-border">
-      <div className="swap-card-bg p-6 rounded-xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">
-            <span className="page-title-gradient">Transaction History</span>
-          </h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <Filter className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        {showFilters && (
-          <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-sm font-medium">Filter by status:</span>
-              <div className="flex gap-2">
-                {(['all', 'pending', 'completed', 'failed'] as const).map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => setFilter(status)}
-                    className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                      filter === status
-                        ? 'bg-gradient-to-r from-[#6C63FF] to-[#3ABEFF] text-white'
-                        : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                    }`}
-                  >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-2">
+    <div className="flex justify-center items-start min-h-screen p-4 bg-white">
+      <div className="w-full max-w-4xl">
+        {/* Main History Card */}
+        <div className="bg-white rounded-3xl p-6 shadow-2xl border border-gray-200">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Transaction History</h2>
+            <div className="flex items-center gap-3">
               <button
                 onClick={exportHistory}
-                className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg text-sm transition-colors"
+                className="p-2 rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-700 transition-all duration-200"
+                title="Export History"
               >
-                Export History
+                <Download className="w-5 h-5" />
               </button>
               <button
                 onClick={clearHistory}
-                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg text-sm transition-colors"
+                className="p-2 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 transition-all duration-200"
+                title="Clear History"
               >
-                Clear History
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="p-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                <Filter className="w-5 h-5 text-white" />
               </button>
             </div>
           </div>
-        )}
 
-        {/* Transaction List */}
-        <div className="space-y-4">
-          {filteredTransactions.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-gray-400 mb-4">
-                <Clock className="w-12 h-12 mx-auto mb-2" />
-                <p className="text-lg font-medium">No transactions found</p>
-                <p className="text-sm">Your transaction history will appear here</p>
+          {/* Filters */}
+          {showFilters && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+              <div className="flex items-center gap-4 mb-4">
+                <span className="text-sm font-medium text-gray-700">Filter by status:</span>
+                <div className="flex gap-2">
+                  {(['all', 'pending', 'completed', 'failed'] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setFilter(status)}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        filter === status
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                      }`}
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          ) : (
-            filteredTransactions.map((tx: Transaction) => (
-              <div
-                key={tx.id}
-                className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(tx.status)}
-                    <div>
-                      <div className="flex items-center gap-2">
+          )}
+
+          {/* Transaction List */}
+          <div className="space-y-4">
+            {filteredTransactions.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <Clock className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p className="text-xl font-medium text-gray-500 mb-2">No transactions found</p>
+                  <p className="text-sm text-gray-400">Your transaction history will appear here</p>
+                </div>
+              </div>
+            ) : (
+              filteredTransactions.map((tx: Transaction) => (
+                <div
+                  key={tx.id}
+                  className={`p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg ${
+                    tx.status === 'completed' ? 'bg-green-50 border-green-200' :
+                    tx.status === 'failed' ? 'bg-red-50 border-red-200' :
+                    tx.status === 'pending' ? 'bg-yellow-50 border-yellow-200' :
+                    'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  {/* Transaction Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(tx.status)}
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <TokenIcon 
+                              token={tx.direction === 'eth-to-xlm' ? ETH_TOKEN : XLM_TOKEN} 
+                              size={24} 
+                            />
+                            <h3 className="text-lg font-bold text-gray-900">
+                              {tx.direction === 'eth-to-xlm' ? 'ETH → XLM' : 'XLM → ETH'}
+                            </h3>
+                            <TokenIcon 
+                              token={tx.direction === 'eth-to-xlm' ? XLM_TOKEN : ETH_TOKEN} 
+                              size={24} 
+                            />
+                          </div>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {formatDate(tx.timestamp)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        tx.status === 'completed' ? 'text-green-700 bg-green-100' :
+                        tx.status === 'failed' ? 'text-red-700 bg-red-100' :
+                        tx.status === 'pending' ? 'text-yellow-700 bg-yellow-100' :
+                        'text-gray-700 bg-gray-100'
+                      }`}>
+                        {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Transaction Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    <div className="p-4 bg-white rounded-xl border border-gray-200">
+                      <p className="text-xs text-gray-600 mb-2 font-medium">Amount</p>
+                      <div className="flex items-center gap-3">
                         <TokenIcon 
                           token={tx.direction === 'eth-to-xlm' ? ETH_TOKEN : XLM_TOKEN} 
                           size={20} 
                         />
-                        <h3 className="font-semibold text-white">
-                          {tx.direction === 'eth-to-xlm' ? 'ETH → XLM' : 'XLM → ETH'}
-                        </h3>
+                        <p className="text-lg font-bold text-gray-900">
+                          {tx.amount} {tx.direction === 'eth-to-xlm' ? 'ETH' : 'XLM'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-white rounded-xl border border-gray-200">
+                      <p className="text-xs text-gray-600 mb-2 font-medium">Estimated</p>
+                      <div className="flex items-center gap-3">
                         <TokenIcon 
                           token={tx.direction === 'eth-to-xlm' ? XLM_TOKEN : ETH_TOKEN} 
                           size={20} 
                         />
+                        <p className="text-lg font-bold text-gray-900">
+                          {tx.estimatedAmount} {tx.direction === 'eth-to-xlm' ? 'XLM' : 'ETH'}
+                        </p>
                       </div>
-                      <p className="text-sm text-gray-400">
-                        {formatDate(tx.timestamp)}
-                      </p>
                     </div>
                   </div>
-                  <span className={`text-sm font-medium ${getStatusColor(tx.status)}`}>
-                    {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
-                  </span>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-3">
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">Amount</p>
-                    <div className="flex items-center gap-2">
-                      <TokenIcon 
-                        token={tx.direction === 'eth-to-xlm' ? ETH_TOKEN : XLM_TOKEN} 
-                        size={16} 
-                      />
-                      <p className="text-white font-medium">
-                        {tx.amount} {tx.direction === 'eth-to-xlm' ? 'ETH' : 'XLM'}
-                      </p>
+                  {/* Addresses */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="p-3 bg-white rounded-xl border border-gray-200">
+                      <p className="text-xs text-gray-600 mb-2 font-medium">ETH Address</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-900 font-mono">{formatAddress(tx.ethAddress)}</span>
+                        <button
+                          onClick={() => copyToClipboard(tx.ethAddress)}
+                          className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          <Copy className="w-4 h-4 text-gray-500" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-white rounded-xl border border-gray-200">
+                      <p className="text-xs text-gray-600 mb-2 font-medium">Stellar Address</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-900 font-mono">{formatAddress(tx.stellarAddress)}</span>
+                        <button
+                          onClick={() => copyToClipboard(tx.stellarAddress)}
+                          className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          <Copy className="w-4 h-4 text-gray-500" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">Estimated</p>
-                    <div className="flex items-center gap-2">
-                      <TokenIcon 
-                        token={tx.direction === 'eth-to-xlm' ? XLM_TOKEN : ETH_TOKEN} 
-                        size={16} 
-                      />
-                      <p className="text-white font-medium">
-                        {tx.estimatedAmount} {tx.direction === 'eth-to-xlm' ? 'XLM' : 'ETH'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">ETH Address:</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-white">{formatAddress(tx.ethAddress)}</span>
-                      <button
-                        onClick={() => copyToClipboard(tx.ethAddress)}
-                        className="p-1 hover:bg-white/10 rounded transition-colors"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">Stellar Address:</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-white">{formatAddress(tx.stellarAddress)}</span>
-                      <button
-                        onClick={() => copyToClipboard(tx.stellarAddress)}
-                        className="p-1 hover:bg-white/10 rounded transition-colors"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Transaction Hashes */}
-                {(tx.ethTxHash || tx.stellarTxHash) && (
-                  <div className="mt-3 pt-3 border-t border-white/10">
-                    <div className="space-y-2">
-                      {tx.ethTxHash && (
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-400">ETH TX:</span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-white">{formatAddress(tx.ethTxHash)}</span>
-                            <button
-                              onClick={() => openExplorer(tx.ethTxHash!, 'ethereum')}
-                              className="p-1 hover:bg-white/10 rounded transition-colors"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                            </button>
+                  {/* Transaction Hashes */}
+                  {(tx.ethTxHash || tx.stellarTxHash) && (
+                    <div className="pt-4 border-t border-gray-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {tx.ethTxHash && (
+                          <div className="p-3 bg-white rounded-xl border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-2 font-medium">ETH Transaction</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-900 font-mono">{formatAddress(tx.ethTxHash)}</span>
+                              <button
+                                onClick={() => openExplorer(tx.ethTxHash!, 'ethereum')}
+                                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                              >
+                                <ExternalLink className="w-4 h-4 text-gray-500" />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {tx.stellarTxHash && (
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-400">Stellar TX:</span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-white">{formatAddress(tx.stellarTxHash)}</span>
-                            <button
-                              onClick={() => openExplorer(tx.stellarTxHash!, 'stellar')}
-                              className="p-1 hover:bg-white/10 rounded transition-colors"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                            </button>
+                        )}
+                        {tx.stellarTxHash && (
+                          <div className="p-3 bg-white rounded-xl border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-2 font-medium">Stellar Transaction</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-900 font-mono">{formatAddress(tx.stellarTxHash)}</span>
+                              <button
+                                onClick={() => openExplorer(tx.stellarTxHash!, 'stellar')}
+                                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                              >
+                                <ExternalLink className="w-4 h-4 text-gray-500" />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Summary */}
+          {filteredTransactions.length > 0 && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">
+                  Showing {filteredTransactions.length} of {transactions.length} transactions
+                </span>
+                <span className="text-gray-900 font-medium">
+                  Filter: {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                </span>
               </div>
-            ))
+            </div>
           )}
         </div>
-
-        {/* Summary */}
-        {filteredTransactions.length > 0 && (
-          <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-400">
-                Showing {filteredTransactions.length} of {transactions.length} transactions
-              </span>
-              <span className="text-white">
-                Filter: {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

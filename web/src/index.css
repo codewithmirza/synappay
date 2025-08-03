@@ -39,8 +39,8 @@ body {
 
 body {
   min-height: 100vh;
-  /* Updated background with soft purple-blue-pink gradient */
-  background: radial-gradient(ellipse at center, #1A1E2E 0%, #151A28 50%);
+  /* Enhanced background with modern gradient */
+  background: radial-gradient(ellipse at center, #0F172A 0%, #1E293B 25%, #334155 50%, #475569 75%, #64748B 100%);
   background-attachment: fixed;
   background-size: cover;
 }
@@ -59,11 +59,11 @@ input[type=number] {
 
 /* Glass effect */
 .glass-effect {
-  background: rgba(13, 17, 28, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 /* Updated flowing border effect with new colors */

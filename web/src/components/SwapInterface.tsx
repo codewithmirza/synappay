@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from './Toast';
-import { ArrowUpDown, Settings, Info, RefreshCw } from 'lucide-react';
+import { ArrowUpDown, Settings, Info, RefreshCw, ChevronDown } from 'lucide-react';
 import TokenIcon, { ETH_TOKEN, XLM_TOKEN } from './TokenIcon';
 
 // Web3 imports for contract interaction
@@ -184,143 +184,157 @@ export default function SwapInterface({ ethAddress, stellarAddress }: SwapInterf
   };
 
   return (
-    <div className="swap-card-border">
-      <div className="swap-card-bg p-6 rounded-xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">
-            <span className="page-title-gradient">Swap Interface</span>
-          </h2>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Settings Panel */}
-        {showSettings && (
-          <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
-            <h3 className="text-lg font-semibold mb-3">Swap Settings</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Slippage Tolerance</label>
-                <input
-                  type="number"
-                  value={slippage}
-                  onChange={(e) => setSlippage(parseFloat(e.target.value))}
-                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white"
-                  min="0.1"
-                  max="50"
-                  step="0.1"
-                />
-                <p className="text-xs text-gray-400 mt-1">Maximum price change: {slippage}%</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Swap Form */}
-        <div className="space-y-4">
-          {/* From Token */}
-          <div className="gradient-border">
-            <div className="p-4 bg-white/5 rounded-xl">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-300">From</label>
-                <div className="flex items-center gap-2">
-                  <TokenIcon token={getFromToken()} size={24} />
-                  <span className="text-sm font-medium">{fromToken}</span>
-                </div>
-              </div>
-              <input
-                type="number"
-                value={amount}
-                onChange={handleAmountChange}
-                placeholder="0.0"
-                className="w-full bg-transparent text-2xl font-bold text-white placeholder-gray-500 outline-none"
-                disabled={isLoading}
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Balance: {ethAddress ? 'Connected' : 'Not connected'}
-              </p>
-            </div>
-          </div>
-
-          {/* Swap Direction Button */}
-          <div className="flex justify-center">
+    <div className="flex justify-center items-center min-h-screen p-4 bg-white">
+      <div className="w-full max-w-md">
+        {/* Main Swap Card */}
+        <div className="bg-white rounded-3xl p-6 shadow-2xl border border-gray-200">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Swap</h2>
             <button
-              onClick={handleTokenSwap}
-              disabled={isLoading}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-200"
             >
-              <ArrowUpDown className="w-5 h-5" />
+              <Settings className="w-5 h-5 text-gray-600" />
             </button>
           </div>
 
-          {/* To Token */}
-          <div className="gradient-border">
-            <div className="p-4 bg-white/5 rounded-xl">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-300">To</label>
-                <div className="flex items-center gap-2">
-                  <TokenIcon token={getToToken()} size={24} />
-                  <span className="text-sm font-medium">{toToken}</span>
+          {/* Settings Panel */}
+          {showSettings && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+              <h3 className="text-lg font-semibold mb-3 text-gray-900">Swap Settings</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Slippage Tolerance</label>
+                  <input
+                    type="number"
+                    value={slippage}
+                    onChange={(e) => setSlippage(parseFloat(e.target.value))}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                    min="0.1"
+                    max="50"
+                    step="0.1"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Maximum price change: {slippage}%</p>
                 </div>
               </div>
-              <input
-                type="text"
-                value={estimatedAmount}
-                readOnly
-                placeholder="0.0"
-                className="w-full bg-transparent text-2xl font-bold text-white placeholder-gray-500 outline-none"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Balance: {stellarAddress ? 'Connected' : 'Not connected'}
-              </p>
             </div>
-          </div>
+          )}
 
-          {/* Exchange Rate Info */}
-          <div className="p-3 bg-white/5 rounded-lg">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-400">Exchange Rate</span>
-              <div className="flex items-center gap-2">
-                <TokenIcon token={getFromToken()} size={16} />
-                <span className="text-white">1 {fromToken} = {exchangeRate.toFixed(2)} {toToken}</span>
-                <TokenIcon token={getToToken()} size={16} />
+          {/* Swap Form */}
+          <div className="space-y-4">
+            {/* From Token */}
+            <div className="relative">
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 hover:border-gray-300 transition-all duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-gray-700">From</label>
+                  <button className="flex items-center gap-2 p-2 rounded-xl bg-white hover:bg-gray-100 transition-all duration-200 border border-gray-200">
+                    <TokenIcon token={getFromToken()} size={20} />
+                    <span className="text-sm font-medium text-gray-900">{fromToken}</span>
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={handleAmountChange}
+                  placeholder="0.0"
+                  className="w-full bg-transparent text-2xl font-bold text-gray-900 placeholder-gray-400 outline-none focus:ring-0"
+                  disabled={isLoading}
+                />
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-gray-500">
+                    Balance: {ethAddress ? 'Connected' : 'Not connected'}
+                  </p>
+                  <button className="text-xs text-blue-600 hover:text-blue-700 transition-colors">
+                    Max
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Swap Button */}
-          <button
-            onClick={handleExecuteSwap}
-            disabled={!canExecuteSwap()}
-            className={`w-full py-4 rounded-xl font-semibold text-lg transition-all duration-200 ${
-              canExecuteSwap()
-                ? 'bg-gradient-to-r from-[#6C63FF] to-[#3ABEFF] hover:from-[#5A52E8] hover:to-[#2A9FE8] text-white shadow-lg hover:shadow-xl'
-                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center gap-2">
-                <RefreshCw className="w-5 h-5 animate-spin" />
-                Executing Swap...
+            {/* Swap Direction Button */}
+            <div className="flex justify-center -my-2 relative z-10">
+              <button
+                onClick={handleTokenSwap}
+                disabled={isLoading}
+                className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-xl hover:scale-105 border-4 border-white"
+              >
+                <ArrowUpDown className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* To Token */}
+            <div className="relative">
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 hover:border-gray-300 transition-all duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-gray-700">To</label>
+                  <button className="flex items-center gap-2 p-2 rounded-xl bg-white hover:bg-gray-100 transition-all duration-200 border border-gray-200">
+                    <TokenIcon token={getToToken()} size={20} />
+                    <span className="text-sm font-medium text-gray-900">{toToken}</span>
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={estimatedAmount}
+                  readOnly
+                  placeholder="0.0"
+                  className="w-full bg-transparent text-2xl font-bold text-gray-900 placeholder-gray-400 outline-none focus:ring-0"
+                />
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-gray-500">
+                    Balance: {stellarAddress ? 'Connected' : 'Not connected'}
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    ≈ $0.00
+                  </div>
+                </div>
               </div>
-            ) : (
-              'Execute Swap'
-            )}
-          </button>
+            </div>
 
-          {/* Info Panel */}
-          <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-            <div className="flex items-start gap-3">
-              <Info className="w-5 h-5 text-blue-400 mt-0.5" />
-              <div className="text-sm">
-                <p className="text-blue-300 font-medium mb-1">How it works</p>
-                <p className="text-blue-200 text-xs">
-                  Your tokens are locked on the source chain, then automatically unlocked on the target chain using Hash Time Locked Contracts (HTLC) for secure cross-chain transfers.
-                </p>
+            {/* Exchange Rate Info */}
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Exchange Rate</span>
+                <div className="flex items-center gap-2">
+                  <TokenIcon token={getFromToken()} size={16} />
+                  <span className="text-gray-900">1 {fromToken} = {exchangeRate.toFixed(2)} {toToken}</span>
+                  <TokenIcon token={getToToken()} size={16} />
+                </div>
+              </div>
+            </div>
+
+            {/* Swap Button */}
+            <button
+              onClick={handleExecuteSwap}
+              disabled={!canExecuteSwap()}
+              className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-200 ${
+                canExecuteSwap()
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  Executing Swap...
+                </div>
+              ) : (
+                'Execute Swap'
+              )}
+            </button>
+
+            {/* Info Panel */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl">
+              <div className="flex items-start gap-3">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="text-blue-800 font-medium mb-1">How it works</p>
+                  <p className="text-blue-700 text-xs leading-relaxed">
+                    Your tokens are locked on the source chain, then automatically unlocked on the target chain using Hash Time Locked Contracts (HTLC) for secure cross-chain transfers.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

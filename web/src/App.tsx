@@ -152,15 +152,13 @@ function AppContent() {
   const hasAnyConnection = ethAddress || (stellarConnected && stellarAddress);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white relative overflow-hidden">
+    <div className="min-h-screen bg-white text-gray-900 relative overflow-hidden">
       {/* Navigation Bar */}
-      <nav className="glass-effect border-b border-white/10 px-6 py-4 flex items-center justify-between">
+      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-[#6C63FF] to-[#3ABEFF] rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
-          </div>
-          <span className="text-xl font-bold page-title-gradient">SynapPay</span>
+          <img src="/icon.png" alt="SynapPay" className="w-8 h-8" />
+          <img src="/synappay-logo.svg" alt="SynapPay" className="h-6" />
         </div>
 
         {/* Network Toggle and Wallet Connect */}
@@ -168,10 +166,10 @@ function AppContent() {
           {/* Network Toggle */}
           <button
             onClick={toggleNetwork}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 network-button-hover"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 bg-gray-100 hover:bg-gray-200 text-gray-700"
           >
             <div className={`w-2 h-2 rounded-full ${
-              currentNetwork === 'mainnet' ? 'bg-[#3ABEFF]' : 'bg-[#FFDD57]'
+              currentNetwork === 'mainnet' ? 'bg-blue-500' : 'bg-yellow-500'
             }`}></div>
             {currentNetwork === 'mainnet' ? 'Mainnet' : 'Testnet'}
           </button>
@@ -180,7 +178,7 @@ function AppContent() {
           <div className="relative">
             <button 
               onClick={() => setShowWalletMenu(!showWalletMenu)}
-              className="bg-gradient-to-r from-[#6C63FF] to-[#3ABEFF] hover:from-[#5A52E8] hover:to-[#2A9FE8] text-white px-6 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 button-hover-scale"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
             >
               {isWalletsConnected ? (
                 <>
@@ -202,33 +200,33 @@ function AppContent() {
 
             {/* Wallet Dropdown Menu */}
             {showWalletMenu && (
-              <div className="absolute top-full right-0 mt-2 w-80 bg-slate-800/95 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl z-[100] p-4">
-                <h3 className="text-white font-semibold mb-4 text-center">Connect Wallets</h3>
+              <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl border border-gray-200 shadow-2xl z-[100] p-4">
+                <h3 className="text-gray-900 font-semibold mb-4 text-center">Connect Wallets</h3>
                 
                 {(connectionError || stellarError) && (
-                  <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-                    <p className="text-red-300 text-sm">{connectionError || stellarError}</p>
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-700 text-sm">{connectionError || stellarError}</p>
                   </div>
                 )}
 
                 {/* MetaMask */}
-                <div className="mb-4 p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">🦊</span>
                       <div>
-                        <div className="text-white font-medium">MetaMask</div>
-                        <div className="text-xs text-gray-400">Ethereum Network</div>
+                        <div className="text-gray-900 font-medium">MetaMask</div>
+                        <div className="text-xs text-gray-500">Ethereum Network</div>
                       </div>
                     </div>
                     
                     {ethAddress ? (
                       <div className="text-right">
                         <div className="flex items-center gap-1 mb-1">
-                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                          <span className="text-xs text-green-400">Connected</span>
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-xs text-green-600">Connected</span>
                         </div>
-                        <p className="text-xs text-gray-300">
+                        <p className="text-xs text-gray-600">
                           {ethAddress.substring(0, 6)}...{ethAddress.substring(ethAddress.length - 4)}
                         </p>
                       </div>
@@ -241,7 +239,7 @@ function AppContent() {
                           console.log('MetaMask button mousedown');
                           connectMetaMask();
                         }}
-                        className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 px-4 py-2 rounded-lg transition-colors text-sm cursor-pointer relative z-[110]"
+                        className="bg-orange-100 hover:bg-orange-200 text-orange-700 px-4 py-2 rounded-lg transition-colors text-sm cursor-pointer relative z-[110]"
                         style={{ pointerEvents: 'auto' }}
                       >
                         {isConnecting ? 'Connecting...' : 'Connect'}
@@ -251,23 +249,23 @@ function AppContent() {
                 </div>
 
                 {/* Freighter */}
-                <div className="mb-4 p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">🚀</span>
                       <div>
-                        <div className="text-white font-medium">Freighter</div>
-                        <div className="text-xs text-gray-400">Stellar Network</div>
+                        <div className="text-gray-900 font-medium">Freighter</div>
+                        <div className="text-xs text-gray-500">Stellar Network</div>
                       </div>
                     </div>
                     
                     {stellarConnected && stellarAddress ? (
                       <div className="text-right">
                         <div className="flex items-center gap-1 mb-1">
-                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                          <span className="text-xs text-green-400">Connected</span>
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-xs text-green-600">Connected</span>
                         </div>
-                        <p className="text-xs text-gray-300">
+                        <p className="text-xs text-gray-600">
                           {stellarAddress.substring(0, 6)}...{stellarAddress.substring(stellarAddress.length - 4)}
                         </p>
                       </div>
@@ -280,7 +278,7 @@ function AppContent() {
                           console.log('Freighter button mousedown');
                           handleFreighterConnect();
                         }}
-                        className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 px-4 py-2 rounded-lg transition-colors text-sm cursor-pointer relative z-[110]"
+                        className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg transition-colors text-sm cursor-pointer relative z-[110]"
                         style={{ pointerEvents: 'auto' }}
                         disabled={stellarLoading}
                       >
@@ -294,7 +292,7 @@ function AppContent() {
                 {hasAnyConnection && (
                   <button
                     onClick={disconnectWallets}
-                    className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-300 py-2 rounded-lg transition-colors text-sm border border-red-500/30"
+                    className="w-full bg-red-100 hover:bg-red-200 text-red-700 py-2 rounded-lg transition-colors text-sm border border-red-200"
                   >
                     Disconnect All
                   </button>
@@ -307,28 +305,23 @@ function AppContent() {
 
       {/* Hero Section */}
       <div className="text-center py-8 px-6">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4">
-          <span className="page-title-gradient">
-            Cross-chain Swap
-          </span>
+        <h1 className="text-5xl font-normal mb-4 text-black leading-[58px]" style={{ fontFamily: 'Inter' }}>
+          Trustless Cross-Chain Swap
         </h1>
-        <p className="text-lg text-gray-300 mb-2 max-w-2xl mx-auto">
-          Bridge your assets seamlessly between Ethereum and Stellar networks
-        </p>
-        <p className="text-sm text-gray-400 mb-6">
-          Powered by Hash Time Locked Contracts (HTLC) for secure cross-chain transfers
+        <p className="text-xl text-black mb-6 max-w-2xl mx-auto leading-[28px]" style={{ fontFamily: 'Inter' }}>
+          Seamless ETH ↔️ XLM transfers, no middleman.
         </p>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex justify-center mb-6">
-        <div className="flex bg-white/5 backdrop-blur-sm rounded-xl p-1 border border-white/10">
+      {/* Floating Navigation Toggle */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="flex bg-white rounded-xl p-1 border border-gray-200 shadow-lg">
           <button
             onClick={() => setActiveTab('swap')}
             className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
               activeTab === 'swap'
-                ? 'bg-gradient-to-r from-[#6C63FF] to-[#3ABEFF] text-white shadow-lg'
-                : 'text-gray-300 hover:text-white hover:bg-white/10'
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
             Swap
@@ -337,8 +330,8 @@ function AppContent() {
             onClick={() => setActiveTab('history')}
             className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
               activeTab === 'history'
-                ? 'bg-gradient-to-r from-[#6C63FF] to-[#3ABEFF] text-white shadow-lg'
-                : 'text-gray-300 hover:text-white hover:bg-white/10'
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
             History
@@ -347,38 +340,34 @@ function AppContent() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center justify-center px-6 pb-32 gap-4 flex-1">
+      <div className="flex-1 pb-20">
         {activeTab === 'swap' && (
-          <div className="w-full max-w-2xl ml-36">
-            <SwapInterface 
-              ethAddress={ethAddress} 
-              stellarAddress={stellarAddress || ''}
-            />
-          </div>
+          <SwapInterface 
+            ethAddress={ethAddress} 
+            stellarAddress={stellarAddress || ''}
+          />
         )}
         
         {activeTab === 'history' && (
-          <div className="w-full max-w-4xl">
-            <TransactionHistory
-              ethAddress={ethAddress}
-              stellarAddress={stellarAddress || ''}
-            />
-          </div>
+          <TransactionHistory
+            ethAddress={ethAddress}
+            stellarAddress={stellarAddress || ''}
+          />
         )}
       </div>
 
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#6C63FF]/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-100/50 rounded-full blur-3xl"></div>
       </div>
 
       {/* Footer Bar */}
-      <div className="w-full h-[28px] bg-[#0b0f1a] flex items-center justify-end px-6">
+      <div className="w-full h-[28px] bg-gray-100 flex items-center justify-end px-6">
         <a 
           href="https://x.com/SynapPay" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-white hover:text-[#3ABEFF] transition-colors text-lg font-semibold flex items-center gap-2"
+          className="text-gray-600 hover:text-blue-600 transition-colors text-lg font-semibold flex items-center gap-2"
         >
           Powered by SynapPay
           <span className="text-xl">𝕏</span>
