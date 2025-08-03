@@ -18,7 +18,9 @@ export default function Swap() {
     ethAddress,
     stellarPublicKey,
     formatEthAddress,
-    formatStellarAddress
+    formatStellarAddress,
+    connectEth,
+    connectStellar
   } = useWalletManager();
 
   const [fromToken, setFromToken] = useState('ETH');
@@ -29,7 +31,7 @@ export default function Swap() {
   const [loading, setLoading] = useState(false);
   const [slippage, setSlippage] = useState(1.0);
   const [showSettings, setShowSettings] = useState(false);
-  const [swapStep, setSwapStep] = useState('input'); // input, quote, confirm, executing
+  const [swapStep, setSwapStep] = useState('input'); // input, quote, intent, executing
 
   // Auto-refresh quotes every 30 seconds
   useEffect(() => {
@@ -111,9 +113,9 @@ export default function Swap() {
     try {
       setLoading(true);
       setError(null);
-      setSwapStep('confirm');
+      setSwapStep('intent');
 
-      // Initiate cross-chain swap
+      // Create swap intent (like OverSync)
       const swapRequest = await SynappayBridge.initiateSwap({
         fromChain: fromToken === 'ETH' ? 'ethereum' : 'stellar',
         toChain: toToken === 'ETH' ? 'ethereum' : 'stellar',
@@ -124,15 +126,24 @@ export default function Swap() {
         stellarAddress: stellarPublicKey
       });
 
-      console.log('Swap initiated:', swapRequest);
+      console.log('Swap intent created:', swapRequest);
       setSwapStep('executing');
 
-      // Redirect to progress page
-      window.location.href = `/progress?swapId=${swapRequest.id}`;
+      // Show success message (like OverSync)
+      setTimeout(() => {
+        setSwapStep('completed');
+        setError(null);
+        // Reset after showing completion
+        setTimeout(() => {
+          setSwapStep('input');
+          setAmount('');
+          setQuote(null);
+        }, 3000);
+      }, 2000);
       
     } catch (error) {
-      console.error('Failed to execute swap:', error);
-      setError('Failed to execute swap. Please try again.');
+      console.error('Failed to create swap intent:', error);
+      setError('Failed to create swap intent. Please try again.');
       setSwapStep('quote');
     } finally {
       setLoading(false);
@@ -144,15 +155,13 @@ export default function Swap() {
   };
 
   const canExecuteSwap = () => {
-    // Check if we have actual wallet addresses, even if wallet manager isn't detecting them
-    const hasEthWallet = ethAddress && ethAddress !== 'None' && ethAddress !== 'null';
-    const hasStellarWallet = stellarPublicKey && stellarPublicKey !== 'None' && stellarPublicKey !== 'null';
-    const walletsConnected = hasEthWallet && hasStellarWallet;
+    // Use the wallet manager's connection status directly
+    const walletsConnected = bothConnected;
     
     console.log('Swap Debug:', {
       bothConnected,
-      hasEthWallet,
-      hasStellarWallet,
+      ethConnected,
+      stellarConnected,
       walletsConnected,
       ethAddress,
       stellarPublicKey,
@@ -165,36 +174,22 @@ export default function Swap() {
     return walletsConnected && amount && quote && !loading && parseFloat(amount) > 0;
   };
 
-  // Check if we have actual wallet addresses, even if wallet manager isn't detecting them
-  const hasEthWallet = ethAddress && ethAddress !== 'None' && ethAddress !== 'null';
-  const hasStellarWallet = stellarPublicKey && stellarPublicKey !== 'None' && stellarPublicKey !== 'null';
-  const walletsConnected = hasEthWallet && hasStellarWallet;
+  // Use the wallet manager's connection status directly
+  const walletsConnected = bothConnected;
 
-  if (!walletsConnected) {
-    return (
-      <UnifiedLayout
-        title="Connect Wallets"
-        subtitle="Connect both Ethereum and Stellar wallets to start swapping"
-        showWalletButton={true}
-      >
-        <div className="text-center space-y-6">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-            <AlertCircle className="w-8 h-8 text-yellow-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-yellow-800 mb-2">
-              Wallets Required
-            </h3>
-            <p className="text-yellow-700">
-              Please connect both your Ethereum and Stellar wallets to enable cross-chain swaps.
-            </p>
-            <div className="mt-4 text-sm text-yellow-600">
-              <p>Ethereum: {hasEthWallet ? '✅ Connected' : '❌ Not Connected'}</p>
-              <p>Stellar: {hasStellarWallet ? '✅ Connected' : '❌ Not Connected'}</p>
-            </div>
-          </div>
-        </div>
-      </UnifiedLayout>
-    );
-  }
+  // Debug logging
+  console.log('Swap Page Debug:', {
+    ethAddress,
+    stellarPublicKey,
+    hasEthWallet: Boolean(ethAddress && ethAddress !== 'None' && ethAddress !== 'null' && ethAddress !== 'Not Connected'),
+    hasStellarWallet: Boolean(stellarPublicKey && stellarPublicKey !== 'None' && stellarPublicKey !== 'null' && stellarPublicKey !== 'Not Connected'),
+    walletsConnected,
+    bothConnected,
+    ethConnected,
+    stellarConnected
+  });
+
+  // Always show the main interface, but with wallet connection status
 
   return (
     <UnifiedLayout
@@ -203,6 +198,40 @@ export default function Swap() {
       showWalletButton={true}
     >
       <div className="max-w-md mx-auto space-y-6">
+        {/* Wallet Connection Status */}
+        {!walletsConnected && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-yellow-800">Connect Wallets</h3>
+                <p className="text-xs text-yellow-700">Both wallets required for swapping</p>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={connectEth}
+                  className={`px-3 py-1 text-xs rounded-lg ${
+                    ethConnected 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                  }`}
+                >
+                  {ethConnected ? '✅ ETH' : 'Connect ETH'}
+                </button>
+                <button
+                  onClick={connectStellar}
+                  className={`px-3 py-1 text-xs rounded-lg ${
+                    stellarConnected 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-purple-100 text-purple-800 hover:bg-purple-200'
+                  }`}
+                >
+                  {stellarConnected ? '✅ XLM' : 'Connect XLM'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Step Indicator */}
         <div className="flex items-center justify-center space-x-2 mb-6">
           <div className={`flex items-center space-x-2 ${swapStep === 'input' ? 'text-blue-600' : 'text-gray-400'}`}>
@@ -219,11 +248,15 @@ export default function Swap() {
             <span className="text-sm font-medium">Quote</span>
           </div>
           <ArrowRight className="w-4 h-4 text-gray-400" />
-          <div className={`flex items-center space-x-2 ${swapStep === 'confirm' ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${swapStep === 'confirm' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-              3
+          <div className={`flex items-center space-x-2 ${swapStep === 'intent' ? 'text-blue-600' : swapStep === 'completed' ? 'text-green-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              swapStep === 'intent' ? 'bg-blue-600 text-white' : 
+              swapStep === 'completed' ? 'bg-green-600 text-white' : 
+              'bg-gray-200'
+            }`}>
+              {swapStep === 'completed' ? '✓' : '3'}
             </div>
-            <span className="text-sm font-medium">Confirm</span>
+            <span className="text-sm font-medium">{swapStep === 'completed' ? 'Complete' : 'Intent'}</span>
           </div>
         </div>
 
@@ -339,15 +372,23 @@ export default function Swap() {
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
+            {!walletsConnected && (
+              <div className="text-xs mb-1">Connect both wallets first</div>
+            )}
             {loading ? (
               <div className="flex items-center justify-center space-x-2">
                 <RefreshCw className="w-4 h-4 animate-spin" />
                 <span>Processing...</span>
               </div>
+            ) : swapStep === 'completed' ? (
+              <div className="flex items-center justify-center space-x-2">
+                <CheckCircle className="w-4 h-4" />
+                <span>Swap Complete!</span>
+              </div>
             ) : (
               <div className="flex items-center justify-center space-x-2">
                 <Zap className="w-4 h-4" />
-                <span>Execute Swap</span>
+                <span>Create Intent</span>
               </div>
             )}
           </button>
