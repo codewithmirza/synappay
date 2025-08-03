@@ -9,7 +9,7 @@ name = "synappay-api-prod"
 [[d1_databases]]
 binding = "DB"
 database_name = "synappay-swaps"
-database_id = "your-d1-database-id"
+database_id = "ca82f87e-2e4b-40b3-83cc-a38fa13a68f6"
 
 [vars]
 ENVIRONMENT = "production"

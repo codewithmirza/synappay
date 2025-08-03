@@ -1,5 +1,5 @@
 // SynapPay 1inch Fusion+ Service
-import { FusionPlusQuote, FusionPlusOrder } from '@synappay/shared/types';
+import { FusionPlusQuote, FusionPlusOrder } from '../types';
 
 export class FusionPlusService {
   private baseUrl = 'https://api.1inch.dev';

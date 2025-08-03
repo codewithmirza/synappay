@@ -4,18 +4,21 @@
   "description": "SynapPay Cloudflare Workers API",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "deploy:staging": "wrangler deploy --env staging",
-    "deploy:production": "wrangler deploy --env production"
+    "dev": "npx wrangler dev",
+    "deploy": "npx wrangler deploy",
+    "deploy:staging": "npx wrangler deploy --env staging",
+    "deploy:production": "npx wrangler deploy --env production",
+    "login": "npx wrangler login",
+    "db:create": "npx wrangler d1 create synappay-swaps",
+    "db:migrate": "npx wrangler d1 execute synappay-swaps --file=schema.sql",
+    "db:migrate:local": "npx wrangler d1 execute synappay-swaps --local --file=schema.sql"
   },
   "dependencies": {
-    "hono": "^3.11.0",
-    "@synappay/shared": "workspace:*"
+    "hono": "^3.12.12"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231025.0",
-    "wrangler": "^3.15.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "wrangler": "^3.15.0"
   }
 }

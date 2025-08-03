@@ -1,6 +1,6 @@
 // SynapPay Swap Service
-import { SwapIntent, SwapIntentSchema } from '@synappay/shared/types';
-import { generateSwapId } from '@synappay/shared/utils';
+import { SwapIntent, validateSwapIntent } from '../types';
+import { generateSwapId } from '../utils';
 
 export class SwapService {
   constructor(private db: D1Database) {}
@@ -24,7 +24,7 @@ export class SwapService {
     };
 
     // Validate the swap intent
-    SwapIntentSchema.parse(swapIntent);
+    const validatedIntent = validateSwapIntent(swapIntent);
 
     // Store in database
     await this.db.prepare(`
