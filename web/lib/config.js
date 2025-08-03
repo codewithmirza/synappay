@@ -103,7 +103,7 @@ const config = {
     debugMode: process.env.NEXT_PUBLIC_ENABLE_DEBUG_MODE === 'true'
   },
 
-  // Swap configuration (inspired by OverSync but differentiated)
+  // Swap configuration (inspired by Synappay but differentiated)
   swaps: {
     defaultTimelock: 3600, // 1 hour in seconds
     maxTimelock: 86400, // 24 hours in seconds

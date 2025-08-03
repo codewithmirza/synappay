@@ -7,36 +7,31 @@ import { useWalletManager } from '../lib/wallet-manager';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
 import apiClient from '../lib/api-client';
+import { SynappayBridge } from '../lib/Synappay-bridge';
 
-const SWAP_STEPS = [
+const Synappay_STEPS = [
   {
-    id: 'intent',
-    title: 'Create Intent',
-    description: 'Broadcasting swap order to 1inch Fusion+ network',
+    id: 'init',
+    title: 'Initialize Swap',
+    description: 'Creating cross-chain swap request with hashlock',
     icon: Zap
   },
   {
-    id: 'lock_eth',
-    title: 'Lock Ethereum Assets',
-    description: 'Depositing tokens into HTLC contract on Ethereum',
+    id: 'ethereum_locked',
+    title: 'Ethereum Lock',
+    description: 'Tokens locked via 1inch Fusion+ escrow',
     icon: Shield
   },
   {
-    id: 'lock_stellar',
-    title: 'Lock Stellar Assets',
-    description: 'Depositing tokens into HTLC contract on Stellar',
+    id: 'stellar_locked',
+    title: 'Stellar HTLC',
+    description: 'Claimable balance created on Stellar network',
     icon: Shield
   },
   {
-    id: 'execute',
-    title: 'Execute Swap',
-    description: 'Atomic execution across both chains',
-    icon: Zap
-  },
-  {
-    id: 'complete',
-    title: 'Complete',
-    description: 'Tokens delivered to destination wallets',
+    id: 'completed',
+    title: 'Swap Complete',
+    description: 'Tokens claimed on destination chain',
     icon: CheckCircle
   }
 ];
@@ -66,22 +61,38 @@ export default function Progress() {
     setSwapId(id);
   }, []);
 
-  // Simulate swap progress
+  // Track Synappay swap progress
   useEffect(() => {
     if (!swapId) return;
 
-    const interval = setInterval(() => {
-      setCurrentStep(prev => {
-        if (prev < SWAP_STEPS.length - 1) {
-          return prev + 1;
-        } else {
-          setSwapStatus('completed');
-          clearInterval(interval);
-          return prev;
+    const trackProgress = async () => {
+      try {
+        const status = await SynappayBridge.getSwapStatus(swapId);
+        if (status) {
+          setSwapDetails(status.request);
+          setSwapStatus(status.request.status);
+          setTimeRemaining(status.timeRemaining);
+          
+          // Map Synappay steps to progress
+          const stepMap = {
+            'init': 0,
+            'ethereum_locked': 1,
+            'stellar_locked': 2,
+            'completed': 3
+          };
+          setCurrentStep(stepMap[status.step] || 0);
         }
-      });
-    }, 3000); // Move to next step every 3 seconds
+      } catch (error) {
+        console.error('Failed to track swap progress:', error);
+        setError('Failed to load swap status');
+      }
+    };
 
+    // Initial load
+    trackProgress();
+
+    // Poll for updates every 5 seconds
+    const interval = setInterval(trackProgress, 5000);
     return () => clearInterval(interval);
   }, [swapId]);
 
@@ -102,41 +113,29 @@ export default function Progress() {
     return () => clearInterval(timer);
   }, [timeRemaining]);
 
-  // Load swap details from backend
-  useEffect(() => {
-    const loadSwapDetails = async () => {
-      if (!swapId) return;
+  // Handle claim tokens action (Synappay flow)
+  const handleClaimTokens = async () => {
+    if (!swapId || !swapDetails) return;
 
-      try {
-        const swapIntent = await apiClient.getSwapStatus(swapId);
-        setSwapDetails({
-          fromToken: swapIntent.fromToken,
-          toToken: swapIntent.toToken,
-          amount: parseFloat(swapIntent.fromAmount),
-          quote: parseFloat(swapIntent.toAmount),
-          fromAddress: swapIntent.sender,
-          toAddress: swapIntent.receiver,
-          hashlock: swapIntent.hashlock,
-          timelock: swapIntent.timelock,
-          status: swapIntent.status
-        });
-      } catch (error) {
-        console.error('Failed to load swap details:', error);
-        // Fallback to mock data
-        setSwapDetails({
-          fromToken: 'ETH',
-          toToken: 'XLM',
-          amount: 0.1,
-          quote: 1000,
-          fromAddress: ethAddress,
-          toAddress: stellarPublicKey,
-          hashlock: '0x' + Math.random().toString(16).substr(2, 64),
-          timelock: Math.floor(Date.now() / 1000) + timeRemaining
-        });
-      }
-    };
-
-    loadSwapDetails();
+    try {
+      setError(null);
+      
+      // For testnet, we'll simulate the claim process
+      // In production, this would require wallet signing
+      const mockKeypair = { publicKey: () => stellarPublicKey };
+      
+      const claimResult = await SynappayBridge.claimTokens(swapId, mockKeypair);
+      console.log('Tokens claimed:', claimResult);
+      
+      // Update status
+      setSwapStatus('completed');
+      setCurrentStep(3);
+      
+    } catch (error) {
+      console.error('Failed to claim tokens:', error);
+      setError('Failed to claim tokens. Please try again.');
+    }
+  };
   }, [swapId, ethAddress, stellarPublicKey, timeRemaining]);
 
   const formatTime = (seconds) => {
@@ -242,7 +241,7 @@ export default function Progress() {
 
         {/* Progress Timeline */}
         <div className="space-y-3">
-          {SWAP_STEPS.map((step, index) => {
+          {Synappay_STEPS.map((step, index) => {
             const status = getStepStatus(index);
             const Icon = step.icon;
             
@@ -302,6 +301,16 @@ export default function Progress() {
             View History
           </button>
           
+          {swapStatus === 'locked' && currentStep >= 2 && (
+            <button
+              onClick={handleClaimTokens}
+              className="flex-1 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 font-medium"
+            >
+              <CheckCircle className="w-4 h-4" />
+              <span>Claim Tokens</span>
+            </button>
+          )}
+
           {swapStatus === 'completed' && (
             <button
               onClick={() => window.location.href = '/swap'}

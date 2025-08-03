@@ -3,17 +3,21 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import WalletConnectionButton from './WalletConnectionButton';
 import Navigation from './Navigation';
+import NetworkToggle from './NetworkToggle';
+import TestnetBanner from './TestnetBanner';
 // import BackendStatus from './BackendStatus';
 
 export default function UnifiedLayout({ children, title, subtitle, showWalletButton = true, showNavigation = true }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f2f2f7] via-white to-[#f8f9fa]">
-      {/* Wallet Connection Button - Fixed Top Right */}
-      {showWalletButton && (
-        <div className="fixed top-4 right-4 z-50">
-          <WalletConnectionButton />
-        </div>
-      )}
+      {/* Testnet Banner */}
+      <TestnetBanner />
+
+      {/* Top Bar with Wallet and Network Toggle */}
+      <div className="fixed top-4 right-4 z-50 flex items-center space-x-3">
+        <NetworkToggle />
+        {showWalletButton && <WalletConnectionButton />}
+      </div>
 
       {/* Main Content - Centered Vertically */}
       <div className="min-h-screen flex items-center justify-center p-4 pb-24">

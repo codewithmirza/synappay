@@ -1,6 +1,6 @@
 /**
  * CoinGecko Price Service
- * Fetches real-time token prices like OverSync
+ * Fetches real-time token prices like Synappay
  */
 
 class PriceService {
@@ -111,7 +111,7 @@ class PriceService {
       const rate = await this.getExchangeRate(fromTokenId, toTokenId);
       const toAmount = parseFloat(fromAmount) * rate;
 
-      // Apply a small spread (0.3% like OverSync)
+      // Apply a small spread (0.3% like Synappay)
       const spreadFactor = 0.997;
       const finalAmount = toAmount * spreadFactor;
 

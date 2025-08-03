@@ -1,4 +1,4 @@
-// SynapPay Coordinator - Simplified version following OverSync architecture
+// SynapPay Coordinator - Simplified version following Synappay architecture
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';

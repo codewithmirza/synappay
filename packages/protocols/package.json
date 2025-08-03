@@ -10,8 +10,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "@1inch/fusion-sdk": "^2.0.0",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "ethers": "^6.8.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

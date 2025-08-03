@@ -8,6 +8,7 @@ import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
 import priceService from '../lib/price-service';
 import apiClient from '../lib/api-client';
+import { SynappayBridge } from '../lib/Synappay-bridge';
 
 export default function Swap() {
   const {
@@ -29,7 +30,7 @@ export default function Swap() {
   const [slippage, setSlippage] = useState(1.0);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Auto-refresh quotes every 30 seconds like OverSync
+  // Auto-refresh quotes every 30 seconds like Synappay
   useEffect(() => {
     if (!amount || !bothConnected || parseFloat(amount) <= 0) return;
 
@@ -52,25 +53,34 @@ export default function Swap() {
     try {
       setLoading(true);
 
-      // Get real-time quote using CoinGecko prices
-      const quoteData = await priceService.calculateSwapQuote(fromToken, toToken, value);
+      // Get Synappay-style cross-chain quote
+      const fromChain = fromToken === 'ETH' ? 'ethereum' : 'stellar';
+      const toChain = toToken === 'ETH' ? 'ethereum' : 'stellar';
+      
+      const SynappayQuote = await SynappayBridge.getSwapQuote(
+        fromChain, 
+        toChain, 
+        fromToken, 
+        toToken, 
+        value
+      );
       
       setQuote({
-        fromTokenAmount: quoteData.fromAmount,
-        toTokenAmount: quoteData.toAmount,
+        fromTokenAmount: SynappayQuote.fromAmount,
+        toTokenAmount: SynappayQuote.toAmount,
         fromTokenDecimals: fromToken === 'ETH' ? 18 : 7,
         toTokenDecimals: toToken === 'ETH' ? 18 : 7,
-        rate: quoteData.rate,
-        spread: quoteData.spread,
-        priceImpact: quoteData.priceImpact,
-        timestamp: quoteData.timestamp
+        rate: parseFloat(SynappayQuote.toAmount) / parseFloat(SynappayQuote.fromAmount),
+        spread: '0.1%',
+        priceImpact: SynappayQuote.priceImpact,
+        timestamp: Date.now(),
+        route: SynappayQuote.route,
+        timeEstimate: SynappayQuote.timeEstimate,
+        estimatedGas: SynappayQuote.estimatedGas
       });
 
-      if (quoteData.error) {
-        setError(`Warning: ${quoteData.error}`);
-      }
     } catch (error) {
-      console.error('Error getting quote:', error);
+      console.error('Error getting Synappay quote:', error);
       setError('Failed to get quote. Please try again.');
     } finally {
       setLoading(false);
@@ -94,26 +104,32 @@ export default function Swap() {
       setLoading(true);
       setError(null);
 
-      // Create swap intent on backend
-      const swapIntent = await apiClient.createSwapIntent({
+      // Initiate Synappay-style cross-chain swap
+      const swapRequest = await SynappayBridge.initiateSwap({
         fromChain: fromToken === 'ETH' ? 'ethereum' : 'stellar',
         toChain: toToken === 'ETH' ? 'ethereum' : 'stellar',
         fromToken,
         toToken,
-        fromAmount: amount,
-        toAmount: quote.toTokenAmount.toString(),
-        sender: fromToken === 'ETH' ? ethAddress : stellarPublicKey,
-        receiver: toToken === 'ETH' ? ethAddress : stellarPublicKey,
-        slippage: slippage
+        amount,
+        userAddress: ethAddress,
+        stellarAddress: stellarPublicKey
       });
 
-      console.log('Swap intent created:', swapIntent);
+      console.log('Synappay swap initiated:', swapRequest);
 
-      // Redirect to progress page to track the swap
-      window.location.href = `/progress?swapId=${swapIntent.id}`;
+      // For Ethereum -> Stellar swaps, create the Ethereum lock first
+      if (fromToken === 'ETH') {
+        console.log('Creating Ethereum lock via 1inch Fusion+...');
+        // This would require the user's private key or wallet signing
+        // For now, we'll simulate the process
+        await SynappayBridge.createEthereumLock(swapRequest.id, 'mock_private_key');
+      }
+
+      // Redirect to progress page to continue the Synappay flow
+      window.location.href = `/progress?swapId=${swapRequest.id}`;
       
     } catch (error) {
-      console.error('Failed to execute swap:', error);
+      console.error('Failed to execute Synappay swap:', error);
       setError('Failed to execute swap. Please try again.');
     } finally {
       setLoading(false);
