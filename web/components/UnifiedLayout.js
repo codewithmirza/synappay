@@ -67,4 +67,4 @@ export default function UnifiedLayout({ children, title, subtitle, showWalletBut
       {/* {process.env.NODE_ENV === 'development' && <BackendStatus />} */}
     </div>
   );
-} 
+}
