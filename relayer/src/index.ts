@@ -91,11 +91,19 @@ app.get('/api/v1/orders', (req, res) => {
 // Events API
 app.get('/api/v1/events', (req, res) => {
   const { limit = 50, eventType, orderHash } = req.query;
-  const events = eventHistoryManager.queryEvents({
-    limit: Number(limit),
-    eventTypes: eventType ? [eventType as any] : undefined,
-    orderHashes: orderHash ? [orderHash as string] : undefined
-  });
+  const queryParams: any = {
+    limit: Number(limit)
+  };
+  
+  if (eventType) {
+    queryParams.eventTypes = [eventType as string];
+  }
+  
+  if (orderHash) {
+    queryParams.orderHashes = [orderHash as string];
+  }
+  
+  const events = eventHistoryManager.queryEvents(queryParams);
   res.json(events);
 });
 
@@ -138,8 +146,8 @@ app.post('/api/v1/partial-fills', async (req, res) => {
       merkleProof
     );
     res.json(result);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+  } catch (error: any) {
+    res.status(400).json({ error: error?.message || 'Unknown error' });
   }
 });
 
@@ -152,8 +160,8 @@ wss.on('connection', (ws, req) => {
     id: `client_${Date.now()}`,
     connectionType: 'websocket',
     connected: true,
-    userAgent: req.headers['user-agent'],
-    ipAddress: req.socket.remoteAddress,
+    userAgent: req.headers['user-agent'] || '',
+    ipAddress: req.socket.remoteAddress || '',
     metadata: {}
   });
 
