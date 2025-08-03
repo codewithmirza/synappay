@@ -1,5 +1,5 @@
 [package]
-name = "stellar-htlc"
+name = "synappay-stellar-htlc"
 version = "0.1.0"
 edition = "2021"
 
@@ -16,7 +16,7 @@ soroban-sdk = { version = "21.0.0", features = ["testutils"] }
 testutils = ["soroban-sdk/testutils"]
 
 [[bin]]
-name = "stellar-htlc"
+name = "synappay-stellar-htlc"
 path = "src/main.rs"
 
 [profile.release]

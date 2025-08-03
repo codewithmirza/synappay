@@ -40,10 +40,10 @@ const REFUND: Symbol = symbol_short!("REFUND");
 const NEW: Symbol = symbol_short!("NEW");
 
 #[contract]
-pub struct StellarHTLCContract;
+pub struct SynapPayStellarHTLC;
 
 #[contractimpl]
-impl StellarHTLCContract {
+impl SynapPayStellarHTLC {
     /// Create a new HTLC contract
     pub fn new_contract(
         env: Env,
@@ -227,8 +227,8 @@ mod test {
     #[test]
     fn test_htlc_flow() {
         let env = Env::default();
-        let contract_id = env.register_contract(None, StellarHTLCContract);
-        let client = StellarHTLCContractClient::new(&env, &contract_id);
+        let contract_id = env.register_contract(None, SynapPayStellarHTLC);
+        let client = SynapPayStellarHTLCClient::new(&env, &contract_id);
         
         let sender = Address::generate(&env);
         let receiver = Address::generate(&env);

@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-contract EthereumHTLC {
+/**
+ * @title SynapPay Ethereum HTLC
+ * @dev Hash Time Locked Contract for cross-chain atomic swaps
+ */
+contract SynapPayHTLC {
     struct HTLCContract {
         address sender;
         address receiver;
@@ -10,7 +14,7 @@ contract EthereumHTLC {
         uint256 timelock;
         bool withdrawn;
         bool refunded;
-        bytes32 preimage;
+        address token; // ERC20 token address, 0x0 for ETH
     }
 
     mapping(bytes32 => HTLCContract) public contracts;
@@ -21,68 +25,48 @@ contract EthereumHTLC {
         address indexed receiver,
         uint256 amount,
         bytes32 hashlock,
-        uint256 timelock
+        uint256 timelock,
+        address token
     );
     
     event HTLCWithdraw(bytes32 indexed contractId);
     event HTLCRefund(bytes32 indexed contractId);
 
-    modifier fundsSent() {
-        require(msg.value > 0, "msg.value must be > 0");
-        _;
-    }
-    
-    modifier futureTimelock(uint256 _time) {
-        require(_time > block.timestamp, "timelock time must be in the future");
-        _;
-    }
-    
     modifier contractExists(bytes32 _contractId) {
-        require(haveContract(_contractId), "contractId does not exist");
+        require(haveContract(_contractId), "Contract does not exist");
         _;
     }
-    
-    modifier hashlockMatches(bytes32 _contractId, bytes32 _x) {
-        require(
-            contracts[_contractId].hashlock == sha256(abi.encodePacked(_x)),
-            "hashlock hash does not match"
-        );
-        _;
-    }
-    
+
     modifier withdrawable(bytes32 _contractId) {
-        require(contracts[_contractId].receiver == msg.sender, "withdrawable: not receiver");
-        require(contracts[_contractId].withdrawn == false, "withdrawable: already withdrawn");
-        require(contracts[_contractId].timelock > block.timestamp, "withdrawable: timelock time must be in the future");
+        require(contracts[_contractId].receiver == msg.sender, "Withdrawable: not receiver");
+        require(contracts[_contractId].withdrawn == false, "Withdrawable: already withdrawn");
+        require(contracts[_contractId].refunded == false, "Withdrawable: already refunded");
+        require(contracts[_contractId].timelock > block.timestamp, "Withdrawable: timelock time passed");
         _;
     }
-    
+
     modifier refundable(bytes32 _contractId) {
-        require(contracts[_contractId].sender == msg.sender, "refundable: not sender");
-        require(contracts[_contractId].refunded == false, "refundable: already refunded");
-        require(contracts[_contractId].withdrawn == false, "refundable: already withdrawn");
-        require(contracts[_contractId].timelock <= block.timestamp, "refundable: timelock not yet passed");
+        require(contracts[_contractId].sender == msg.sender, "Refundable: not sender");
+        require(contracts[_contractId].refunded == false, "Refundable: already refunded");
+        require(contracts[_contractId].withdrawn == false, "Refundable: already withdrawn");
+        require(contracts[_contractId].timelock <= block.timestamp, "Refundable: timelock not yet passed");
         _;
     }
 
     function newContract(
         address _receiver,
         bytes32 _hashlock,
-        uint256 _timelock
-    )
-        external
-        payable
-        fundsSent
-        futureTimelock(_timelock)
-        returns (bytes32 contractId)
-    {
+        uint256 _timelock,
+        address _token
+    ) external payable returns (bytes32 contractId) {
         contractId = keccak256(
             abi.encodePacked(
                 msg.sender,
                 _receiver,
                 msg.value,
                 _hashlock,
-                _timelock
+                _timelock,
+                _token
             )
         );
 
@@ -97,7 +81,7 @@ contract EthereumHTLC {
             _timelock,
             false,
             false,
-            0x0
+            _token
         );
 
         emit HTLCNew(
@@ -106,21 +90,21 @@ contract EthereumHTLC {
             _receiver,
             msg.value,
             _hashlock,
-            _timelock
+            _timelock,
+            _token
         );
     }
 
     function withdraw(bytes32 _contractId, bytes32 _preimage)
         external
         contractExists(_contractId)
-        hashlockMatches(_contractId, _preimage)
         withdrawable(_contractId)
         returns (bool)
     {
         HTLCContract storage c = contracts[_contractId];
-        c.preimage = _preimage;
-        c.withdrawn = true;
+        require(c.hashlock == keccak256(abi.encodePacked(_preimage)), "Hashlock hash does not match");
         
+        c.withdrawn = true;
         payable(c.receiver).transfer(c.amount);
         emit HTLCWithdraw(_contractId);
         return true;
@@ -151,11 +135,11 @@ contract EthereumHTLC {
             uint256 timelock,
             bool withdrawn,
             bool refunded,
-            bytes32 preimage
+            address token
         )
     {
         if (haveContract(_contractId) == false)
-            return (address(0), address(0), 0, 0, 0, false, false, 0);
+            return (address(0), address(0), 0, 0, 0, false, false, address(0));
         HTLCContract storage c = contracts[_contractId];
         return (
             c.sender,
@@ -165,7 +149,7 @@ contract EthereumHTLC {
             c.timelock,
             c.withdrawn,
             c.refunded,
-            c.preimage
+            c.token
         );
     }
 

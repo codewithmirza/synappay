@@ -1,0 +1,27 @@
+{
+  "name": "@synappay/coordinator",
+  "version": "0.1.0",
+  "description": "SynapPay cross-chain coordinator service",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "ts-node src/main.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@synappay/blockchain": "workspace:*",
+    "@synappay/protocols": "workspace:*",
+    "@synappay/shared": "workspace:*",
+    "ethers": "^6.8.0",
+    "stellar-sdk": "^11.2.0",
+    "ws": "^8.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0",
+    "jest": "^29.0.0"
+  }
+}
