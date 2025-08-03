@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import SwapInterface from './components/SwapInterface'
 import TransactionHistory from './components/TransactionHistory'
-import { ToastContainer, useToast } from './components/Toast'
+import { ToastContainer, useToast, ToastProvider } from './components/Toast'
 import { useFreighter } from './hooks/useFreighter'
 import { isTestnet } from './config/networks'
 
@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-function App() {
+function AppContent() {
   const [ethAddress, setEthAddress] = useState<string>('');
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -391,6 +391,14 @@ function App() {
         onClose={toast.removeToast}
       />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   );
 }
 
