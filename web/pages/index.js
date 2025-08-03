@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { simpleWalletService } from '../lib/simple-wallet-service';
+import { workingWalletService } from '../lib/working-wallet-service';
 import UnifiedLayout from '../components/UnifiedLayout';
 import { CheckCircle, AlertCircle, ArrowRight, Wallet } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export default function Home() {
   useEffect(() => {
     // Update wallet status
     const updateStatus = () => {
-      const status = simpleWalletService.getStatus();
+      const status = workingWalletService.getStatus();
       setWalletStatus(status);
     };
 
@@ -32,7 +32,7 @@ export default function Home() {
     setError(null);
     
     try {
-      const result = await simpleWalletService.connectEthereum();
+      const result = await workingWalletService.connectEthereum();
       if (result.success) {
         console.log('Ethereum connected:', result);
       } else {
@@ -50,7 +50,7 @@ export default function Home() {
     setError(null);
     
     try {
-      const result = await simpleWalletService.connectStellar();
+      const result = await workingWalletService.connectStellar();
       if (result.success) {
         console.log('Stellar connected:', result);
       } else {

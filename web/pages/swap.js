@@ -166,7 +166,7 @@ export default function Swap() {
       setError(null);
       setSwapStep('intent');
 
-      // Create swap intent (like OverSync)
+      // Create swap intent (like synappay)
       const swapRequest = await SynappayBridge.initiateSwap({
         fromChain: fromToken === 'ETH' ? 'ethereum' : 'stellar',
         toChain: toToken === 'ETH' ? 'ethereum' : 'stellar',

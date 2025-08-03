@@ -1,70 +1,78 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, Wallet, CheckCircle, AlertCircle, X } from 'lucide-react';
-import { useWalletManager } from '../lib/wallet-manager';
+import { workingWalletService } from '../lib/working-wallet-service';
 
 export default function WalletConnectionButton() {
-  const {
-    ethConnected,
-    ethAddress,
-    ethChainId,
-    ethLoading,
-    ethError,
-    connectEth,
-    disconnectEth,
-    switchToSepolia,
-    formatEthAddress,
-    isCorrectEthNetwork,
-    
-    stellarConnected,
-    stellarPublicKey,
-    stellarLoading,
-    stellarError,
-    connectStellar,
-    disconnectStellar,
-    formatStellarAddress,
-    getStellarWalletName,
-    
-    bothConnected,
-    canSwap,
-    isLoading,
-    error
-  } = useWalletManager();
+  const [walletStatus, setWalletStatus] = useState({
+    ethereumConnected: false,
+    stellarConnected: false,
+    account: null,
+    chainId: null
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Update wallet status
+  useEffect(() => {
+    const updateStatus = () => {
+      const status = workingWalletService.getStatus();
+      setWalletStatus(status);
+    };
+
+    updateStatus();
+    const interval = setInterval(updateStatus, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const ethConnected = walletStatus.ethereumConnected;
+  const stellarConnected = walletStatus.stellarConnected;
+  const ethAddress = walletStatus.account;
+  const bothConnected = ethConnected && stellarConnected;
+  const isLoading = loading;
 
   const [showDropdown, setShowDropdown] = useState(false);
 
   const handleConnectEth = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      await connectEth();
-      setShowDropdown(false);
-    } catch (error) {
-      console.error('Failed to connect Ethereum wallet:', error);
+      const result = await workingWalletService.connectEthereum();
+      if (result.success) {
+        console.log('Ethereum connected:', result);
+        setShowDropdown(false);
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleConnectStellar = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      await connectStellar();
-      setShowDropdown(false);
-    } catch (error) {
-      console.error('Failed to connect Stellar wallet:', error);
-    }
-  };
-
-  const handleSwitchToSepolia = async () => {
-    try {
-      await switchToSepolia();
-      setShowDropdown(false);
-    } catch (error) {
-      console.error('Failed to switch network:', error);
+      const result = await workingWalletService.connectStellar();
+      if (result.success) {
+        console.log('Stellar connected:', result);
+        setShowDropdown(false);
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDisconnect = async () => {
     try {
-      await disconnectEth();
-      await disconnectStellar();
+      workingWalletService.disconnect();
       setShowDropdown(false);
     } catch (error) {
       console.error('Failed to disconnect wallets:', error);
@@ -136,27 +144,15 @@ export default function WalletConnectionButton() {
                       <div className="flex items-center justify-between p-2 bg-green-50 rounded">
                         <div className="flex items-center space-x-2">
                           <CheckCircle className="w-4 h-4 text-green-600" />
-                          <span className="text-sm text-green-700">{formatEthAddress(ethAddress)}</span>
+                                                     <span className="text-sm text-green-700">{workingWalletService.formatEthAddress(ethAddress)}</span>
                         </div>
                         <span className="text-xs text-green-600">Connected</span>
                       </div>
                       
-                      {!isCorrectEthNetwork() && (
-                        <div className="p-2 bg-yellow-50 border border-yellow-200 rounded">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-yellow-700">Wrong Network</span>
-                            <button
-                              onClick={handleSwitchToSepolia}
-                              className="px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700"
-                            >
-                              Switch to Sepolia
-                            </button>
-                          </div>
-                        </div>
-                      )}
+
                       
                       <button
-                        onClick={disconnectEth}
+                        onClick={handleDisconnect}
                         className="w-full px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
                       >
                         Disconnect ETH
@@ -165,10 +161,10 @@ export default function WalletConnectionButton() {
                   ) : (
                     <button
                       onClick={handleConnectEth}
-                      disabled={ethLoading}
+                      disabled={loading}
                       className="w-full flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {ethLoading ? 'Connecting...' : 'Connect Ethereum Wallet'}
+                      {loading ? 'Connecting...' : 'Connect Ethereum Wallet'}
                     </button>
                   )}
                 </div>
@@ -184,15 +180,15 @@ export default function WalletConnectionButton() {
                         <div className="flex items-center space-x-2">
                           <CheckCircle className="w-4 h-4 text-green-600" />
                           <div className="flex flex-col">
-                            <span className="text-sm text-green-700">{formatStellarAddress(stellarPublicKey)}</span>
-                            <span className="text-xs text-green-600">{getStellarWalletName()}</span>
+                            <span className="text-sm text-green-700">Stellar Connected</span>
+                            <span className="text-xs text-green-600">Freighter</span>
                           </div>
                         </div>
                         <span className="text-xs text-green-600">Connected</span>
                       </div>
                       
                       <button
-                        onClick={disconnectStellar}
+                        onClick={handleDisconnect}
                         className="w-full px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
                       >
                         Disconnect Stellar
@@ -201,22 +197,22 @@ export default function WalletConnectionButton() {
                   ) : (
                     <button
                       onClick={handleConnectStellar}
-                      disabled={stellarLoading}
+                      disabled={loading}
                       className="w-full flex items-center justify-center px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
                     >
-                      {stellarLoading ? 'Connecting...' : 'Connect Stellar'}
+                      {loading ? 'Connecting...' : 'Connect Stellar'}
                     </button>
                   )}
                 </div>
               </div>
 
               {/* Error Display */}
-              {(ethError || stellarError) && (
+              {error && (
                 <div className="p-2 bg-red-50 border border-red-200 rounded">
                   <div className="flex items-center space-x-2">
                     <AlertCircle className="w-4 h-4 text-red-600" />
                     <span className="text-sm text-red-700">
-                      {ethError || stellarError}
+                      {error}
                     </span>
                   </div>
                 </div>
