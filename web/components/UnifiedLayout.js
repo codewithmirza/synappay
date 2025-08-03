@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import WalletConnectionButton from './WalletConnectionButton';
+import WalletConnect from './WalletConnect';
 import Navigation from './Navigation';
 import NetworkToggle from './NetworkToggle';
 import TestnetBanner from './TestnetBanner';
@@ -16,7 +16,7 @@ export default function UnifiedLayout({ children, title, subtitle, showWalletBut
       {/* Top Bar with Wallet and Network Toggle */}
       <div className="fixed top-4 right-4 z-50 flex items-center space-x-3">
         <NetworkToggle />
-        {showWalletButton && <WalletConnectionButton />}
+        {showWalletButton && <WalletConnect />}
       </div>
 
       {/* Main Content - Centered Vertically */}

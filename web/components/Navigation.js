@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import { Home, ArrowUpDown, History, BarChart3 } from 'lucide-react';
 
-import { useWalletManager } from '../lib/wallet-manager';
+import { walletConnectionService } from '../lib/wallet-connection-service';
 
 const navigationItems = [
   { href: '/', label: 'Home', icon: Home, requiresWallets: false },
@@ -14,7 +14,8 @@ const navigationItems = [
 
 export default function Navigation() {
   const router = useRouter();
-  const { bothConnected } = useWalletManager();
+  const walletStatus = walletConnectionService.getStatus();
+  const bothConnected = walletStatus.bothConnected;
 
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">

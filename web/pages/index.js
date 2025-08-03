@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { workingWalletService } from '../lib/working-wallet-service';
+import { walletConnectionService } from '../lib/wallet-connection-service';
 import UnifiedLayout from '../components/UnifiedLayout';
 import { CheckCircle, AlertCircle, ArrowRight, Wallet } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export default function Home() {
   useEffect(() => {
     // Update wallet status
     const updateStatus = () => {
-      const status = workingWalletService.getStatus();
+      const status = walletConnectionService.getStatus();
       setWalletStatus(status);
     };
 
@@ -32,9 +32,9 @@ export default function Home() {
     setError(null);
     
     try {
-      const result = await workingWalletService.connectEthereum();
+      const result = await walletConnectionService.connectEthereum();
       if (result.success) {
-        console.log('Ethereum connected:', result);
+        console.log('✅ MetaMask connected:', result);
       } else {
         setError(result.error);
       }
@@ -50,9 +50,9 @@ export default function Home() {
     setError(null);
     
     try {
-      const result = await workingWalletService.connectStellar();
+      const result = await walletConnectionService.connectStellar();
       if (result.success) {
-        console.log('Stellar connected:', result);
+        console.log('✅ Freighter connected:', result);
       } else {
         setError(result.error);
       }

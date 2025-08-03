@@ -1,0 +1,30 @@
+{
+  "name": "@synappay/contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for SynapPay cross-chain bridge",
+  "type": "module",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.ts",
+    "deploy:sepolia": "hardhat run scripts/deploy-sepolia.ts",
+    "test": "hardhat test",
+    "clean": "hardhat clean"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0",
+    "ethers": "^6.9.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@types/node": "^20.10.0",
+    "hardhat": "^2.19.0",
+    "typescript": "^5.3.0"
+  },
+  "keywords": [
+    "ethereum",
+    "smart-contracts",
+    "htlc",
+    "bridge",
+    "cross-chain"
+  ]
+} 

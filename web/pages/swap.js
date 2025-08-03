@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, RefreshCw, CheckCircle, AlertCircle, Settings, Info, ChevronDown, ArrowUpDown, Zap, Shield, Clock, Coins } from 'lucide-react';
-import { simpleWalletService } from '../lib/simple-wallet-service';
+import { walletConnectionService } from '../lib/wallet-connection-service';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
 import priceService from '../lib/price-service';
 import apiClient from '../lib/api-client';
-import { SynappayBridge } from '../lib/Synappay-bridge';
+import { workingSwapService } from '../lib/working-swap-service';
 
 export default function Swap() {
   const [walletStatus, setWalletStatus] = useState({
@@ -23,7 +23,7 @@ export default function Swap() {
   // Update wallet status
   useEffect(() => {
     const updateStatus = () => {
-      const status = simpleWalletService.getStatus();
+      const status = walletConnectionService.getStatus();
       setWalletStatus(status);
     };
 
@@ -37,9 +37,9 @@ export default function Swap() {
     setError(null);
     
     try {
-      const result = await simpleWalletService.connectEthereum();
+      const result = await walletConnectionService.connectEthereum();
       if (result.success) {
-        console.log('Ethereum connected:', result);
+        console.log('✅ MetaMask connected:', result);
       } else {
         setError(result.error);
       }
@@ -55,9 +55,9 @@ export default function Swap() {
     setError(null);
     
     try {
-      const result = await simpleWalletService.connectStellar();
+      const result = await walletConnectionService.connectStellar();
       if (result.success) {
-        console.log('Stellar connected:', result);
+        console.log('✅ Freighter connected:', result);
       } else {
         setError(result.error);
       }
@@ -116,26 +116,32 @@ export default function Swap() {
       const fromChain = fromToken === 'ETH' ? 'ethereum' : 'stellar';
       const toChain = toToken === 'ETH' ? 'ethereum' : 'stellar';
       
-      const SynappayQuote = await SynappayBridge.getSwapQuote(
-        fromChain, 
-        toChain, 
-        fromToken, 
-        toToken, 
-        value
-      );
+      const quoteResult = await workingSwapService.getSwapQuote({
+        fromChain,
+        toChain,
+        fromToken,
+        toToken,
+        amount: value
+      });
+      
+      if (!quoteResult.success) {
+        throw new Error(quoteResult.error);
+      }
+      
+      const swapQuote = quoteResult.data;
       
       setQuote({
-        fromTokenAmount: SynappayQuote.fromAmount,
-        toTokenAmount: SynappayQuote.toAmount,
+        fromTokenAmount: swapQuote.fromAmount,
+        toTokenAmount: swapQuote.toAmount,
         fromTokenDecimals: fromToken === 'ETH' ? 18 : 7,
         toTokenDecimals: toToken === 'ETH' ? 18 : 7,
-        rate: parseFloat(SynappayQuote.toAmount) / parseFloat(SynappayQuote.fromAmount),
+        rate: swapQuote.exchangeRate,
         spread: '0.1%',
-        priceImpact: SynappayQuote.priceImpact,
+        priceImpact: swapQuote.priceImpact,
         timestamp: Date.now(),
-        route: SynappayQuote.route,
-        timeEstimate: SynappayQuote.timeEstimate,
-        estimatedGas: SynappayQuote.estimatedGas
+        route: swapQuote.route,
+        timeEstimate: swapQuote.timeEstimate,
+        estimatedGas: swapQuote.gasEstimate
       });
 
     } catch (error) {
@@ -166,8 +172,8 @@ export default function Swap() {
       setError(null);
       setSwapStep('intent');
 
-      // Create swap intent (like synappay)
-      const swapRequest = await SynappayBridge.initiateSwap({
+      // Create swap intent
+      const swapIntentResult = await workingSwapService.createSwapIntent({
         fromChain: fromToken === 'ETH' ? 'ethereum' : 'stellar',
         toChain: toToken === 'ETH' ? 'ethereum' : 'stellar',
         fromToken,
@@ -177,11 +183,15 @@ export default function Swap() {
         stellarAddress: stellarPublicKey
       });
 
-      console.log('Swap intent created:', swapRequest);
+      if (!swapIntentResult.success) {
+        throw new Error(swapIntentResult.error);
+      }
+
+      console.log('Swap intent created:', swapIntentResult.data);
       setSwapStep('executing');
 
       // Execute the actual swap transaction (triggers wallet popup)
-      const transactionResult = await SynappayBridge.executeSwap(swapRequest.id);
+      const transactionResult = await workingSwapService.executeSwap(swapIntentResult.data.id);
       
       console.log('Transaction completed:', transactionResult);
       setSwapStep('completed');

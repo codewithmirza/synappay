@@ -1,10 +1,10 @@
 import { ethers } from 'ethers';
 
 /**
- * Working Wallet Service - Based on proven implementation
- * Direct wallet connections that actually work
+ * Wallet Connection Service
+ * Handles MetaMask and Freighter wallet connections with proper popup triggers
  */
-class WorkingWalletService {
+class WalletConnectionService {
   constructor() {
     this.ethereumProvider = null;
     this.stellarProvider = null;
@@ -14,10 +14,12 @@ class WorkingWalletService {
   }
 
   /**
-   * Connect to Ethereum wallet (MetaMask)
+   * Connect to Ethereum wallet (MetaMask) - Triggers popup
    */
   async connectEthereum() {
     try {
+      console.log('🔗 Connecting to MetaMask...');
+      
       // Check if MetaMask is installed
       if (typeof window.ethereum === 'undefined') {
         return {
@@ -26,7 +28,7 @@ class WorkingWalletService {
         };
       }
 
-      // Request account access
+      // Request account access - This triggers the MetaMask popup
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
@@ -51,26 +53,28 @@ class WorkingWalletService {
         }
       });
 
-      console.log('✅ Ethereum connected:', this.ethereumAccount);
+      console.log('✅ MetaMask connected:', this.ethereumAccount);
       return {
         success: true,
         account: this.ethereumAccount
       };
 
     } catch (error) {
-      console.error('❌ Ethereum connection failed:', error);
+      console.error('❌ MetaMask connection failed:', error);
       return {
         success: false,
-        error: error.message || 'Failed to connect Ethereum wallet'
+        error: error.message || 'Failed to connect MetaMask wallet'
       };
     }
   }
 
   /**
-   * Connect to Stellar wallet (Freighter)
+   * Connect to Stellar wallet (Freighter) - Triggers popup
    */
   async connectStellar() {
     try {
+      console.log('🔗 Connecting to Freighter...');
+      
       // Check if Freighter is installed
       if (typeof window.freighterApi === 'undefined') {
         return {
@@ -83,6 +87,7 @@ class WorkingWalletService {
       const isConnected = await window.freighterApi.isConnected();
       
       if (!isConnected) {
+        // This triggers the Freighter popup
         await window.freighterApi.connect();
       }
 
@@ -92,7 +97,7 @@ class WorkingWalletService {
       this.stellarAccount = publicKey;
       this.stellarProvider = window.freighterApi;
 
-      console.log('✅ Stellar connected:', publicKey, 'Network:', network);
+      console.log('✅ Freighter connected:', publicKey, 'Network:', network);
       return {
         success: true,
         publicKey,
@@ -100,10 +105,10 @@ class WorkingWalletService {
       };
 
     } catch (error) {
-      console.error('❌ Stellar connection failed:', error);
+      console.error('❌ Freighter connection failed:', error);
       return {
         success: false,
-        error: error.message || 'Failed to connect Stellar wallet'
+        error: error.message || 'Failed to connect Freighter wallet'
       };
     }
   }
@@ -119,18 +124,10 @@ class WorkingWalletService {
     try {
       const signer = await this.ethereumProvider.getSigner();
       const tx = await signer.sendTransaction(transaction);
-      
-      console.log('✅ Transaction sent:', tx.hash);
-      return {
-        success: true,
-        hash: tx.hash
-      };
+      return await tx.wait();
     } catch (error) {
-      console.error('❌ Transaction failed:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      console.error('❌ Ethereum transaction failed:', error);
+      throw error;
     }
   }
 
@@ -141,9 +138,11 @@ class WorkingWalletService {
     return {
       ethereumConnected: !!this.ethereumAccount,
       stellarConnected: !!this.stellarAccount,
+      bothConnected: !!this.ethereumAccount && !!this.stellarAccount,
       ethereumAccount: this.ethereumAccount,
       stellarAccount: this.stellarAccount,
-      bothConnected: !!this.ethereumAccount && !!this.stellarAccount
+      ethereumProvider: this.ethereumProvider,
+      stellarProvider: this.stellarProvider
     };
   }
 
@@ -151,12 +150,11 @@ class WorkingWalletService {
    * Disconnect wallets
    */
   disconnect() {
-    this.ethereumProvider = null;
-    this.stellarProvider = null;
     this.ethereumAccount = null;
     this.stellarAccount = null;
+    this.ethereumProvider = null;
+    this.stellarProvider = null;
     this.isConnected = false;
-    
     console.log('🔌 Wallets disconnected');
   }
 
@@ -177,4 +175,4 @@ class WorkingWalletService {
   }
 }
 
-export const workingWalletService = new WorkingWalletService(); 
+export const walletConnectionService = new WalletConnectionService(); 

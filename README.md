@@ -1,47 +1,127 @@
-# SynapPay - Cross-Chain Atomic Swaps
+# SynapPay
 
-A decentralized platform enabling atomic swaps between Ethereum and Stellar networks using HTLC (Hash Time Lock Contracts) and 1inch Fusion+ integration.
+Cross-chain atomic swaps extending 1inch Fusion+ to Stellar using Hash Time Locked Contracts (HTLC).
 
-## ✅ Implementation Status: 100% Complete
+## 🚀 New Architecture
 
-**Core Features:**
-- ✅ **HTLC Atomic Swaps**: Secure cross-chain token exchanges with time-locked contracts
-- ✅ **1inch Fusion+ Integration**: Leverages 1inch's Fusion+ protocol for Ethereum-side liquidity
-- ✅ **Dual Contract Architecture**: Custom HTLC contracts for testnet, official 1inch Escrow Factory for mainnet
-- ✅ **Automated Relayer**: Seamless user experience with automated cross-chain coordination
-- ✅ **Real-time Rates**: Live exchange rates via CoinGecko API integration
-- ✅ **Partial Fill Support**: Flexible swap amounts with incremental fills
-- ✅ **Complete Error Handling**: Comprehensive monitoring and error tracking
-- ✅ **Mainnet Deployment**: Production-ready configuration for all environments
+This project has been migrated to a modern pnpm workspace structure with Vite + React + TypeScript for improved performance and developer experience.
 
-## Supported Networks
+### Workspace Structure
 
-- **Testnet**: Sepolia ↔ Stellar Testnet (custom contracts)
-- **Mainnet**: Ethereum ↔ Stellar Mainnet (1inch Escrow Factory)
-
-## Architecture
-
-User locks tokens on source chain → Relayer detects lock → Creates corresponding lock on target chain → User claims with preimage → Relayer claims original tokens → Automatic refund if timeout expires.
-
-## Quick Start
-
-```bash
-# Deploy to development
-./infrastructure/cloudflare/deploy.sh development
-
-# Deploy to staging
-./infrastructure/cloudflare/deploy.sh staging
-
-# Deploy to production
-./infrastructure/cloudflare/deploy.sh production
+```
+synappay/
+├── contracts/     # Smart contracts (Hardhat)
+├── stellar/       # Stellar integration
+├── relayer/       # Backend relayer service
+└── web/          # Frontend (Vite + React + TypeScript)
 ```
 
-## API Endpoints
+### Technology Stack
 
-- **Health Check**: `/health`
-- **Swap Management**: `/api/v1/swaps/*`
-- **1inch Fusion+**: `/api/v1/fusion-plus/*`
-- **Real-time Prices**: `/api/v1/prices/*`
-- **Partial Fills**: `/api/v1/partial-fills/*`
-- **Relayer Control**: `/api/v1/relayer/*`
-- **Monitoring**: `/api/v1/monitoring/*` 
+- **Frontend**: Vite + React + TypeScript
+- **Styling**: Tailwind CSS with custom dark theme
+- **Ethereum**: Ethers.js
+- **Stellar**: Stellar SDK + Freighter API
+- **Package Manager**: pnpm workspaces
+- **Build Tool**: Vite
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Node.js >= 18.0.0
+- pnpm >= 8.0.0
+
+### Installation
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+
+# Build all workspaces
+pnpm build
+
+# Build for production
+pnpm build:prod
+```
+
+### Workspace Commands
+
+```bash
+# Frontend (web)
+pnpm web:dev          # Start development server
+pnpm web:build        # Build frontend
+pnpm web:preview      # Preview build
+
+# Smart Contracts
+pnpm contracts:compile # Compile contracts
+pnpm contracts:deploy  # Deploy to mainnet
+pnpm contracts:deploy:sepolia # Deploy to testnet
+
+# Stellar
+pnpm stellar:build    # Build stellar integration
+
+# Relayer
+pnpm relayer:start    # Start relayer service
+```
+
+## 🌟 Features
+
+- **Cross-chain Swaps**: Ethereum ↔ Stellar
+- **1inch Fusion+ Integration**: Advanced swap routing
+- **HTLC Security**: Hash Time Locked Contracts
+- **Real-time Updates**: WebSocket connections
+- **Dark Theme**: Modern glass morphism UI
+- **Wallet Integration**: MetaMask + Freighter
+- **Transaction History**: Complete swap tracking
+
+## 🔧 Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# Network Configuration
+VITE_NETWORK_MODE=testnet
+
+# Ethereum RPC URLs
+VITE_SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
+VITE_MAINNET_RPC_URL=https://mainnet.infura.io/v3/YOUR_KEY
+
+# 1inch API
+VITE_ONEINCH_API_KEY=your_1inch_api_key
+
+# Contract Addresses
+VITE_HTLC_CONTRACT_ADDRESS=0x...
+VITE_STELLAR_HTLC_ADDRESS=...
+```
+
+## 📦 Migration from Next.js
+
+This project has been successfully migrated from Next.js to Vite for:
+
+- **Faster Development**: Hot module replacement
+- **Better Performance**: Optimized builds
+- **Modern Tooling**: Latest React features
+- **TypeScript Support**: Full type safety
+- **Monorepo Structure**: pnpm workspaces
+
+## 🎨 UI/UX Improvements
+
+- **Dark Theme**: Consistent dark mode
+- **Glass Morphism**: Modern glass effects
+- **Gradient Borders**: Animated flowing borders
+- **Toast Notifications**: User feedback system
+- **Responsive Design**: Mobile-first approach
+
+## 🔗 Links
+
+- [Live Demo](https://synappay.com)
+- [Documentation](https://docs.synappay.com)
+- [GitHub](https://github.com/synappay)
+
+## 📄 License
+
+MIT License - see LICENSE file for details. 

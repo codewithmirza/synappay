@@ -1,23 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useWalletManager } from '../lib/wallet-manager';
-import { SynappayBridge } from '../lib/Synappay-bridge';
+import { workingWalletService } from '../lib/working-wallet-service';
+import { workingSwapService } from '../lib/working-swap-service';
 import UnifiedLayout from '../components/UnifiedLayout';
 
 export default function Debug() {
+  const walletStatus = workingWalletService.getStatus();
   const {
-    ethConnected,
+    ethereumConnected: ethConnected,
     stellarConnected,
     bothConnected,
-    ethAddress,
-    stellarPublicKey,
-    connectEth,
-    connectStellar,
-    formatEthAddress,
-    formatStellarAddress,
-    ethChainId
-  } = useWalletManager();
+    ethereumAccount: ethAddress,
+    stellarAccount: stellarPublicKey
+  } = walletStatus;
+  
+  const connectEth = workingWalletService.connectEthereum;
+  const connectStellar = workingWalletService.connectStellar;
+  const formatEthAddress = workingWalletService.formatEthAddress;
+  const formatStellarAddress = workingWalletService.formatStellarAddress;
+  const ethChainId = 1; // Default to mainnet
 
   const [debugInfo, setDebugInfo] = useState({});
 
@@ -44,7 +46,13 @@ export default function Debug() {
 
   const testQuote = async () => {
     try {
-      const quote = await SynappayBridge.getSwapQuote('ethereum', 'stellar', 'USDC', 'XLM', '10');
+      const quote = await workingSwapService.getSwapQuote({
+        fromChain: 'ethereum',
+        toChain: 'stellar',
+        fromToken: 'USDC',
+        toToken: 'XLM',
+        amount: '10'
+      });
       console.log('Quote test successful:', quote);
       alert('Quote test successful! Check console for details.');
     } catch (error) {

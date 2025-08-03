@@ -1,0 +1,36 @@
+{
+  "name": "@synappay/relayer",
+  "version": "1.0.0",
+  "description": "Relayer service for SynapPay cross-chain bridge",
+  "type": "module",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "ws": "^8.14.0",
+    "ethers": "^6.9.0",
+    "@stellar/stellar-sdk": "^13.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/cors": "^2.8.19",
+    "@types/ws": "^8.5.0",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "tsx": "^4.0.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.0"
+  },
+  "keywords": [
+    "relayer",
+    "websocket",
+    "ethereum",
+    "stellar",
+    "bridge"
+  ]
+} 

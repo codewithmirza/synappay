@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useWalletManager } from '../lib/wallet-manager';
-import { SynappayBridge } from '../lib/Synappay-bridge';
+import { workingWalletService } from '../lib/working-wallet-service';
+import { workingSwapService } from '../lib/working-swap-service';
 import UnifiedLayout from '../components/UnifiedLayout';
 
 export default function Test() {

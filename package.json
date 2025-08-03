@@ -1,0 +1,69 @@
+{
+  "name": "synappay",
+  "version": "1.0.0",
+  "description": "Cross-chain token bridge between Ethereum and Stellar using Fusion+ architecture with HTLC mechanism",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "contracts",
+    "stellar",
+    "relayer",
+    "web"
+  ],
+  "packageManager": "pnpm@8.15.0",
+  "scripts": {
+    "start": "pnpm --filter relayer start",
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build",
+    "build:prod": "NODE_ENV=production pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "contracts:compile": "pnpm --filter contracts compile",
+    "contracts:deploy": "pnpm --filter contracts deploy",
+    "contracts:deploy:sepolia": "pnpm --filter contracts deploy:sepolia",
+    "stellar:build": "pnpm --filter stellar build",
+    "relayer:start": "pnpm --filter relayer start",
+    "relayer:start:prod": "NODE_ENV=production pnpm --filter relayer start",
+    "web:dev": "pnpm --filter web dev",
+    "web:build": "pnpm --filter web build",
+    "web:build:prod": "NODE_ENV=production pnpm --filter web build",
+    "web:preview": "pnpm --filter web preview",
+    "health:check": "curl -s http://localhost:3001/health | jq .",
+    "deploy:setup": "cp .env.production .env && pnpm build:prod"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/synappay.git"
+  },
+  "keywords": [
+    "cross-chain",
+    "ethereum",
+    "stellar",
+    "bridge",
+    "defi",
+    "htlc",
+    "fusion",
+    "1inch",
+    "synappay"
+  ],
+  "author": "SynapPay Team",
+  "license": "MIT",
+  "dependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "relayer": "1.0.0-beta"
+  }
+} 

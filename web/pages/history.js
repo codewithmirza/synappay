@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, Clock, AlertCircle, ExternalLink, Coins, ArrowRight, Filter } from 'lucide-react';
-import { useWalletManager } from '../lib/wallet-manager';
+import { walletConnectionService } from '../lib/wallet-connection-service';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
 import apiClient from '../lib/api-client';
@@ -51,15 +51,17 @@ const MOCK_SWAPS = [
 ];
 
 export default function History() {
+  const walletStatus = walletConnectionService.getStatus();
   const {
-    ethConnected,
+    ethereumConnected: ethConnected,
     stellarConnected,
     bothConnected,
-    ethAddress,
-    stellarPublicKey,
-    formatEthAddress,
-    formatStellarAddress
-  } = useWalletManager();
+    ethereumAccount: ethAddress,
+    stellarAccount: stellarPublicKey
+  } = walletStatus;
+  
+  const formatEthAddress = walletConnectionService.formatEthAddress;
+  const formatStellarAddress = walletConnectionService.formatStellarAddress;
 
   const [swaps, setSwaps] = useState([]);
   const [loading, setLoading] = useState(true);
