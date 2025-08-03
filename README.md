@@ -119,7 +119,6 @@ This project has been successfully migrated from Next.js to Vite for:
 ## 🔗 Links
 
 - [Live Demo](https://synappay.com)
-- [Documentation](https://docs.synappay.com)
 - [GitHub](https://github.com/synappay)
 
 ## 📄 License
