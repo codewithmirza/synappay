@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowLeft, RefreshCw, CheckCircle, AlertCircle, Coins, Zap, Shield, ChevronDown, Settings, Info } from 'lucide-react';
+import { ArrowRight, RefreshCw, CheckCircle, AlertCircle, Settings, Info, ChevronDown } from 'lucide-react';
 import { useWalletManager } from '../lib/wallet-manager';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
-import TokenSelector from '../components/TokenSelector';
 
 // Import services with error handling
 let SwapService, FusionPlusClient, StellarHTLCManager;
@@ -150,16 +149,6 @@ export default function Swap() {
     return addresses[symbol] || symbol;
   };
 
-  const getStatusMessage = (status) => {
-    const messages = {
-      idle: 'Ready to swap',
-      executing: 'Executing swap...',
-      completed: 'Swap completed!',
-      failed: 'Swap failed'
-    };
-    return messages[status] || status;
-  };
-
   const formatAmount = (amount, decimals = 6) => {
     return parseFloat(amount).toFixed(decimals);
   };
@@ -177,7 +166,7 @@ export default function Swap() {
       >
         <div className="text-center space-y-6">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-            <Coins className="w-8 h-8 text-gray-400" />
+            <CheckCircle className="w-8 h-8 text-gray-400" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -194,16 +183,17 @@ export default function Swap() {
 
   return (
     <UnifiedLayout
-      title="Swap Tokens"
-      subtitle="Cross-chain swaps between Ethereum and Stellar"
+      title=""
+      subtitle=""
       showWalletButton={true}
     >
+      {/* Main Swap Interface - Direct implementation */}
       <div className="max-w-md mx-auto">
-        {/* Main Swap Card */}
+        {/* Swap Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+          className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
         >
           {/* Header */}
           <div className="p-6 border-b border-gray-100">
@@ -372,7 +362,6 @@ export default function Swap() {
                 }
               `}
             >
-              <Shield className="w-5 h-5" />
               <span>{loading ? 'Getting Quote...' : 'Review Order'}</span>
             </button>
           </div>
