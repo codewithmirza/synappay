@@ -21,7 +21,7 @@ export default function UnifiedLayout({ children, title, subtitle, showWalletBut
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="bg-white rounded-[30px] shadow-[0px_20px_60px_0px_rgba(0,0,0,0.1)] p-8 md:p-16 max-w-[800px] w-full relative overflow-hidden"
+          className="bg-white rounded-[24px] shadow-[0px_8px_32px_0px_rgba(0,0,0,0.08)] p-6 md:p-12 max-w-[600px] w-full relative overflow-hidden"
         >
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-5">
@@ -36,13 +36,13 @@ export default function UnifiedLayout({ children, title, subtitle, showWalletBut
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.6 }}
-                className="text-center mb-8"
+                className="text-center mb-6"
               >
-                <h2 className="text-3xl md:text-4xl font-bold leading-tight text-[#000000] font-inter mb-2">
+                <h2 className="text-2xl md:text-3xl font-bold leading-tight text-[#000000] font-inter mb-2">
                   {title}
                 </h2>
                 {subtitle && (
-                  <p className="text-lg text-gray-600 leading-relaxed max-w-md mx-auto">
+                  <p className="text-base text-gray-600 leading-relaxed max-w-sm mx-auto">
                     {subtitle}
                   </p>
                 )}
