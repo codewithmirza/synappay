@@ -4,7 +4,7 @@
   "description": "Advanced SynapPay Relayer with comprehensive order management, event handling, and monitoring",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest",

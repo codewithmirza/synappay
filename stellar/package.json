@@ -4,7 +4,7 @@
   "description": "Stellar integration for SynapPay cross-chain bridge",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "npx tsc",
     "dev": "tsc --watch",
     "test": "jest"
   },

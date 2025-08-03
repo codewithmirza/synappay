@@ -186,12 +186,6 @@ importers:
       '@stellar/stellar-sdk':
         specifier: ^13.3.0
         version: 13.3.0
-      '@synappay/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-      '@synappay/stellar':
-        specifier: workspace:*
-        version: link:../stellar
       '@tanstack/react-query':
         specifier: ^5.14.0
         version: 5.84.1(react@18.3.1)
@@ -220,6 +214,9 @@ importers:
         specifier: ^1.4.0
         version: 1.4.13(@types/react@18.3.23)(react-dom@18.3.1)(react@18.3.1)(typescript@5.9.2)(viem@1.21.4)
     devDependencies:
+      '@types/minimatch':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@types/react':
         specifier: ^18.2.43
         version: 18.3.23
@@ -254,7 +251,7 @@ importers:
         specifier: ^3.3.6
         version: 3.4.17
       typescript:
-        specifier: ^5.2.2
+        specifier: ^5.9.2
         version: 5.9.2
       vite:
         specifier: ^5.0.8
