@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, RefreshCw, CheckCircle, AlertCircle, Settings, Info, ChevronDown, ArrowUpDown, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, RefreshCw, CheckCircle, AlertCircle, Settings, Info, ChevronDown, ArrowUpDown, Zap, Shield, Clock, Coins } from 'lucide-react';
 import { useWalletManager } from '../lib/wallet-manager';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
@@ -29,14 +29,15 @@ export default function Swap() {
   const [loading, setLoading] = useState(false);
   const [slippage, setSlippage] = useState(1.0);
   const [showSettings, setShowSettings] = useState(false);
+  const [swapStep, setSwapStep] = useState('input'); // input, quote, confirm, executing
 
-  // Auto-refresh quotes every 30 seconds like Synappay
+  // Auto-refresh quotes every 30 seconds
   useEffect(() => {
     if (!amount || !bothConnected || parseFloat(amount) <= 0) return;
 
     const interval = setInterval(() => {
       handleAmountChange(amount);
-    }, 30000); // 30 seconds
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [amount, fromToken, toToken, bothConnected]);
@@ -44,6 +45,7 @@ export default function Swap() {
   const handleAmountChange = async (value) => {
     setAmount(value);
     setError(null);
+    setSwapStep('input');
 
     if (!value || !bothConnected || parseFloat(value) <= 0) {
       setQuote(null);
@@ -52,8 +54,9 @@ export default function Swap() {
 
     try {
       setLoading(true);
+      setSwapStep('quote');
 
-      // Get Synappay-style cross-chain quote
+      // Get cross-chain quote
       const fromChain = fromToken === 'ETH' ? 'ethereum' : 'stellar';
       const toChain = toToken === 'ETH' ? 'ethereum' : 'stellar';
       
@@ -80,8 +83,9 @@ export default function Swap() {
       });
 
     } catch (error) {
-      console.error('Error getting Synappay quote:', error);
+      console.error('Error getting quote:', error);
       setError('Failed to get quote. Please try again.');
+      setSwapStep('input');
     } finally {
       setLoading(false);
     }
@@ -92,6 +96,7 @@ export default function Swap() {
     setToToken(fromToken);
     setQuote(null);
     setAmount('');
+    setSwapStep('input');
   };
 
   const handleExecuteSwap = async () => {
@@ -103,8 +108,9 @@ export default function Swap() {
     try {
       setLoading(true);
       setError(null);
+      setSwapStep('confirm');
 
-      // Initiate Synappay-style cross-chain swap
+      // Initiate cross-chain swap
       const swapRequest = await SynappayBridge.initiateSwap({
         fromChain: fromToken === 'ETH' ? 'ethereum' : 'stellar',
         toChain: toToken === 'ETH' ? 'ethereum' : 'stellar',
@@ -115,22 +121,16 @@ export default function Swap() {
         stellarAddress: stellarPublicKey
       });
 
-      console.log('Synappay swap initiated:', swapRequest);
+      console.log('Swap initiated:', swapRequest);
+      setSwapStep('executing');
 
-      // For Ethereum -> Stellar swaps, create the Ethereum lock first
-      if (fromToken === 'ETH') {
-        console.log('Creating Ethereum lock via 1inch Fusion+...');
-        // This would require the user's private key or wallet signing
-        // For now, we'll simulate the process
-        await SynappayBridge.createEthereumLock(swapRequest.id, 'mock_private_key');
-      }
-
-      // Redirect to progress page to continue the Synappay flow
+      // Redirect to progress page
       window.location.href = `/progress?swapId=${swapRequest.id}`;
       
     } catch (error) {
-      console.error('Failed to execute Synappay swap:', error);
+      console.error('Failed to execute swap:', error);
       setError('Failed to execute swap. Please try again.');
+      setSwapStep('quote');
     } finally {
       setLoading(false);
     }
@@ -147,28 +147,20 @@ export default function Swap() {
   if (!bothConnected) {
     return (
       <UnifiedLayout
-        title="Connect Wallets First"
-        subtitle="Please connect both Ethereum and Stellar wallets to start swapping"
+        title="Connect Wallets"
+        subtitle="Connect both Ethereum and Stellar wallets to start swapping"
         showWalletButton={true}
       >
         <div className="text-center space-y-6">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-gray-400" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Wallets Not Connected
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+            <AlertCircle className="w-8 h-8 text-yellow-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+              Wallets Required
             </h3>
-            <p className="text-gray-600">
-              Use the wallet connection button in the top-right corner to connect both wallets
+            <p className="text-yellow-700">
+              Please connect both your Ethereum and Stellar wallets to enable cross-chain swaps.
             </p>
           </div>
-          <button
-            onClick={() => window.location.href = '/'}
-            className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all"
-          >
-            Go to Home Page
-          </button>
         </div>
       </UnifiedLayout>
     );
@@ -177,146 +169,112 @@ export default function Swap() {
   return (
     <UnifiedLayout
       title="Cross-Chain Swap"
-      subtitle="Swap tokens between Ethereum and Stellar networks with atomic security"
+      subtitle={`Swap ${fromToken} to ${toToken} across chains`}
       showWalletButton={true}
     >
-      <div className="space-y-6">
-        {/* Settings Panel */}
-        {showSettings && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-gray-50 rounded-xl p-4 border border-gray-200"
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Slippage Tolerance</span>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    value={slippage}
-                    onChange={(e) => setSlippage(parseFloat(e.target.value))}
-                    className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0.1"
-                    max="50"
-                    step="0.1"
-                  />
-                  <span className="text-sm text-gray-500">%</span>
-                </div>
-              </div>
+      <div className="max-w-md mx-auto space-y-6">
+        {/* Step Indicator */}
+        <div className="flex items-center justify-center space-x-2 mb-6">
+          <div className={`flex items-center space-x-2 ${swapStep === 'input' ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${swapStep === 'input' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              1
             </div>
-          </motion.div>
-        )}
+            <span className="text-sm font-medium">Input</span>
+          </div>
+          <ArrowRight className="w-4 h-4 text-gray-400" />
+          <div className={`flex items-center space-x-2 ${swapStep === 'quote' ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${swapStep === 'quote' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              2
+            </div>
+            <span className="text-sm font-medium">Quote</span>
+          </div>
+          <ArrowRight className="w-4 h-4 text-gray-400" />
+          <div className={`flex items-center space-x-2 ${swapStep === 'confirm' ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${swapStep === 'confirm' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              3
+            </div>
+            <span className="text-sm font-medium">Confirm</span>
+          </div>
+        </div>
 
         {/* Swap Interface */}
-        <div className="space-y-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
           {/* From Token */}
-          <div className="bg-gray-50 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">From</label>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-gray-500">Balance: 0.0</span>
-                <button
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="p-1 hover:bg-gray-200 rounded transition-colors"
-                >
-                  <Settings className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">From</label>
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <TokenIcon symbol={fromToken} className="w-8 h-8" />
               <div className="flex-1">
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => handleAmountChange(e.target.value)}
                   placeholder="0.0"
-                  className="w-full text-2xl font-semibold bg-transparent border-none outline-none placeholder-gray-400"
+                  className="w-full bg-transparent text-lg font-semibold outline-none"
                   disabled={loading}
                 />
               </div>
-              <div className="flex items-center space-x-2">
-                <TokenIcon symbol={fromToken} size={32} />
-                <span className="font-semibold text-gray-900">{fromToken}</span>
-                <ChevronDown className="w-4 h-4 text-gray-400" />
+              <div className="text-right">
+                <div className="font-semibold">{fromToken}</div>
+                <div className="text-xs text-gray-500">
+                  {formatEthAddress(ethAddress)}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Swap Arrow */}
+          {/* Swap Button */}
           <div className="flex justify-center">
             <button
               onClick={handleTokenSwap}
-              className="p-3 bg-white border-2 border-gray-200 hover:border-gray-300 rounded-full transition-all shadow-sm hover:shadow-md"
+              className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+              disabled={loading}
             >
-              <ArrowUpDown className="w-5 h-5 text-gray-600" />
+              <ArrowUpDown className="w-5 h-5" />
             </button>
           </div>
 
           {/* To Token */}
-          <div className="bg-gray-50 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">To</label>
-              <span className="text-xs text-gray-500">Balance: 0.0</span>
-            </div>
-            <div className="flex items-center space-x-3">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">To</label>
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <TokenIcon symbol={toToken} className="w-8 h-8" />
               <div className="flex-1">
-                <input
-                  type="text"
-                  value={quote ? formatAmount(quote.toTokenAmount, quote.toTokenDecimals) : ''}
-                  placeholder="0.0"
-                  className="w-full text-2xl font-semibold bg-transparent border-none outline-none placeholder-gray-400"
-                  readOnly
-                />
+                <div className="text-lg font-semibold">
+                  {quote ? formatAmount(quote.toTokenAmount) : '0.0'}
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <TokenIcon symbol={toToken} size={32} />
-                <span className="font-semibold text-gray-900">{toToken}</span>
-                <ChevronDown className="w-4 h-4 text-gray-400" />
+              <div className="text-right">
+                <div className="font-semibold">{toToken}</div>
+                <div className="text-xs text-gray-500">
+                  {formatStellarAddress(stellarPublicKey)}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Quote Information */}
+          {/* Quote Details */}
           {quote && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-blue-50 rounded-xl p-4 space-y-3"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="space-y-3 p-4 bg-blue-50 rounded-lg"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Info className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800">Quote Details</span>
-                </div>
-                <button
-                  onClick={() => handleAmountChange(amount)}
-                  disabled={loading}
-                  className="p-1 hover:bg-blue-100 rounded transition-colors"
-                >
-                  <RefreshCw className={`w-4 h-4 text-blue-600 ${loading ? 'animate-spin' : ''}`} />
-                </button>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Rate</span>
+                <span className="font-medium">1 {fromToken} = {formatAmount(quote.rate)} {toToken}</span>
               </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Rate</span>
-                  <span className="font-medium text-gray-900">
-                    1 {fromToken} = {formatAmount(quote.rate, 6)} {toToken}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Spread</span>
-                  <span className="font-medium text-gray-900">{quote.spread}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Price Impact</span>
-                  <span className="font-medium text-gray-900">{quote.priceImpact}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Network Fee</span>
-                  <span className="font-medium text-gray-900">~$0.50</span>
-                </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Price Impact</span>
+                <span className="font-medium">{quote.priceImpact}%</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Estimated Time</span>
+                <span className="font-medium">{quote.timeEstimate}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Route</span>
+                <span className="font-medium">{quote.route}</span>
               </div>
             </motion.div>
           )}
@@ -324,61 +282,83 @@ export default function Swap() {
           {/* Error Display */}
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border border-red-200 rounded-xl p-4"
+              className="p-3 bg-red-50 border border-red-200 rounded-lg"
             >
               <div className="flex items-center space-x-2">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <span className="text-red-700 text-sm">{error}</span>
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <span className="text-sm text-red-700">{error}</span>
               </div>
             </motion.div>
           )}
 
-          {/* Execute Swap Button */}
+          {/* Security Info */}
+          <div className="flex items-center space-x-2 text-xs text-gray-500">
+            <Shield className="w-4 h-4" />
+            <span>HTLC secured • Atomic execution</span>
+          </div>
+
+          {/* Execute Button */}
           <button
             onClick={handleExecuteSwap}
             disabled={!canExecuteSwap()}
-            className={`
-              w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all flex items-center justify-center space-x-2
-              ${canExecuteSwap()
-                ? 'bg-black text-white hover:bg-gray-800 shadow-lg hover:shadow-xl transform hover:scale-[1.02]'
-                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              }
-            `}
+            className={`w-full py-3 px-4 rounded-lg font-semibold transition-all ${
+              canExecuteSwap()
+                ? 'bg-black text-white hover:bg-gray-800 transform hover:scale-105'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
           >
             {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <div className="flex items-center justify-center space-x-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
                 <span>Processing...</span>
-              </>
+              </div>
             ) : (
-              <>
-                <Zap className="w-5 h-5" />
+              <div className="flex items-center justify-center space-x-2">
+                <Zap className="w-4 h-4" />
                 <span>Execute Swap</span>
-                <ArrowRight className="w-5 h-5" />
-              </>
+              </div>
             )}
           </button>
         </div>
 
-        {/* Connection Status */}
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
-          <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-            <div className="flex items-center space-x-2 mb-1">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="font-medium text-green-800 text-sm">Ethereum</span>
-            </div>
-            <p className="text-xs text-green-700">{formatEthAddress(ethAddress)}</p>
-          </div>
-          
-          <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-            <div className="flex items-center space-x-2 mb-1">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="font-medium text-green-800 text-sm">Stellar</span>
-            </div>
-            <p className="text-xs text-green-700">{formatStellarAddress(stellarPublicKey)}</p>
-          </div>
+        {/* Settings Panel */}
+        <AnimatePresence>
+          {showSettings && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-white rounded-xl border border-gray-200 p-4 space-y-3"
+            >
+              <h3 className="font-semibold">Swap Settings</h3>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Slippage Tolerance</label>
+                <input
+                  type="number"
+                  value={slippage}
+                  onChange={(e) => setSlippage(parseFloat(e.target.value))}
+                  className="w-full p-2 border border-gray-300 rounded-lg"
+                  min="0.1"
+                  max="50"
+                  step="0.1"
+                />
+                <span className="text-xs text-gray-500">Transaction will revert if price changes by more than this percentage</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Settings Toggle */}
+        <div className="flex justify-center">
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800"
+          >
+            <Settings className="w-4 h-4" />
+            <span>Settings</span>
+          </button>
         </div>
       </div>
     </UnifiedLayout>

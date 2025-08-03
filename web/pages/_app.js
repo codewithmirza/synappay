@@ -23,7 +23,7 @@ export default function App({ Component, pageProps }) {
       
       try {
         // Test API connection directly
-        const apiResponse = await fetch('https://synappay-api.blockable.workers.dev/health');
+        const apiResponse = await fetch('https://synappay-api-prod.synappay.workers.dev/health');
         const apiHealth = await apiResponse.json();
         console.log('✅ API Health Check:', apiHealth);
         

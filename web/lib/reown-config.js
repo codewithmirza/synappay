@@ -28,7 +28,7 @@ const modal = createAppKit({
     icons: ['/icon.png']
   },
   features: {
-    analytics: true,
+    analytics: false,
     email: false,
     socials: false,
     emailShowWallets: false
