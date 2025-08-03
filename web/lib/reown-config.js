@@ -11,7 +11,7 @@ if (!projectId) {
 
 // Set up the Wagmi adapter
 const wagmiAdapter = new WagmiAdapter({
-  networks: [sepolia],
+  chains: [sepolia], // Changed from networks to chains
   projectId,
   ssr: true
 });
@@ -19,7 +19,7 @@ const wagmiAdapter = new WagmiAdapter({
 // Create the modal
 const modal = createAppKit({
   adapters: [wagmiAdapter],
-  networks: [sepolia],
+  chains: [sepolia], // Changed from networks to chains
   projectId,
   metadata: {
     name: 'SynapPay',

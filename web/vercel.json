@@ -1,7 +1,58 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "installCommand": "npm install",
-  "devCommand": "npm run dev"
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID": "@walletconnect_project_id",
+    "NEXT_PUBLIC_NETWORK_MODE": "@network_mode",
+    "NEXT_PUBLIC_SYNAPPAY_API_URL": "@synappay_api_url",
+    "NEXT_PUBLIC_COORDINATOR_WS_URL": "@coordinator_ws_url",
+    "NEXT_PUBLIC_FUSION_PLUS_API_URL": "@fusion_plus_api_url",
+    "NEXT_PUBLIC_SEPOLIA_RPC_URL": "@sepolia_rpc_url",
+    "NEXT_PUBLIC_SEPOLIA_CHAIN_ID": "@sepolia_chain_id",
+    "NEXT_PUBLIC_SEPOLIA_HTLC_ADDRESS": "@sepolia_htlc_address",
+    "NEXT_PUBLIC_ETHEREUM_RPC_URL": "@ethereum_rpc_url",
+    "NEXT_PUBLIC_ETHEREUM_CHAIN_ID": "@ethereum_chain_id",
+    "NEXT_PUBLIC_ETHEREUM_HTLC_ADDRESS": "@ethereum_htlc_address",
+    "NEXT_PUBLIC_STELLAR_TESTNET_HORIZON_URL": "@stellar_testnet_horizon_url",
+    "NEXT_PUBLIC_STELLAR_TESTNET_NETWORK_PASSPHRASE": "@stellar_testnet_network_passphrase",
+    "NEXT_PUBLIC_STELLAR_TESTNET_HTLC_ADDRESS": "@stellar_testnet_htlc_address",
+    "NEXT_PUBLIC_STELLAR_MAINNET_HORIZON_URL": "@stellar_mainnet_horizon_url",
+    "NEXT_PUBLIC_STELLAR_MAINNET_NETWORK_PASSPHRASE": "@stellar_mainnet_network_passphrase",
+    "NEXT_PUBLIC_STELLAR_MAINNET_HTLC_ADDRESS": "@stellar_mainnet_htlc_address",
+    "NEXT_PUBLIC_USDC_ADDRESS": "@usdc_address",
+    "NEXT_PUBLIC_USDT_ADDRESS": "@usdt_address",
+    "NEXT_PUBLIC_DAI_ADDRESS": "@dai_address",
+    "NEXT_PUBLIC_ENABLE_TESTNET_BANNER": "@enable_testnet_banner",
+    "NEXT_PUBLIC_ENABLE_NETWORK_SWITCH": "@enable_network_switch",
+    "NEXT_PUBLIC_ENABLE_MARKETPLACE_MODE": "@enable_marketplace_mode",
+    "NEXT_PUBLIC_ENABLE_INTENT_FULFILLMENT": "@enable_intent_fulfillment",
+    "NEXT_PUBLIC_ENABLE_PARTIAL_FILLS": "@enable_partial_fills",
+    "NEXT_PUBLIC_APP_NAME": "@app_name",
+    "NEXT_PUBLIC_APP_DESCRIPTION": "@app_description",
+    "NEXT_PUBLIC_APP_URL": "@app_url",
+    "NEXT_PUBLIC_DEFAULT_SLIPPAGE": "@default_slippage",
+    "NEXT_PUBLIC_MIN_SWAP_AMOUNT": "@min_swap_amount",
+    "NEXT_PUBLIC_MAX_SWAP_AMOUNT": "@max_swap_amount",
+    "NEXT_PUBLIC_ENABLE_DEBUG_MODE": "@enable_debug_mode",
+    "NEXT_PUBLIC_LOG_LEVEL": "@log_level",
+    "NEXT_PUBLIC_ENABLE_MOCK_DATA": "@enable_mock_data",
+    "NEXT_PUBLIC_HTLC_CONTRACT_ADDRESS": "@htlc_contract_address",
+    "NEXT_PUBLIC_STELLAR_NETWORK": "@stellar_network",
+    "NEXT_PUBLIC_STELLAR_HORIZON_URL": "@stellar_horizon_url"
+  }
 } 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, RefreshCw, CheckCircle, AlertCircle, Settings, Info, ChevronDown, ArrowUpDown, Zap, Shield, Clock, Coins } from 'lucide-react';
-import { useWalletManager } from '../lib/wallet-manager';
+import { simpleWalletService } from '../lib/simple-wallet-service';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
 import priceService from '../lib/price-service';
@@ -11,24 +11,75 @@ import apiClient from '../lib/api-client';
 import { SynappayBridge } from '../lib/Synappay-bridge';
 
 export default function Swap() {
-  const {
-    ethConnected,
-    stellarConnected,
-    bothConnected,
-    ethAddress,
-    stellarPublicKey,
-    formatEthAddress,
-    formatStellarAddress,
-    connectEth,
-    connectStellar
-  } = useWalletManager();
+  const [walletStatus, setWalletStatus] = useState({
+    ethereumConnected: false,
+    stellarConnected: false,
+    account: null,
+    chainId: null
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Update wallet status
+  useEffect(() => {
+    const updateStatus = () => {
+      const status = simpleWalletService.getStatus();
+      setWalletStatus(status);
+    };
+
+    updateStatus();
+    const interval = setInterval(updateStatus, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleConnectEthereum = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const result = await simpleWalletService.connectEthereum();
+      if (result.success) {
+        console.log('Ethereum connected:', result);
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConnectStellar = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const result = await simpleWalletService.connectStellar();
+      if (result.success) {
+        console.log('Stellar connected:', result);
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const bothConnected = walletStatus.ethereumConnected && walletStatus.stellarConnected;
+  const ethConnected = walletStatus.ethereumConnected;
+  const stellarConnected = walletStatus.stellarConnected;
+  const ethAddress = walletStatus.account;
+  const stellarPublicKey = walletStatus.account; // This will be updated when Stellar is connected
 
   const [fromToken, setFromToken] = useState('ETH');
   const [toToken, setToToken] = useState('XLM');
   const [amount, setAmount] = useState('');
   const [quote, setQuote] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [swapError, setSwapError] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const [slippage, setSlippage] = useState(1.0);
   const [showSettings, setShowSettings] = useState(false);
   const [swapStep, setSwapStep] = useState('input'); // input, quote, intent, executing
@@ -58,7 +109,7 @@ export default function Swap() {
     }
 
     try {
-      setLoading(true);
+      setQuoteLoading(true);
       setSwapStep('quote');
 
       // Get cross-chain quote
@@ -89,10 +140,10 @@ export default function Swap() {
 
     } catch (error) {
       console.error('Error getting quote:', error);
-      setError('Failed to get quote. Please try again.');
+      setSwapError('Failed to get quote. Please try again.');
       setSwapStep('input');
     } finally {
-      setLoading(false);
+      setQuoteLoading(false);
     }
   };
 
@@ -129,21 +180,22 @@ export default function Swap() {
       console.log('Swap intent created:', swapRequest);
       setSwapStep('executing');
 
-      // Show success message (like OverSync)
+      // Execute the actual swap transaction (triggers wallet popup)
+      const transactionResult = await SynappayBridge.executeSwap(swapRequest.id);
+      
+      console.log('Transaction completed:', transactionResult);
+      setSwapStep('completed');
+      setError(null);
+      
+      // Show completion for 3 seconds then reset
       setTimeout(() => {
-        setSwapStep('completed');
-        setError(null);
-        // Reset after showing completion
-        setTimeout(() => {
-          setSwapStep('input');
-          setAmount('');
-          setQuote(null);
-        }, 3000);
-      }, 2000);
+        setSwapStep('input');
+        // Keep amount and quote for user convenience
+      }, 3000);
       
     } catch (error) {
-      console.error('Failed to create swap intent:', error);
-      setError('Failed to create swap intent. Please try again.');
+      console.error('Failed to execute swap:', error);
+      setError('Failed to execute swap. Please try again.');
       setSwapStep('quote');
     } finally {
       setLoading(false);
@@ -201,7 +253,7 @@ export default function Swap() {
         {/* Wallet Connection Status */}
         {!walletsConnected && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-yellow-800">Connect Wallets</h3>
                 <p className="text-xs text-yellow-700">Both wallets required for swapping</p>
@@ -299,7 +351,7 @@ export default function Swap() {
 
           {/* To Token */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">To</label>
+              <label className="text-sm font-medium text-gray-700">To</label>
             <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
               <TokenIcon symbol={toToken} className="w-8 h-8" />
               <div className="flex-1">
@@ -328,13 +380,13 @@ export default function Swap() {
                 <span className="font-medium">1 {fromToken} = {formatAmount(quote.rate)} {toToken}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Price Impact</span>
+                  <span className="text-gray-600">Price Impact</span>
                 <span className="font-medium">{quote.priceImpact}%</span>
-              </div>
+                </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Estimated Time</span>
                 <span className="font-medium">{quote.timeEstimate}</span>
-              </div>
+                </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Route</span>
                 <span className="font-medium">{quote.route}</span>
@@ -416,7 +468,7 @@ export default function Swap() {
                   step="0.1"
                 />
                 <span className="text-xs text-gray-500">Transaction will revert if price changes by more than this percentage</span>
-              </div>
+            </div>
             </motion.div>
           )}
         </AnimatePresence>

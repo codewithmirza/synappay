@@ -7,6 +7,7 @@ import { useWalletManager } from '../lib/wallet-manager';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
 import apiClient from '../lib/api-client';
+import { historyService } from '../lib/history-service';
 
 // Mock swap history data
 const MOCK_SWAPS = [
@@ -67,8 +68,15 @@ export default function History() {
   useEffect(() => {
     const loadSwapHistory = async () => {
       try {
-        const activeSwaps = await apiClient.getActiveSwaps();
-        setSwaps(activeSwaps.length > 0 ? activeSwaps : MOCK_SWAPS);
+        // Use real history service
+        const realHistory = historyService.getSwapHistory();
+        
+        if (realHistory.length > 0) {
+          setSwaps(realHistory);
+        } else {
+          // Fallback to mock data only if no real history exists
+          setSwaps(MOCK_SWAPS);
+        }
       } catch (error) {
         console.error('Failed to load swap history:', error);
         setSwaps(MOCK_SWAPS); // Fallback to mock data
@@ -77,12 +85,9 @@ export default function History() {
       }
     };
 
-    if (bothConnected) {
-      loadSwapHistory();
-    } else {
-      setLoading(false);
-    }
-  }, [bothConnected]);
+    // Load history regardless of wallet connection status
+    loadSwapHistory();
+  }, []);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -125,35 +130,7 @@ export default function History() {
     window.open(url, '_blank');
   };
 
-  if (!bothConnected) {
-    return (
-      <UnifiedLayout
-        title="Connect Wallets First"
-        subtitle="Please connect both Ethereum and Stellar wallets to view your swap history"
-        showWalletButton={true}
-      >
-        <div className="text-center space-y-6">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-            <Coins className="w-8 h-8 text-gray-400" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Wallets Not Connected
-            </h3>
-            <p className="text-gray-600">
-              Use the wallet connection button in the top-right corner to connect both wallets
-            </p>
-          </div>
-          <button
-            onClick={() => window.location.href = '/'}
-            className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all"
-          >
-            Go to Home Page
-          </button>
-        </div>
-      </UnifiedLayout>
-    );
-  }
+  // Remove wallet connection requirement - history should be accessible to all users
 
   return (
     <UnifiedLayout

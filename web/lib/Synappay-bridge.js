@@ -1,3 +1,6 @@
+import { historyService } from './history-service';
+import { transactionService } from './transaction-service';
+
 /**
  * SynappayBridge - Cross-chain swap bridge
  * Handles all swap operations between Ethereum and Stellar
@@ -37,17 +40,17 @@ class SynappayBridgeClass {
       const exchangeRate = fromPrice / toPrice;
       const toAmount = (parseFloat(amount) * exchangeRate * 0.995).toFixed(6); // 0.5% fee
 
-      const quote = {
-        fromAmount: amount,
-        toAmount: toAmount,
-        priceImpact: '0.5%',
-        route: `${fromToken} → ${toToken}`,
-        timeEstimate: '2-5 minutes',
-        estimatedGas: '0.001 ETH',
-        exchangeRate: exchangeRate,
-        fromPrice: fromPrice,
-        toPrice: toPrice
-      };
+                        const quote = {
+                    fromAmount: amount,
+                    toAmount: toAmount,
+                    priceImpact: '0.5%',
+                    route: `${fromToken} → ${toToken}`,
+                    timeEstimate: 'Instant',
+                    estimatedGas: '0.001 ETH',
+                    exchangeRate: exchangeRate,
+                    fromPrice: fromPrice,
+                    toPrice: toPrice
+                  };
 
       console.log('Real-time quote:', quote);
       return quote;
@@ -67,7 +70,7 @@ class SynappayBridgeClass {
   }
 
   /**
-   * Initiate a cross-chain swap
+   * Initiate a cross-chain swap with real wallet transactions
    */
   async initiateSwap(params) {
     const {
@@ -107,8 +110,90 @@ class SynappayBridgeClass {
       preimage: null
     });
 
+    // Add to history service
+    historyService.addSwap({
+      id: swapId,
+      fromToken,
+      toToken,
+      amount,
+      quote: swapRequest.toAmount,
+      status: 'pending',
+      timestamp: Date.now(),
+      userAddress,
+      stellarAddress,
+      fromChain,
+      toChain,
+      rate: parseFloat(swapRequest.toAmount) / parseFloat(amount)
+    });
+
     console.log('Swap initiated:', swapRequest);
     return swapRequest;
+  }
+
+  /**
+   * Execute the actual swap transaction (triggers wallet popup)
+   */
+  async executeSwap(swapId) {
+    const swap = this.activeSwaps.get(swapId);
+    if (!swap) {
+      throw new Error('Swap not found');
+    }
+
+    try {
+      // Update status to executing
+      swap.step = 'executing';
+      swap.request.status = 'executing';
+
+      console.log('Executing real swap transaction...');
+      
+      // Execute real blockchain transaction (triggers wallet popup)
+      const transactionResult = await transactionService.executeSwapTransaction(swap.request);
+      
+      // Update swap with transaction details
+      swap.txHash = transactionResult.ethereum?.txHash;
+      swap.stellarTxHash = transactionResult.stellar?.txHash;
+      swap.step = 'completed';
+      swap.request.status = 'completed';
+
+      // Update history
+      historyService.updateSwapStatus(swapId, 'completed', {
+        txHash: transactionResult.ethereum?.txHash,
+        stellarTxHash: transactionResult.stellar?.txHash
+      });
+
+      console.log('Swap executed successfully:', transactionResult);
+      return transactionResult;
+    } catch (error) {
+      console.error('Swap execution failed:', error);
+      swap.step = 'failed';
+      swap.request.status = 'failed';
+      
+      // Update history
+      historyService.updateSwapStatus(swapId, 'failed', {
+        error: error.message
+      });
+      
+      throw error;
+    }
+  }
+
+  /**
+   * Simulate a real transaction (replace with actual blockchain calls)
+   */
+  async simulateTransaction(swap) {
+    // Simulate transaction delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Generate mock transaction hashes
+    const txHash = '0x' + Math.random().toString(16).substr(2, 64);
+    const stellarTxHash = Math.random().toString(16).substr(2, 64);
+    
+    return {
+      txHash,
+      stellarTxHash,
+      status: 'success',
+      timestamp: Date.now()
+    };
   }
 
   /**
