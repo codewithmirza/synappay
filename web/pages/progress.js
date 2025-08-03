@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, AlertCircle, Zap, Shield, Coins, ArrowRight, ArrowLeft, Home } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Zap, Shield, Coins, ArrowRight } from 'lucide-react';
 import { useWalletManager } from '../lib/wallet-manager';
+import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
 
 const SWAP_STEPS = [
@@ -147,250 +148,157 @@ export default function Progress() {
 
   if (!bothConnected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">S</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900">SynapPay</span>
-              </div>
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => window.location.href = '/'}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  Home
-                </button>
-              </div>
-            </div>
+      <UnifiedLayout
+        title="Connect Wallets First"
+        subtitle="Please connect both Ethereum and Stellar wallets to track your swap"
+        showWalletButton={true}
+      >
+        <div className="text-center space-y-6">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+            <Coins className="w-8 h-8 text-gray-400" />
           </div>
-        </div>
-
-        {/* Connect Wallets Content */}
-        <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
-          <div className="max-w-md w-full">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center"
-            >
-              <div className="w-16 h-16 bg-gradient-to-r from-red-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-8 h-8 text-red-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Wallets Required</h2>
-              <p className="text-gray-600 mb-8">
-                Please connect both Ethereum and Stellar wallets to track your swap progress
-              </p>
-              
-              <button
-                onClick={() => window.location.href = '/'}
-                className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
-              >
-                Go to Home Page
-              </button>
-            </motion.div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Wallets Not Connected
+            </h3>
+            <p className="text-gray-600">
+              Use the wallet connection button in the top-right corner to connect both wallets
+            </p>
           </div>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all"
+          >
+            Go to Home Page
+          </button>
         </div>
-      </div>
+      </UnifiedLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">SynapPay</span>
+    <UnifiedLayout
+      title="Swap Progress"
+      subtitle="Real-time tracking of your cross-chain atomic swap"
+      showWalletButton={true}
+    >
+      <div className="space-y-6">
+        {/* Swap ID and Status */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-blue-800">Swap #{swapId}</h3>
+              <p className="text-sm text-blue-600 capitalize">Status: {swapStatus}</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => window.location.href = '/'}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+            <div className="text-right">
+              <div className="text-sm text-blue-600">Time Remaining</div>
+              <div className="text-xl font-bold text-blue-800">{formatTime(timeRemaining)}</div>
+            </div>
+          </div>
+
+          {/* Swap Summary */}
+          {swapDetails && (
+            <div className="flex items-center justify-center space-x-6 pt-4 border-t border-blue-200">
+              <div className="text-center">
+                <TokenIcon symbol={swapDetails.fromToken} size={32} className="mx-auto mb-1" />
+                <div className="text-lg font-bold text-gray-900">{swapDetails.amount}</div>
+                <div className="text-xs text-gray-600">{swapDetails.fromToken}</div>
+              </div>
+              
+              <ArrowRight className="w-5 h-5 text-blue-600" />
+              
+              <div className="text-center">
+                <TokenIcon symbol={swapDetails.toToken} size={32} className="mx-auto mb-1" />
+                <div className="text-lg font-bold text-gray-900">{swapDetails.quote}</div>
+                <div className="text-xs text-gray-600">{swapDetails.toToken}</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Progress Timeline */}
+        <div className="space-y-3">
+          {SWAP_STEPS.map((step, index) => {
+            const status = getStepStatus(index);
+            const Icon = step.icon;
+            
+            return (
+              <motion.div
+                key={step.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`border rounded-xl p-4 ${getStatusBg(status)}`}
               >
-                <Home className="w-4 h-4" />
-                <span>Home</span>
-              </button>
-              <div className="flex items-center space-x-2 px-3 py-2 bg-green-100 rounded-lg">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">Wallets Connected</span>
-              </div>
+                <div className="flex items-center space-x-4">
+                  <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${status === 'completed' ? 'bg-green-100' : status === 'active' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                    {status === 'completed' ? (
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    ) : status === 'active' ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    ) : (
+                      <Icon className={`w-6 h-6 ${getStatusColor(status)}`} />
+                    )}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <h4 className={`font-semibold ${getStatusColor(status)}`}>
+                      {step.title}
+                    </h4>
+                    <p className="text-sm text-gray-600">{step.description}</p>
+                  </div>
+                  
+                  {status === 'active' && (
+                    <div className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                      In Progress
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <span className="text-red-700">{error}</span>
             </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="space-y-8">
-          {/* Header */}
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Swap Progress</h1>
-            <p className="text-gray-600">Real-time tracking of your cross-chain atomic swap</p>
-          </div>
-
-          {/* Swap Status Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
+        {/* Action Buttons */}
+        <div className="flex space-x-4">
+          <button
+            onClick={() => window.location.href = '/history'}
+            className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
           >
-            {/* Status Header */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Swap #{swapId}</h3>
-                  <p className="text-gray-600 capitalize">Status: {swapStatus}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-gray-600">Time Remaining</div>
-                  <div className="text-2xl font-bold text-blue-600">{formatTime(timeRemaining)}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Swap Details */}
-            {swapDetails && (
-              <div className="p-6 border-b border-gray-100">
-                <div className="flex items-center justify-center space-x-8">
-                  <div className="text-center">
-                    <TokenIcon symbol={swapDetails.fromToken} size={40} className="mx-auto mb-2" />
-                    <div className="text-xl font-bold text-gray-900">{swapDetails.amount}</div>
-                    <div className="text-sm text-gray-600">{swapDetails.fromToken}</div>
-                    <div className="text-xs text-gray-500 mt-1">{formatEthAddress(swapDetails.fromAddress)}</div>
-                  </div>
-                  
-                  <div className="p-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full">
-                    <ArrowRight className="w-6 h-6 text-blue-600" />
-                  </div>
-                  
-                  <div className="text-center">
-                    <TokenIcon symbol={swapDetails.toToken} size={40} className="mx-auto mb-2" />
-                    <div className="text-xl font-bold text-gray-900">{swapDetails.quote}</div>
-                    <div className="text-sm text-gray-600">{swapDetails.toToken}</div>
-                    <div className="text-xs text-gray-500 mt-1">{formatStellarAddress(swapDetails.toAddress)}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Progress Steps */}
-            <div className="p-6">
-              <div className="space-y-4">
-                {SWAP_STEPS.map((step, index) => {
-                  const status = getStepStatus(index);
-                  const Icon = step.icon;
-                  
-                  return (
-                    <motion.div
-                      key={step.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className={`border rounded-xl p-4 ${getStatusBg(status)}`}
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${status === 'completed' ? 'bg-green-100' : status === 'active' ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                          {status === 'completed' ? (
-                            <CheckCircle className="w-6 h-6 text-green-600" />
-                          ) : status === 'active' ? (
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                          ) : (
-                            <Icon className={`w-6 h-6 ${getStatusColor(status)}`} />
-                          )}
-                        </div>
-                        
-                        <div className="flex-1">
-                          <h4 className={`font-semibold text-lg ${getStatusColor(status)}`}>
-                            {step.title}
-                          </h4>
-                          <p className="text-gray-600">{step.description}</p>
-                        </div>
-                        
-                        {status === 'active' && (
-                          <div className="text-xs text-blue-600 bg-blue-100 px-3 py-1 rounded-full font-medium">
-                            In Progress
-                          </div>
-                        )}
-                        
-                        {status === 'completed' && (
-                          <div className="text-xs text-green-600 bg-green-100 px-3 py-1 rounded-full font-medium">
-                            Completed
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Error Display */}
-            {error && (
-              <div className="p-6 border-t border-gray-100">
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <div className="flex items-center space-x-2">
-                    <AlertCircle className="w-5 h-5 text-red-600" />
-                    <span className="text-red-700">{error}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Status Messages */}
-            {swapStatus === 'timeout' && (
-              <div className="p-6 border-t border-gray-100">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-5 h-5 text-yellow-600" />
-                    <span className="text-yellow-700">Swap timed out. You can refund your tokens.</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="p-6 border-t border-gray-100">
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => window.location.href = '/history'}
-                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                >
-                  View History
-                </button>
-                
-                {swapStatus === 'completed' ? (
-                  <button
-                    onClick={() => window.location.href = '/swap'}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center space-x-2 font-medium hover:shadow-xl transform hover:-translate-y-0.5"
-                  >
-                    <Coins className="w-4 h-4" />
-                    <span>Start New Swap</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => window.location.href = '/swap'}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all flex items-center justify-center space-x-2 font-medium hover:shadow-xl transform hover:-translate-y-0.5"
-                  >
-                    <Coins className="w-4 h-4" />
-                    <span>Start New Swap</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </motion.div>
+            View History
+          </button>
+          
+          {swapStatus === 'completed' && (
+            <button
+              onClick={() => window.location.href = '/swap'}
+              className="flex-1 px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center space-x-2 font-medium"
+            >
+              <Coins className="w-4 h-4" />
+              <span>Start New Swap</span>
+            </button>
+          )}
         </div>
+
+        {/* Status Messages */}
+        {swapStatus === 'timeout' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div className="flex items-center space-x-2">
+              <Clock className="w-5 h-5 text-yellow-600" />
+              <span className="text-yellow-700">Swap timed out. You can refund your tokens.</span>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </UnifiedLayout>
   );
 }

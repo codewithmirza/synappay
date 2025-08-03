@@ -2,9 +2,10 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import WalletConnectionButton from './WalletConnectionButton';
+import Navigation from './Navigation';
 // import BackendStatus from './BackendStatus';
 
-export default function UnifiedLayout({ children, title, subtitle, showWalletButton = true }) {
+export default function UnifiedLayout({ children, title, subtitle, showWalletButton = true, showNavigation = true }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f2f2f7] via-white to-[#f8f9fa]">
       {/* Wallet Connection Button - Fixed Top Right */}
@@ -15,7 +16,7 @@ export default function UnifiedLayout({ children, title, subtitle, showWalletBut
       )}
 
       {/* Main Content - Centered Vertically */}
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 pb-24">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -62,6 +63,9 @@ export default function UnifiedLayout({ children, title, subtitle, showWalletBut
           </div>
         </motion.div>
       </div>
+
+      {/* Navigation - Fixed Bottom */}
+      {showNavigation && <Navigation />}
 
       {/* Backend Status - Show in development */}
       {/* {process.env.NODE_ENV === 'development' && <BackendStatus />} */}
