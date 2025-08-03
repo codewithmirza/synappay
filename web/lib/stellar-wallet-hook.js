@@ -112,21 +112,17 @@ export function useStellarWallet() {
           return;
         }
         
+        // Disable auto-restore to prevent popup on every page load
+        // Users will need to manually reconnect their Stellar wallet
         const savedWalletId = sessionStorage.getItem(STELLAR_WALLET_KEY);
         const savedAddress = sessionStorage.getItem(STELLAR_ADDRESS_KEY);
         
         if (savedWalletId && savedAddress) {
-          console.log('Restoring Stellar wallet connection:', savedWalletId, savedAddress);
-          
-          // Set the wallet in the kit first
-          kit.setWallet(savedWalletId);
-          
-          // Update state
-          setSelectedWalletId(savedWalletId);
-          setPublicKey(savedAddress);
-          setConnected(true);
-          
-          console.log('Successfully restored Stellar wallet connection:', savedAddress);
+          console.log('Stellar wallet session found but auto-restore disabled:', savedWalletId, savedAddress);
+          // Don't auto-restore to prevent popup
+          // setSelectedWalletId(savedWalletId);
+          // setPublicKey(savedAddress);
+          // setConnected(true);
         }
       } catch (err) {
         console.error('Failed to restore wallet connection:', err);

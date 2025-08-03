@@ -7,29 +7,9 @@ import { useWalletManager } from '../lib/wallet-manager';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
 
-// Import services with error handling
-let SwapService, FusionPlusClient, StellarHTLCManager;
-
-try {
-  const swapServiceModule = require('../lib/swap-service');
-  SwapService = swapServiceModule.SwapService;
-} catch (error) {
-  console.warn('SwapService not available:', error);
-}
-
-try {
-  const fusionPlusModule = require('../lib/fusion-plus-client');
-  FusionPlusClient = fusionPlusModule.FusionPlusClient;
-} catch (error) {
-  console.warn('FusionPlusClient not available:', error);
-}
-
-try {
-  const stellarHTLCModule = require('../lib/stellar-htlc-manager');
-  StellarHTLCManager = stellarHTLCModule.StellarHTLCManager;
-} catch (error) {
-  console.warn('StellarHTLCManager not available:', error);
-}
+// Import new backend services
+import apiClient from '../lib/api-client';
+import swapService from '../lib/swap-service-new';
 
 export default function Swap() {
   const {
