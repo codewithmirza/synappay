@@ -3,7 +3,7 @@
  * Handles all swap operations between Ethereum and Stellar
  */
 
-class SynappayBridge {
+class SynappayBridgeClass {
   constructor() {
     this.activeSwaps = new Map();
     this.apiBaseUrl = process.env.NEXT_PUBLIC_SYNAPPAY_API_URL || 'https://synappay-api-prod.synappay.workers.dev';
@@ -131,4 +131,4 @@ class SynappayBridge {
 }
 
 // Export singleton instance
-export const SynappayBridge = new SynappayBridge(); 
+export const SynappayBridge = new SynappayBridgeClass(); 
