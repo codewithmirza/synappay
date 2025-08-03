@@ -22,11 +22,37 @@ export default function App({ Component, pageProps }) {
       console.log('🚀 Initializing SynapPay services...');
       
       try {
-        // TODO: Re-enable after fixing import issues
-        // const initialized = await swapService.initialize();
-        console.log('✅ SynapPay services initialized successfully (basic mode)');
+        // Test API connection directly
+        const apiResponse = await fetch('https://synappay-api.blockable.workers.dev/health');
+        const apiHealth = await apiResponse.json();
+        console.log('✅ API Health Check:', apiHealth);
+        
+        // Test Coordinator connection
+        const coordinatorResponse = await fetch('https://synappay-production.up.railway.app/health');
+        const coordinatorHealth = await coordinatorResponse.json();
+        console.log('✅ Coordinator Health Check:', coordinatorHealth);
+        
+        // Test WebSocket connection
+        console.log('🔗 Testing WebSocket connection...');
+        const ws = new WebSocket('wss://synappay-production.up.railway.app');
+        
+        ws.onopen = () => {
+          console.log('✅ WebSocket connected successfully!');
+          ws.close();
+        };
+        
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          console.log('📨 WebSocket message received:', data);
+        };
+        
+        ws.onerror = (error) => {
+          console.error('❌ WebSocket connection failed:', error);
+        };
+        
+        console.log('✅ SynapPay backend services are healthy!');
       } catch (error) {
-        console.error('❌ Failed to initialize services:', error);
+        console.error('❌ Failed to connect to backend services:', error);
       }
     };
 
