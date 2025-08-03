@@ -4,15 +4,17 @@ import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import { Home, ArrowUpDown, History, BarChart3 } from 'lucide-react';
 
+import { useWalletManager } from '../lib/wallet-manager';
+
 const navigationItems = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/swap', label: 'Swap', icon: ArrowUpDown },
-  { href: '/history', label: 'History', icon: History },
-  { href: '/progress', label: 'Progress', icon: BarChart3 }
+  { href: '/', label: 'Home', icon: Home, requiresWallets: false },
+  { href: '/swap', label: 'Swap', icon: ArrowUpDown, requiresWallets: true },
+  { href: '/history', label: 'History', icon: History, requiresWallets: true }
 ];
 
 export default function Navigation() {
   const router = useRouter();
+  const { bothConnected } = useWalletManager();
 
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
@@ -25,16 +27,24 @@ export default function Navigation() {
           {navigationItems.map((item) => {
             const isActive = router.pathname === item.href;
             const Icon = item.icon;
+            const isDisabled = item.requiresWallets && !bothConnected;
             
             return (
               <button
                 key={item.href}
-                onClick={() => router.push(item.href)}
+                onClick={() => {
+                  if (!isDisabled) {
+                    router.push(item.href);
+                  }
+                }}
+                disabled={isDisabled}
                 className={`
                   flex items-center space-x-2 px-4 py-2 rounded-xl transition-all
-                  ${isActive 
-                    ? 'bg-black text-white shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  ${isDisabled 
+                    ? 'text-gray-400 cursor-not-allowed opacity-50' 
+                    : isActive 
+                      ? 'bg-black text-white shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }
                 `}
               >

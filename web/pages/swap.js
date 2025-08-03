@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, RefreshCw, CheckCircle, AlertCircle, Settings, Info, ChevronDown, ArrowUpDown } from 'lucide-react';
+import { ArrowRight, RefreshCw, CheckCircle, AlertCircle, Settings, Info, ChevronDown, ArrowUpDown, Zap } from 'lucide-react';
 import { useWalletManager } from '../lib/wallet-manager';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
+import priceService from '../lib/price-service';
+import apiClient from '../lib/api-client';
 
 export default function Swap() {
   const {
@@ -27,25 +29,46 @@ export default function Swap() {
   const [slippage, setSlippage] = useState(1.0);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Auto-refresh quotes every 30 seconds like OverSync
+  useEffect(() => {
+    if (!amount || !bothConnected || parseFloat(amount) <= 0) return;
+
+    const interval = setInterval(() => {
+      handleAmountChange(amount);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [amount, fromToken, toToken, bothConnected]);
+
   const handleAmountChange = async (value) => {
     setAmount(value);
     setError(null);
 
-    if (!value || !bothConnected) return;
+    if (!value || !bothConnected || parseFloat(value) <= 0) {
+      setQuote(null);
+      return;
+    }
 
     try {
       setLoading(true);
 
-      // Mock quote for now - replace with actual API call
-      const mockQuote = {
-        fromTokenAmount: value,
-        toTokenAmount: (parseFloat(value) * 0.95).toString(), // Mock rate
-        fromTokenDecimals: 18,
-        toTokenDecimals: 7,
-        rate: 0.95
-      };
+      // Get real-time quote using CoinGecko prices
+      const quoteData = await priceService.calculateSwapQuote(fromToken, toToken, value);
+      
+      setQuote({
+        fromTokenAmount: quoteData.fromAmount,
+        toTokenAmount: quoteData.toAmount,
+        fromTokenDecimals: fromToken === 'ETH' ? 18 : 7,
+        toTokenDecimals: toToken === 'ETH' ? 18 : 7,
+        rate: quoteData.rate,
+        spread: quoteData.spread,
+        priceImpact: quoteData.priceImpact,
+        timestamp: quoteData.timestamp
+      });
 
-      setQuote(mockQuote);
+      if (quoteData.error) {
+        setError(`Warning: ${quoteData.error}`);
+      }
     } catch (error) {
       console.error('Error getting quote:', error);
       setError('Failed to get quote. Please try again.');
@@ -61,31 +84,48 @@ export default function Swap() {
     setAmount('');
   };
 
-  const handleReviewOrder = () => {
-    if (!quote || !amount) {
-      setError('Please enter an amount and get a quote first.');
+  const handleExecuteSwap = async () => {
+    if (!quote || !amount || !bothConnected) {
+      setError('Please ensure wallets are connected and quote is available.');
       return;
     }
 
-    // Redirect to review page with swap details
-    const params = new URLSearchParams({
-      fromToken,
-      toToken,
-      amount,
-      quote: quote.toTokenAmount || quote.quote,
-      rate: quote.rate || (quote.toTokenAmount / quote.fromTokenAmount),
-      slippage: slippage.toString()
-    });
+    try {
+      setLoading(true);
+      setError(null);
 
-    window.location.href = `/review?${params.toString()}`;
+      // Create swap intent on backend
+      const swapIntent = await apiClient.createSwapIntent({
+        fromChain: fromToken === 'ETH' ? 'ethereum' : 'stellar',
+        toChain: toToken === 'ETH' ? 'ethereum' : 'stellar',
+        fromToken,
+        toToken,
+        fromAmount: amount,
+        toAmount: quote.toTokenAmount.toString(),
+        sender: fromToken === 'ETH' ? ethAddress : stellarPublicKey,
+        receiver: toToken === 'ETH' ? ethAddress : stellarPublicKey,
+        slippage: slippage
+      });
+
+      console.log('Swap intent created:', swapIntent);
+
+      // Redirect to progress page to track the swap
+      window.location.href = `/progress?swapId=${swapIntent.id}`;
+      
+    } catch (error) {
+      console.error('Failed to execute swap:', error);
+      setError('Failed to execute swap. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatAmount = (amount, decimals = 6) => {
     return parseFloat(amount).toFixed(decimals);
   };
 
-  const canReviewOrder = () => {
-    return bothConnected && amount && quote && !loading;
+  const canExecuteSwap = () => {
+    return bothConnected && amount && quote && !loading && parseFloat(amount) > 0;
   };
 
   if (!bothConnected) {
@@ -246,12 +286,16 @@ export default function Swap() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Rate</span>
                   <span className="font-medium text-gray-900">
-                    1 {fromToken} = {formatAmount(quote.toTokenAmount / quote.fromTokenAmount)} {toToken}
+                    1 {fromToken} = {formatAmount(quote.rate, 6)} {toToken}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Slippage</span>
-                  <span className="font-medium text-gray-900">{slippage}%</span>
+                  <span className="text-gray-600">Spread</span>
+                  <span className="font-medium text-gray-900">{quote.spread}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Price Impact</span>
+                  <span className="font-medium text-gray-900">{quote.priceImpact}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Network Fee</span>
@@ -275,20 +319,30 @@ export default function Swap() {
             </motion.div>
           )}
 
-          {/* Swap Button */}
+          {/* Execute Swap Button */}
           <button
-            onClick={handleReviewOrder}
-            disabled={!canReviewOrder()}
+            onClick={handleExecuteSwap}
+            disabled={!canExecuteSwap()}
             className={`
               w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all flex items-center justify-center space-x-2
-              ${canReviewOrder()
+              ${canExecuteSwap()
                 ? 'bg-black text-white hover:bg-gray-800 shadow-lg hover:shadow-xl transform hover:scale-[1.02]'
                 : 'bg-gray-200 text-gray-500 cursor-not-allowed'
               }
             `}
           >
-            <span>{loading ? 'Getting Quote...' : 'Review Swap'}</span>
-            {!loading && canReviewOrder() && <ArrowRight className="w-5 h-5" />}
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Processing...</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-5 h-5" />
+                <span>Execute Swap</span>
+                <ArrowRight className="w-5 h-5" />
+              </>
+            )}
           </button>
         </div>
 

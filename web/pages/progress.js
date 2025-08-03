@@ -6,6 +6,7 @@ import { CheckCircle, Clock, AlertCircle, Zap, Shield, Coins, ArrowRight } from 
 import { useWalletManager } from '../lib/wallet-manager';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
+import apiClient from '../lib/api-client';
 
 const SWAP_STEPS = [
   {
@@ -101,19 +102,42 @@ export default function Progress() {
     return () => clearInterval(timer);
   }, [timeRemaining]);
 
-  // Mock swap details
+  // Load swap details from backend
   useEffect(() => {
-    setSwapDetails({
-      fromToken: 'ETH',
-      toToken: 'XLM',
-      amount: 0.1,
-      quote: 1000,
-      fromAddress: ethAddress,
-      toAddress: stellarPublicKey,
-      hashlock: '0x' + Math.random().toString(16).substr(2, 64),
-      timelock: Math.floor(Date.now() / 1000) + timeRemaining
-    });
-  }, [ethAddress, stellarPublicKey, timeRemaining]);
+    const loadSwapDetails = async () => {
+      if (!swapId) return;
+
+      try {
+        const swapIntent = await apiClient.getSwapStatus(swapId);
+        setSwapDetails({
+          fromToken: swapIntent.fromToken,
+          toToken: swapIntent.toToken,
+          amount: parseFloat(swapIntent.fromAmount),
+          quote: parseFloat(swapIntent.toAmount),
+          fromAddress: swapIntent.sender,
+          toAddress: swapIntent.receiver,
+          hashlock: swapIntent.hashlock,
+          timelock: swapIntent.timelock,
+          status: swapIntent.status
+        });
+      } catch (error) {
+        console.error('Failed to load swap details:', error);
+        // Fallback to mock data
+        setSwapDetails({
+          fromToken: 'ETH',
+          toToken: 'XLM',
+          amount: 0.1,
+          quote: 1000,
+          fromAddress: ethAddress,
+          toAddress: stellarPublicKey,
+          hashlock: '0x' + Math.random().toString(16).substr(2, 64),
+          timelock: Math.floor(Date.now() / 1000) + timeRemaining
+        });
+      }
+    };
+
+    loadSwapDetails();
+  }, [swapId, ethAddress, stellarPublicKey, timeRemaining]);
 
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);

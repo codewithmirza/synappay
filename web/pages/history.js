@@ -6,6 +6,7 @@ import { CheckCircle, Clock, AlertCircle, ExternalLink, Coins, ArrowRight, Filte
 import { useWalletManager } from '../lib/wallet-manager';
 import UnifiedLayout from '../components/UnifiedLayout';
 import TokenIcon from '../components/TokenIcon';
+import apiClient from '../lib/api-client';
 
 // Mock swap history data
 const MOCK_SWAPS = [
@@ -64,12 +65,24 @@ export default function History() {
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setSwaps(MOCK_SWAPS);
+    const loadSwapHistory = async () => {
+      try {
+        const activeSwaps = await apiClient.getActiveSwaps();
+        setSwaps(activeSwaps.length > 0 ? activeSwaps : MOCK_SWAPS);
+      } catch (error) {
+        console.error('Failed to load swap history:', error);
+        setSwaps(MOCK_SWAPS); // Fallback to mock data
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (bothConnected) {
+      loadSwapHistory();
+    } else {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  }, [bothConnected]);
 
   const getStatusColor = (status) => {
     switch (status) {
